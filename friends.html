@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZIVV — الأصدقاء</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/shell.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: #000; color: #f5f5f5; min-height: 100dvh; }
+      .wrap { width: min(560px, 100%); margin: 0 auto; padding: 16px 14px 80px; }
+      h1 {
+        font-size: 24px; font-weight: 800;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .count { color: #888; font-size: 13px; margin: 4px 0 12px; }
+      .find {
+        width: 100%; background: #121212; border: 1px solid #262626; color: #fff;
+        border-radius: 999px; padding: 10px 14px; outline: none; margin-bottom: 16px;
+      }
+      .find:focus { border-color: #e1306c; }
+      h2 { font-size: 17px; margin: 18px 0 10px; display: flex; justify-content: space-between; align-items: center; }
+      h2 span { color: #e1306c; font-size: 13px; font-weight: 700; }
+      .req {
+        display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid #1d1d1d;
+      }
+      .req img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
+      .req .n { font-weight: 800; font-size: 15px; }
+      .req .m { color: #888; font-size: 12px; margin: 3px 0 8px; }
+      .btns { display: flex; gap: 8px; }
+      .btn, .ghost {
+        border: 0; border-radius: 8px; padding: 8px 0; font-weight: 800; font-size: 13px;
+        flex: 1; text-align: center; text-decoration: none; color: #fff;
+      }
+      .btn { background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4); }
+      .ghost { background: #262626; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .card {
+        background: #111; border: 1px solid #262626; border-radius: 14px; overflow: hidden; color: #fff;
+        text-decoration: none; display: flex; flex-direction: column;
+      }
+      .card img { width: 100%; height: 140px; object-fit: cover; display: block; }
+      .card .pad { padding: 8px 10px 10px; }
+      .card b { font-size: 14px; display: block; }
+      .card .m { color: #888; font-size: 11px; margin: 2px 0 8px; }
+      .row {
+        display: flex; gap: 10px; align-items: center; padding: 8px 0;
+        border-bottom: 1px solid #1d1d1d; color: #fff; text-decoration: none;
+      }
+      .row img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+      .row .grow { flex: 1; min-width: 0; }
+      .empty { color: #888; font-size: 13px; padding: 8px 0 12px; }
+      .tabs { display: flex; gap: 8px; margin-bottom: 8px; }
+      .tabs button {
+        border: 1px solid #262626; background: #111; color: #aaa;
+        border-radius: 999px; padding: 6px 12px; font-size: 13px;
+      }
+      .tabs button.on { color: #fff; border-color: #e1306c; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap" id="root"></main>
+    <script src="js/core.js"></script>
+    <script src="js/shell.js"></script>
+    <script>
+      let q = "";
+      let tab = "all";
+
+      function person(user) {
+        return ZIVV_CORE.peopleForShare().find((p) => p.user === user) ||
+          ZIVV_CORE.PEOPLE.find((p) => p.user === user) ||
+          { name: user, user, avatar: "brand/logo-sm.png", city: "" };
+      }
+
+      function suggestions() {
+        const friends = new Set(ZIVV_CORE.myFriends());
+        const me = (ZIVV_CORE.author().user || "").toLowerCase();
+        return ZIVV_CORE.PEOPLE.filter((p) => p.user !== me && !friends.has(p.user) && ZIVV_CORE.friendStatus(p.user) === "none");
+      }
+
+      function match(p) {
+        if (!q) return true;
+        const n = ZIVV_CORE.norm(q);
+        return ZIVV_CORE.norm(p.name).includes(n) || ZIVV_CORE.norm(p.user).includes(n);
+      }
+
+      function paint() {
+        const incoming = ZIVV_CORE.incomingFriendRequests();
+        const friends = ZIVV_CORE.myFriends().map(person).filter(match);
+        const sug = suggestions().filter(match);
+
+        document.getElementById("root").innerHTML = `
+          <h1>الأصدقاء</h1>
+          <p class="count">${friends.length} صديق · الطلبات من الحساب الرسمي</p>
+          <input class="find" id="q" placeholder="ابحث عن أصدقاء" value="${q.replace(/"/g, "")}" />
+          <div class="tabs">
+            <button type="button" class="${tab === "all" ? "on" : ""}" data-t="all">الكل</button>
+            <button type="button" class="${tab === "req" ? "on" : ""}" data-t="req">الطلبات</button>
+            <button type="button" class="${tab === "sug" ? "on" : ""}" data-t="sug">اقتراحات</button>
+          </div>
+          <div id="body"></div>`;
+
+        const body = document.getElementById("body");
+        let html = "";
+
+        if (tab === "all" || tab === "req") {
+          html += `<h2>طلبات الصداقة <span>${incoming.length}</span></h2>`;
+          html += incoming.length
+            ? incoming.map((r) => {
+                const p = person(r.from);
+                return `<div class="req">
+                  <a href="profile.html?u=${p.user}"><img src="${p.avatar}" alt=""></a>
+                  <div style="flex:1">
+                    <div class="n">${r.fromName || p.name}</div>
+                    <div class="m">@${r.from} · طلب صداقة</div>
+                    <div class="btns">
+                      <button class="btn" data-ok="${r.id}">تأكيد</button>
+                      <button class="ghost" data-no="${r.id}">حذف</button>
+                    </div>
+                  </div>
+                </div>`;
+              }).join("")
+            : '<p class="empty">مفيش طلبات دلوقتي.</p>';
+        }
+
+        if (tab === "all" || tab === "sug") {
+          html += `<h2>أشخاص قد تعرفهم</h2>`;
+          html += sug.length
+            ? `<div class="grid">${sug.map((p) => `
+                <div class="card">
+                  <a href="profile.html?u=${p.user}"><img src="${p.avatar}" alt=""></a>
+                  <div class="pad">
+                    <b>${p.name.split(" ")[0]}</b>
+                    <div class="m">${p.city || "@" + p.user}</div>
+                    <button class="btn" data-add="${p.user}" data-name="${p.name}" style="width:100%">إضافة صديق</button>
+                  </div>
+                </div>`).join("")}</div>`
+            : '<p class="empty">مفيش اقتراحات.</p>';
+        }
+
+        if (tab === "all") {
+          html += `<h2>كل الأصدقاء <span>${friends.length}</span></h2>`;
+          html += friends.length
+            ? friends.map((p) => `
+                <div class="row">
+                  <a class="row" href="profile.html?u=${p.user}" style="flex:1;border:0;padding:0">
+                    <img src="${p.avatar}" alt="">
+                    <div class="grow"><b>${p.name}</b><div class="m" style="color:#888;font-size:12px">@${p.user}</div></div>
+                  </a>
+                  <a class="ghost" href="chat.html?u=${encodeURIComponent(p.user)}" style="flex:0 0 auto;padding:8px 12px">رسالة</a>
+                </div>`).join("")
+            : '<p class="empty">مفيش أصدقاء لسه. أكّد طلب أو ابعت طلب من الحساب الرسمي.</p>';
+        }
+
+        body.innerHTML = html;
+        document.getElementById("q").oninput = (e) => { q = e.target.value; paint(); };
+        document.querySelectorAll(".tabs button").forEach((b) => {
+          b.onclick = () => { tab = b.getAttribute("data-t"); paint(); };
+        });
+        document.querySelectorAll("[data-ok]").forEach((b) => {
+          b.onclick = () => { ZIVV_CORE.setFriendRequest(b.getAttribute("data-ok"), "accepted"); paint(); };
+        });
+        document.querySelectorAll("[data-no]").forEach((b) => {
+          b.onclick = () => { ZIVV_CORE.setFriendRequest(b.getAttribute("data-no"), "rejected"); paint(); };
+        });
+        document.querySelectorAll("[data-add]").forEach((b) => {
+          b.onclick = () => {
+            ZIVV_CORE.sendFriendRequest(b.getAttribute("data-add"), b.getAttribute("data-name"));
+            b.textContent = "اتبعت الطلب";
+            b.disabled = true;
+          };
+        });
+      }
+      paint();
+    </script>
+  </body>
+</html>

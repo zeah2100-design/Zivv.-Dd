@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZIVV — الملف الشخصي</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/shell.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: #000; color: #f5f5f5; min-height: 100dvh; }
+      .cover { height: 168px; background: #141414; overflow: hidden; position: relative; z-index: 2; }
+      .cover img, .ava { cursor: default; }
+      .cover.mine img, .ava.mine { cursor: pointer; }
+      .cover img { width: 100%; height: 100%; object-fit: cover; opacity: .9; }
+      .head { width: min(560px, 100%); margin: -46px auto 0; padding: 0 16px 20px; position: relative; z-index: 3; }
+      .ava-wrap { position: relative; width: 92px; }
+      .ava { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; border: 3px solid #000; background: #111; display: block; }
+      .shop-sec { width: min(560px, 100%); margin: 0 auto 18px; padding: 0 16px; }
+      .shop-sec h2 { font-size: 16px; margin-bottom: 10px; }
+      .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .shop-card { display: block; background: #111; border: 1px solid #262626; border-radius: 12px; overflow: hidden; color: #fff; text-decoration: none; }
+      .shop-card img { width: 100%; height: 120px; object-fit: cover; }
+      .shop-card div { padding: 8px; font-size: 13px; }
+      .name { font-size: 20px; font-weight: 800; margin-top: 10px; }
+      .user { color: #888; font-size: 13px; }
+      .bio { margin: 8px 0; font-size: 14px; line-height: 1.6; color: #ddd; }
+      .stats { display: flex; gap: 18px; margin: 12px 0; font-size: 14px; }
+      .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+      .btn, .ghost, .danger {
+        border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 800; font-size: 13px;
+      }
+      .btn { background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4); color: #fff; }
+      .gold {
+        background: linear-gradient(135deg, #fcaf45, #f77737);
+        color: #1a0e00; border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 800; font-size: 13px;
+      }
+      .badge-gold {
+        display: inline-block; margin-inline-start: 6px; font-size: 11px;
+        background: linear-gradient(135deg, #fcaf45, #f77737); color: #1a0e00;
+        border-radius: 999px; padding: 2px 8px; font-weight: 800;
+      }
+      .ghost { background: #161616; color: #fff; border: 1px solid #262626; }
+      .danger { background: #2a0d12; color: #ff8aa0; border: 1px solid #5a1a24; }
+      .tabs { display: flex; border-bottom: 1px solid #262626; margin-top: 16px; }
+      .tabs button { flex: 1; background: none; border: 0; color: #777; padding: 10px; font-weight: 800; }
+      .tabs button.on { color: #fff; box-shadow: inset 0 -2px 0 #e1306c; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px; }
+      .grid a, .grid .cell { aspect-ratio: 1; background: #111; display: block; overflow: hidden; position: relative; color: #fff; text-decoration: none; }
+      .grid img { width: 100%; height: 100%; object-fit: cover; }
+      .grid .txt { padding: 8px; font-size: 11px; display: flex; align-items: flex-end; height: 100%; background: #141414; }
+      .play { position: absolute; top: 6px; left: 6px; }
+      .pcard { background: #111; }
+      .pcard .pr { position: absolute; bottom: 6px; right: 6px; font-size: 11px; font-weight: 800; }
+      .empty { color: #888; text-align: center; padding: 28px 12px; }
+      .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 60; place-items: center; }
+      .modal.open { display: grid; }
+      .sheet { width: min(360px, 92vw); background: #111; border: 1px solid #262626; border-radius: 16px; padding: 16px; }
+      .sheet input, .sheet textarea { width: 100%; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; padding: 10px; margin: 6px 0 10px; }
+      .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #161616; border: 1px solid #333; padding: 8px 14px; border-radius: 999px; display: none; z-index: 70; font-size: 13px; }
+      input[type="file"] { display: none; }
+    </style>
+  </head>
+  <body>
+    <input id="file-ava" type="file" accept="image/*" />
+    <input id="file-cover" type="file" accept="image/*" />
+    <div class="cover" id="cover"></div>
+    <div class="head" id="head"></div>
+    <section class="shop-sec" id="shop-sec"></section>
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="grid"></div>
+    <div class="modal" id="edit">
+      <form class="sheet" id="edit-form">
+        <h3>تعديل الملف</h3>
+        <input id="e-name" placeholder="الاسم" />
+        <input id="e-user" placeholder="اسم المستخدم" />
+        <input id="e-city" placeholder="المدينة" />
+        <textarea id="e-bio" rows="3" placeholder="نبذة"></textarea>
+        <button class="btn" type="submit" style="width:100%">حفظ</button>
+        <button class="ghost" type="button" id="e-close" style="width:100%;margin-top:8px">إغلاق</button>
+      </form>
+    </div>
+    <div class="modal" id="addp">
+      <form class="sheet" id="addp-form">
+        <h3>إضافة منتج</h3>
+        <input id="p-title" placeholder="اسم المنتج" required />
+        <input id="p-price" type="number" placeholder="السعر" required />
+        <input id="p-phone" placeholder="رقم التواصل" />
+        <input id="p-specs" placeholder="المواصفات (افصل بفاصلة)" />
+        <input id="p-img" type="file" accept="image/*" style="display:block;margin:8px 0;color:#aaa" />
+        <button class="btn" type="submit" style="width:100%">نشر المنتج</button>
+        <button class="ghost" type="button" id="p-close" style="width:100%;margin-top:8px">إغلاق</button>
+      </form>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script src="js/core.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/creator.js"></script>
+    <script src="js/shell.js"></script>
+    <script>
+      const BIOS = { layla: "بكتب عن المدن وهي بتنام.", karim: "صوت وظل واستوديو بعد منتصف الليل.", omar: "عدسة على النيل.", maya: "حرير وذهب وصمت أنيق.", nora: "أصمّم ليالي القاهرة.", youssef: "مشاهد قصيرة بتفضل في الرأس." };
+      const COVERS = { layla: "posts/giza.webp", karim: "posts/studio.jpg", omar: "posts/nile.jpg", maya: "posts/fashion.jpg", nora: "posts/coffee.jpg", youssef: "posts/cinema.jpg" };
+
+      function extra() { try { return JSON.parse(localStorage.getItem("zivv.profiles") || "{}"); } catch { return {}; } }
+      function saveExtra(map) {
+        try { localStorage.setItem("zivv.profiles", JSON.stringify(map)); return true; }
+        catch { toast("الصورة كبيرة — جرّب صورة أصغر"); return false; }
+      }
+      function follows() { try { return JSON.parse(localStorage.getItem("zivv.followUsers") || "[]"); } catch { return []; } }
+      function saveFollows(list) { localStorage.setItem("zivv.followUsers", JSON.stringify(list)); }
+      function toast(t) {
+        const el = document.getElementById("toast");
+        el.textContent = t; el.style.display = "block";
+        setTimeout(() => (el.style.display = "none"), 2400);
+      }
+
+      const q = new URLSearchParams(location.search).get("u");
+      const ses = ZIVV_CORE.session();
+      const myUser = (ses.username || (ses.email || "").split("@")[0] || "me").replace(/^@/, "");
+      const target = (q || myUser).replace(/^@/, "").toLowerCase();
+      const person = ZIVV_CORE.PEOPLE.find((p) => p.user === target);
+      const mine = !q || target === myUser.toLowerCase();
+      const patch = extra()[target] || extra()[myUser.toLowerCase()] || {};
+
+      const profile = {
+        name: patch.name || (mine ? ses.name : "") || (person && person.name) || "مستخدم ZIVV",
+        user: patch.user || (person && person.user) || myUser,
+        city: patch.city || (person && person.city) || "",
+        bio: patch.bio || BIOS[target] || (mine ? "مرحباً، أنا على ZIVV." : ""),
+        avatar: patch.avatar || (person && person.avatar) || "brand/logo-sm.png",
+        cover: patch.cover || COVERS[target] || ""
+      };
+
+      const posts = ZIVV_CORE.getPosts().filter((p) =>
+        (p.user || "").toLowerCase() === profile.user.toLowerCase() ||
+        (mine && (p.user || "").toLowerCase() === myUser.toLowerCase())
+      );
+      function productsOf() {
+        return ZIVV_STORE.bySeller(profile.user);
+      }
+
+      let tab = "all";
+
+      function persistPatch(more) {
+        const map = extra();
+        map[target] = Object.assign({}, map[target] || {}, {
+          name: profile.name, user: profile.user, city: profile.city, bio: profile.bio,
+          avatar: profile.avatar, cover: profile.cover
+        }, more || {});
+        saveExtra(map);
+      }
+
+      function paintHead() {
+        const goods = productsOf();
+        document.getElementById("cover").classList.toggle("mine", mine);
+        document.getElementById("cover").innerHTML = profile.cover
+          ? `<img id="cover-img" class="${mine ? "mine" : ""}" src="${profile.cover}" alt="الخلفية">`
+          : `<div id="cover-img" class="${mine ? "mine" : ""}" style="width:100%;height:100%;background:#141414"></div>`;
+        const f = follows();
+        const on = f.includes(profile.user);
+        const gold = ZIVV_CORE.isGold(profile.user);
+        const gstat = ZIVV_CORE.goldStatus(myUser);
+        const fr = mine ? "none" : ZIVV_CORE.friendStatus(profile.user);
+        const friendBtn =
+          fr === "friends" ? `<button class="ghost" type="button" disabled>أصدقاء</button>`
+          : fr === "outgoing" ? `<button class="ghost" type="button" disabled>طلب صداقة اتبعت</button>`
+          : fr === "incoming" ? `<button class="btn" id="btn-accept" type="button">قبول الصداقة</button>
+             <button class="ghost" id="btn-reject" type="button">رفض</button>`
+          : `<button class="ghost" id="btn-friend" type="button">طلب صداقة</button>`;
+        const msgBtn = fr === "friends"
+          ? `<a class="ghost" href="chat.html?u=${encodeURIComponent(profile.user)}">رسالة</a>`
+          : `<button class="ghost" id="btn-msg-lock" type="button">رسالة</button>`;
+        document.getElementById("head").innerHTML = `
+          <div class="ava-wrap">
+            <img class="ava ${mine ? "mine" : ""} ${gold ? "gold" : ""}" id="ava-img" src="${profile.avatar}" alt="صورة البروفايل">
+          </div>
+          <div class="name">${profile.name}${gold ? '<span class="badge-gold">ذهبي</span>' : ""}</div>
+          <div class="user">@${profile.user}${profile.city ? " · " + profile.city : ""}${goods.length ? " · بائع" : ""}</div>
+          <p class="bio">${profile.bio}</p>
+          <div class="stats">
+            <span><b>${posts.length}</b> منشور</span>
+            <span><b>${180 + profile.user.length * 7 + (on ? 1 : 0)}</b> متابع</span>
+            <span><b>${goods.length}</b> منتج</span>
+          </div>
+          <div class="acts">
+            ${mine
+              ? `<button class="btn" id="btn-edit" type="button">تعديل الملف</button>
+                 <button class="ghost" id="btn-addp" type="button">إضافة منتج</button>
+                 ${
+                   gold
+                     ? `<button class="gold" type="button" disabled>حساب ذهبي مميز</button>`
+                     : gstat === "pending"
+                       ? `<a class="gold" href="alerts.html?t=official" style="display:inline-flex;align-items:center">استنى تفعيل الدفع</a>`
+                       : `<button class="gold" id="btn-gold" type="button">الاشتراك الذهبي</button>`
+                 }
+                 <a class="ghost" href="friends.html">الأصدقاء</a>
+                 <a class="ghost" href="settings.html">الإعدادات</a>`
+              : `<button class="btn" id="btn-follow" type="button">${on ? "إلغاء المتابعة" : "متابعة"}</button>
+                 ${friendBtn}
+                 ${msgBtn}
+                 <button class="danger" id="btn-block" type="button">حظر</button>`}
+          </div>`;
+
+        if (mine) {
+          document.getElementById("cover-img").onclick = () => document.getElementById("file-cover").click();
+          document.getElementById("ava-img").onclick = () => document.getElementById("file-ava").click();
+        }
+        const ap = document.getElementById("btn-addp");
+        if (ap) ap.onclick = () => document.getElementById("addp").classList.add("open");
+
+        const ed = document.getElementById("btn-edit");
+        if (ed) ed.onclick = () => {
+          document.getElementById("e-name").value = profile.name;
+          document.getElementById("e-user").value = profile.user;
+          document.getElementById("e-city").value = profile.city;
+          document.getElementById("e-bio").value = profile.bio;
+          document.getElementById("edit").classList.add("open");
+        };
+        const fol = document.getElementById("btn-follow");
+        if (fol) fol.onclick = () => {
+          let list = follows();
+          if (list.includes(profile.user)) list = list.filter((x) => x !== profile.user);
+          else list.push(profile.user);
+          saveFollows(list);
+          paintHead();
+        };
+        const frb = document.getElementById("btn-friend");
+        if (frb) frb.onclick = () => {
+          ZIVV_CORE.sendFriendRequest(profile.user, profile.name);
+          toast("طلب الصداقة اتبعت. هتقدر تدردش بعد ما يقبل.");
+          paintHead();
+        };
+        const acc = document.getElementById("btn-accept");
+        if (acc) acc.onclick = () => {
+          const req = ZIVV_CORE.incomingFriendRequests().find((r) => r.from === profile.user.toLowerCase());
+          if (req) ZIVV_CORE.setFriendRequest(req.id, "accepted");
+          toast("بقوا أصدقاء. تقدروا تدردشوا.");
+          paintHead();
+        };
+        const rej = document.getElementById("btn-reject");
+        if (rej) rej.onclick = () => {
+          const req = ZIVV_CORE.incomingFriendRequests().find((r) => r.from === profile.user.toLowerCase());
+          if (req) ZIVV_CORE.setFriendRequest(req.id, "rejected");
+          paintHead();
+        };
+        const lock = document.getElementById("btn-msg-lock");
+        if (lock) lock.onclick = () => toast("الدردشة للأصدقاء بس. ابعت طلب صداقة من هنا واستنى القبول.");
+        const goldb = document.getElementById("btn-gold");
+        if (goldb) goldb.onclick = () => {
+          if (window.ZIVV_CREATOR && ZIVV_CREATOR.openPay) ZIVV_CREATOR.openPay();
+        };
+        if (mine && window.ZIVV_CREATOR) {
+          const pg = ZIVV_CREATOR.progress(profile.user);
+          const acts = document.querySelector(".acts");
+          if (acts && !document.getElementById("cr-prog")) {
+            const card = document.createElement("div");
+            card.id = "cr-prog";
+            card.style.cssText = "margin-top:12px;width:100%";
+            const left = gold && ZIVV_CREATOR.goldLeft ? ZIVV_CREATOR.goldLeft(profile.user) : null;
+            const feats = gold
+              ? "ذهبي شهر: باقي " + (left ? left.days + " يوم و " + left.hours + " ساعة و " + left.minutes + " دقيقة" : "")
+              : "كل ١٠٠٠ لايك = ١٠٠ نقطة · الذهبي شهر بـ ١٠٬٠٠٠ نقطة أو نقدي";
+            card.innerHTML = `<div class="cr-banner slim"><b>${pg.points} / ${pg.need} نقطة</b><div class="cr-bar"><i style="width:${pg.pct}%"></i></div><span class="cr-more">${feats}</span></div>`;
+            acts.parentNode.insertBefore(card, acts.nextSibling);
+          }
+        }
+        const blk = document.getElementById("btn-block");
+        if (blk) blk.onclick = () => {
+          if (!confirm("تبعت طلب حظر للحساب ده لإدارة الموقع وصفحة الملك؟ القرار للإدارة.")) return;
+          const reports = JSON.parse(localStorage.getItem("zivv.reports") || "[]");
+          reports.unshift({
+            id: "r_" + Date.now(),
+            type: "account-block",
+            dest: "king",
+            targetUser: profile.user,
+            targetName: profile.name,
+            reporterName: ZIVV_CORE.meName(),
+            reporterEmail: ZIVV_CORE.meKey(),
+            note: "طلب حظر حساب — الإدارة تقرر تقبل أو ترفض",
+            at: Date.now()
+          });
+          localStorage.setItem("zivv.reports", JSON.stringify(reports));
+          toast("الطلب اتبعت للملك والإدارة باسمك");
+        };
+      }
+
+      function paintShop() {
+        const goods = productsOf();
+        document.getElementById("shop-sec").innerHTML = `
+          <h2>المنتجات</h2>
+          ${goods.length
+            ? `<div class="shop-grid">${goods.map((p) =>
+                `<a class="shop-card" href="explore.html?id=${p.id}"><img src="${p.image}" alt=""><div><b>${p.title}</b><div style="color:#e1306c;font-weight:800">${p.price} ج.م</div></div></a>`
+              ).join("")}</div>`
+            : `<p class="empty" style="padding:8px 0">${mine ? "ضيف منتج من الزر فوق." : "صاحب الحساب ما عندوش منتجات."}</p>`}`;
+      }
+
+      function paintTabs() {
+        const items = [
+          ["all", "المنشورات"],
+          ["photo", "صور"],
+          ["video", "فيديو"],
+          ["shop", "المنتجات"]
+        ];
+        document.getElementById("tabs").innerHTML = items.map(([k, l]) =>
+          `<button type="button" class="${k === tab ? "on" : ""}" data-t="${k}">${l}</button>`
+        ).join("");
+        document.querySelectorAll("#tabs button").forEach((b) => {
+          b.onclick = () => { tab = b.getAttribute("data-t"); paintTabs(); paintGrid(); };
+        });
+      }
+
+      function paintGrid() {
+        if (tab === "shop") {
+          const goods = productsOf();
+          document.getElementById("grid").innerHTML = goods.length
+            ? goods.map((p) =>
+                `<a class="cell pcard" href="explore.html?id=${p.id}">
+                  <img src="${p.image}" alt="">
+                  <span class="pr">${p.price} ج.م</span>
+                </a>`
+              ).join("")
+            : '<p class="empty">مفيش منتجات.</p>';
+          return;
+        }
+        const list = posts.filter((p) => tab === "all" || p.type === tab || (tab === "photo" && p.image && p.type !== "video"));
+        document.getElementById("grid").innerHTML = list.length
+          ? list.map((p) => p.image
+              ? `<a class="cell" href="${p.type === "video" ? "reels.html" : "home.html"}"><img src="${p.image}" alt="">${p.type === "video" ? '<span class="play">▶</span>' : ""}</a>`
+              : `<div class="cell txt">${(p.text || "").slice(0, 70)}</div>`)
+              .join("")
+          : '<p class="empty">مفيش منشورات في القسم ده.</p>';
+      }
+
+      function compress(dataUrl, max, cb) {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, max / Math.max(img.width, img.height));
+          const c = document.createElement("canvas");
+          c.width = Math.round(img.width * scale);
+          c.height = Math.round(img.height * scale);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          cb(c.toDataURL("image/jpeg", 0.82));
+        };
+        img.onerror = () => cb(dataUrl);
+        img.src = dataUrl;
+      }
+      function readFile(input, max, cb) {
+        input.addEventListener("change", () => {
+          const file = input.files && input.files[0];
+          if (!file) return;
+          const r = new FileReader();
+          r.onload = () => compress(r.result, max, cb);
+          r.readAsDataURL(file);
+          input.value = "";
+        });
+      }
+      readFile(document.getElementById("file-ava"), 500, (data) => {
+        profile.avatar = data;
+        persistPatch({ avatar: data });
+        paintHead();
+        toast("اتغيرت صورة البروفايل");
+      });
+      readFile(document.getElementById("file-cover"), 1200, (data) => {
+        profile.cover = data;
+        persistPatch({ cover: data });
+        paintHead();
+        toast("اتغيرت الخلفية");
+      });
+
+      document.getElementById("p-close").onclick = () => document.getElementById("addp").classList.remove("open");
+      document.getElementById("addp-form").onsubmit = (e) => {
+        e.preventDefault();
+        const file = document.getElementById("p-img").files[0];
+        const finish = (image) => {
+          ZIVV_STORE.addUserProduct({
+            id: "pru_" + Date.now(),
+            title: document.getElementById("p-title").value.trim(),
+            price: Number(document.getElementById("p-price").value) || 0,
+            cat: "عام",
+            seller: profile.name,
+            sellerUser: profile.user,
+            phone: document.getElementById("p-phone").value.trim() || "",
+            image: image || "posts/fashion.jpg",
+            desc: "منتج من " + profile.name,
+            specs: document.getElementById("p-specs").value.split(",").map((s) => s.trim()).filter(Boolean)
+          });
+          document.getElementById("addp").classList.remove("open");
+          document.getElementById("addp-form").reset();
+          paintHead();
+          paintShop();
+          paintGrid();
+          toast("المنتج اتضاف على حسابك");
+        };
+        if (!file) return finish("");
+        const r = new FileReader();
+        r.onload = () => compress(r.result, 900, finish);
+        r.readAsDataURL(file);
+      };
+      document.getElementById("e-close").onclick = () => document.getElementById("edit").classList.remove("open");
+      document.getElementById("edit-form").onsubmit = (e) => {
+        e.preventDefault();
+        profile.name = document.getElementById("e-name").value.trim() || profile.name;
+        profile.user = document.getElementById("e-user").value.replace(/^@/, "").trim() || profile.user;
+        profile.city = document.getElementById("e-city").value.trim();
+        profile.bio = document.getElementById("e-bio").value.trim();
+        persistPatch();
+        const s = ZIVV_CORE.session();
+        s.name = profile.name; s.username = profile.user;
+        localStorage.setItem("zivv.session", JSON.stringify(s));
+        location.href = "profile.html";
+      };
+
+      paintHead();
+      paintShop();
+      paintTabs();
+      paintGrid();
+    </script>
+  </body>
+</html>

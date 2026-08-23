@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZIVV — البحث</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/shell.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        background: #000;
+        color: #f5f5f5;
+        min-height: 100dvh;
+      }
+      .box { margin-top: 14px; }
+      .search { display: flex; gap: 8px; }
+      .search input {
+        flex: 1;
+        background: #121212;
+        border: 1px solid #262626;
+        color: #fff;
+        border-radius: 12px;
+        padding: 12px 14px;
+        outline: none;
+        font-size: 15px;
+      }
+      .search input:focus { border-color: #e1306c; }
+      .tabs {
+        display: flex;
+        gap: 6px;
+        margin: 12px 0 14px;
+        flex-wrap: wrap;
+      }
+      .tabs button {
+        background: #111;
+        border: 1px solid #262626;
+        color: #bbb;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+      .tabs button.on {
+        border-color: #e1306c;
+        color: #fff;
+        background: #1a0b12;
+      }
+      .hit {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 8px;
+        border-bottom: 1px solid #1d1d1d;
+        color: #fff;
+        text-decoration: none;
+      }
+      .hit img, .dot {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        flex: 0 0 auto;
+      }
+      .dot { display: grid; place-items: center; font-weight: 800; border-radius: 50%; }
+      .k { font-size: 11px; color: #c13584; }
+      .t { font-size: 14px; line-height: 1.45; }
+      .s { font-size: 12px; color: #888; }
+      .empty { color: #888; padding: 24px 4px; }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 4px;
+      }
+      .card {
+        display: block;
+        background: #111;
+        border: 1px solid #262626;
+        border-radius: 14px;
+        overflow: hidden;
+        color: #fff;
+      }
+      .card img {
+        width: 100%;
+        height: 140px;
+        object-fit: cover;
+        display: block;
+        background: #1a1a1a;
+      }
+      .card .meta { padding: 8px; }
+      .playmark {
+        position: relative;
+      }
+      .playmark::after {
+        content: "▶";
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 22px;
+        text-shadow: 0 2px 8px #000;
+        height: 140px;
+      }
+    </style>
+  </head>
+  <body data-page="search">
+    <main class="page-pad">
+      <h1>البحث</h1>
+      <p>اختار النوع الأول: صور، فيديو، منتجات، أو هاشتاج. مش بحث عشوائي.</p>
+      <div class="box">
+        <div class="search">
+          <input id="q" type="search" placeholder="ابحث في النوع المختار…" autofocus />
+        </div>
+        <div class="tabs">
+          <button type="button" data-k="photo">صور</button>
+          <button type="button" data-k="video">فيديو</button>
+          <button type="button" data-k="product">منتجات</button>
+          <button type="button" data-k="hashtag">هاشتاج</button>
+          <button type="button" data-k="person">أشخاص</button>
+          <button type="button" data-k="music">موسيقى</button>
+          <button type="button" data-k="post">منشورات</button>
+        </div>
+        <div id="out"></div>
+      </div>
+    </main>
+    <script src="js/core.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/shell.js"></script>
+    <script>
+      const params = new URLSearchParams(location.search);
+      let kind = params.get("k") || "photo";
+      const q = document.getElementById("q");
+      const out = document.getElementById("out");
+      if (params.get("q")) q.value = params.get("q");
+
+      function setKind(next) {
+        kind = next;
+        document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x.getAttribute("data-k") === kind));
+        const url = new URL(location.href);
+        url.searchParams.set("k", kind);
+        if (q.value.trim()) url.searchParams.set("q", q.value.trim());
+        else url.searchParams.delete("q");
+        history.replaceState({}, "", url);
+        run();
+      }
+
+      document.querySelectorAll(".tabs button").forEach((b) => {
+        b.onclick = () => setKind(b.getAttribute("data-k"));
+      });
+
+      function hrefFor(r) {
+        if (r.kind === "person") return "profile.html?u=" + r.item.user;
+        if (r.kind === "music") return "music.html";
+        if (r.kind === "product") return "store.html?id=" + r.item.id;
+        if (r.kind === "hashtag") return "search.html?k=hashtag&q=" + encodeURIComponent("#" + r.item.tag);
+        if (r.item && r.item.type === "video") return "reels.html";
+        return "home.html";
+      }
+
+      function run() {
+        const query = q.value.trim();
+        const rows = ZIVV_CORE.search(query, kind);
+        if (!rows.length) {
+          out.innerHTML = query
+            ? '<p class="empty">مفيش نتيجة في القسم ده.</p>'
+            : '<p class="empty">اكتب كلمة أو سيبه فاضي عشان تشوف القسم كله.</p>';
+          return;
+        }
+        const visual = kind === "photo" || kind === "video" || kind === "product";
+        if (visual) {
+          out.innerHTML = '<div class="grid">' + rows.map((r) => {
+            const p = r.item;
+            const img = p.image || "brand/logo-sm.png";
+            const title = p.title || (p.text || "").slice(0, 42) || p.seller || "";
+            const sub = r.kind === "product"
+              ? (p.price || "") + " ج.م · " + (p.seller || "")
+              : "@" + (p.user || "");
+            return `<a class="card" href="${hrefFor(r)}">
+              <div class="${r.kind === "video" ? "playmark" : ""}"><img src="${img}" alt=""></div>
+              <div class="meta"><div class="k">${r.kind === "product" ? "منتج" : r.kind === "video" ? "فيديو" : "صورة"}</div><div class="t">${title}</div><div class="s">${sub}</div></div>
+            </a>`;
+          }).join("") + "</div>";
+          return;
+        }
+        out.innerHTML = rows.map((r) => {
+          if (r.kind === "person") {
+            const p = r.item;
+            return `<a class="hit" href="profile.html?u=${p.user}"><img src="${p.avatar}" alt=""><div><div class="k">شخص</div><div class="t">${p.name}</div><div class="s">@${p.user} · ${p.city || ""}</div></div></a>`;
+          }
+          if (r.kind === "music") {
+            const m = r.item;
+            return `<a class="hit" href="music.html"><div class="dot">♪</div><div><div class="k">موسيقى</div><div class="t">${m.title}</div><div class="s">${m.artist}</div></div></a>`;
+          }
+          if (r.kind === "hashtag") {
+            const h = r.item;
+            return `<a class="hit" href="search.html?k=hashtag&q=${encodeURIComponent("#" + h.tag)}"><div class="dot">#</div><div><div class="k">هاشتاج</div><div class="t">#${h.tag}</div><div class="s">${h.count} منشور</div></div></a>`;
+          }
+          const p = r.item;
+          return `<a class="hit" href="home.html"><img src="${p.avatar || p.image || "brand/logo-sm.png"}" alt=""><div><div class="k">منشور</div><div class="t">${(p.title || p.text || "").slice(0, 90)}</div><div class="s">@${p.user || ""} · ${(p.tags || []).map((t) => "#" + t).join(" ")}</div></div></a>`;
+        }).join("");
+      }
+      q.addEventListener("input", () => {
+        const url = new URL(location.href);
+        url.searchParams.set("k", kind);
+        if (q.value.trim()) url.searchParams.set("q", q.value.trim());
+        else url.searchParams.delete("q");
+        history.replaceState({}, "", url);
+        run();
+      });
+      setKind(kind);
+    </script>
+  </body>
+</html>

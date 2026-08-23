@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZIVV — صناع المحتوى</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/shell.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        background:
+          radial-gradient(900px 420px at 10% -10%, rgba(252,175,69,.12), transparent 50%),
+          radial-gradient(800px 380px at 110% 110%, rgba(131,58,180,.16), transparent 46%),
+          #000;
+        color: #f5f5f5;
+        min-height: 100dvh;
+      }
+      a { color: inherit; text-decoration: none; }
+      .wrap { width: min(520px, 100%); margin: 0 auto; padding: 18px 16px 90px; }
+      .hero {
+        position: relative; overflow: hidden; border-radius: 22px;
+        min-height: 220px; margin-bottom: 16px;
+      }
+      .hero img { width: 100%; height: 220px; object-fit: cover; filter: brightness(.45); display: block; }
+      .hero .copy {
+        position: absolute; inset: 0; display: flex; flex-direction: column;
+        justify-content: flex-end; padding: 18px;
+      }
+      .kicker { font-size: 12px; color: #fcaf45; font-weight: 800; letter-spacing: .08em; }
+      h1 {
+        font-size: 26px; line-height: 1.25; margin: 6px 0 8px;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .lead { color: #ddd; font-size: 14px; line-height: 1.7; }
+      .go {
+        display: block; text-align: center; margin: 14px 0 18px;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        color: #fff; font-weight: 800; border-radius: 14px; padding: 14px;
+        font-size: 16px; border: 0;
+      }
+      .steps { display: grid; gap: 8px; margin-bottom: 18px; }
+      .step {
+        background: #0d0d0d; border: 1px solid #262626; border-radius: 14px;
+        padding: 12px 14px; display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: start;
+      }
+      .n {
+        width: 36px; height: 36px; border-radius: 10px;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        display: grid; place-items: center; font-weight: 800;
+      }
+      .step b { display: block; margin-bottom: 4px; }
+      .step span { color: #aaa; font-size: 13px; line-height: 1.55; }
+      .me {
+        background: #111; border: 1px solid #3a2a14; border-radius: 16px;
+        padding: 14px; margin-bottom: 16px;
+      }
+      .me h2 { font-size: 15px; margin-bottom: 8px; }
+      .nums { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 10px 0; }
+      .num { background: #0a0a0a; border-radius: 12px; padding: 10px; text-align: center; }
+      .num b { display: block; font-size: 18px; }
+      .num span { color: #888; font-size: 11px; }
+      .bar { height: 8px; background: #1c1c1c; border-radius: 99px; overflow: hidden; }
+      .bar i { display: block; height: 100%; background: linear-gradient(90deg, #fcaf45, #e1306c); }
+      .mute { color: #888; font-size: 12px; margin-top: 8px; line-height: 1.6; }
+      h2 { font-size: 16px; margin: 8px 0 10px; }
+      .row {
+        display: flex; align-items: center; gap: 10px;
+        background: #111; border: 1px solid #262626; border-radius: 14px;
+        padding: 10px; margin-bottom: 8px;
+      }
+      .row img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
+      .row .who { flex: 1; min-width: 0; }
+      .row b { display: block; }
+      .row span { color: #888; font-size: 12px; }
+      .badge {
+        font-size: 11px; font-weight: 800; border-radius: 999px; padding: 3px 8px;
+        background: linear-gradient(135deg, #fcaf45, #f77737); color: #1a0e00;
+      }
+      .welcome {
+        display: none; margin-bottom: 12px; padding: 10px 12px; border-radius: 12px;
+        background: #1a1408; border: 1px solid #5a3a12; color: #fcaf45; font-size: 13px; line-height: 1.6;
+      }
+      .welcome.on { display: block; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <p class="welcome" id="welcome">أهلاً بصانع المحتوى. انشر أول صورة أو فيديو دلوقتي — الناس هتشوفه من غير ما تشتري إعلان.</p>
+      <div class="hero">
+        <img src="posts/studio.jpg" alt="" />
+        <div class="copy">
+          <div class="kicker">برنامج صناع المحتوى</div>
+          <h1>انشر. اجمع لايكات. اشترك ذهبي.</h1>
+          <p class="lead">كل ١٠٠٠ لايك = ١٠٠ نقطة. الذهبي بـ ١٠٬٠٠٠ نقطة، أو اطلب نقدي والملك هو اللي يكتب السعر ويبعت الرسالة.</p>
+        </div>
+      </div>
+      <a class="go" href="publish.html" id="go">انشر منشور دلوقتي</a>
+      <button class="go" type="button" id="go-gold" style="background:#161616;border:1px solid #3a2a14;margin-top:-6px">الاشتراك الذهبي — نقاط أو نقدي</button>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><div><b>انشر</b><span>صورة أو فيديو أو ريل. اللايكات على منشوراتك هي اللي بتحسب.</span></div></div>
+        <div class="step"><div class="n">2</div><div><b>كل ١٠٠٠ لايك = ١٠٠ نقطة</b><span>مفيش نقاط من المشاهدة لوحدها. اللايك هو اللي بيفتح الرصيد.</span></div></div>
+        <div class="step"><div class="n">3</div><div><b>الذهبي: ١٠٬٠٠٠ نقطة أو فلوس</b><span>ادفع النقاط، أو اطلب نقدي. الملك يكتب السعر ويبعت الرسالة من صفحته.</span></div></div>
+      </div>
+      <div class="steps">
+        <div class="step"><div class="n">★</div><div><b>مميزات الذهبي عن العادي</b><span>شارة ذهبية · إطار صورة · وسم مميز على المنشور · ظهور أقوى في الفيد · من غير إعلانات جوّه حسابك.</span></div></div>
+      </div>
+      <section class="me" id="me"></section>
+      <h2>صناع ظاهرين دلوقتي</h2>
+      <div id="board"></div>
+    </main>
+    <script src="js/core.js"></script>
+    <script src="js/creator.js"></script>
+    <script src="js/shell.js"></script>
+    <script>
+      const welcome = new URLSearchParams(location.search).get("welcome") === "1";
+      if (welcome) document.getElementById("welcome").classList.add("on");
+      ZIVV_CREATOR.join();
+      const me = ZIVV_CORE.author();
+      const st = ZIVV_CREATOR.of(me.user);
+      const pg = ZIVV_CREATOR.progress(me.user);
+      document.getElementById("me").innerHTML = `
+        <h2>تقدمك يا ${me.name}</h2>
+        <div class="nums">
+          <div class="num"><b>${st.posts || 0}</b><span>منشور</span></div>
+          <div class="num"><b>${pg.likes || 0}</b><span>لايك</span></div>
+          <div class="num"><b>${st.points || 0}</b><span>نقطة</span></div>
+        </div>
+        <div class="bar"><i style="width:${pg.pct}%"></i></div>
+        <p class="mute">${pg.gold ? "حسابك ذهبي ومميز عن العادي." : "باقي " + pg.left + " نقطة، أو ادفع نقدي. لايكاتك: " + pg.likes}</p>
+      `;
+      const avatars = { layla: "avatars/layla.jpg", karim: "avatars/karim.jpg", omar: "avatars/omar.jpg", maya: "avatars/maya.jpg", nora: "avatars/nora.jpg", youssef: "avatars/youssef.jpg" };
+      document.getElementById("board").innerHTML = ZIVV_CREATOR.top(8).map((c, i) => `
+        <a class="row" href="profile.html?u=${encodeURIComponent(c.user)}">
+          <img src="${avatars[c.user] || "brand/logo-sm.png"}" alt="">
+          <div class="who">
+            <b>${i + 1}. ${c.name || c.user}</b>
+            <span>@${c.user} · ${c.posts || 0} منشور · ${c.views || 0} مشاهدة</span>
+          </div>
+          ${c.gold || pg.gold && c.user === me.user ? '<span class="badge">ذهبي</span>' : `<span class="mute">${c.points || 0} نقطة</span>`}
+        </a>
+      `).join("");
+      document.getElementById("go-gold").onclick = () => ZIVV_CREATOR.openPay();
+    </script>
+  </body>
+</html>

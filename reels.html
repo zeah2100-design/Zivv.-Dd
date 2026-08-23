@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>ZIVV — الشريط</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; background: #000; color: #fff; font-family: "Segoe UI", Tahoma, Arial, sans-serif; overflow: hidden; }
+      .bar {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 20;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        background: linear-gradient(180deg, rgba(0,0,0,.55), transparent);
+      }
+      .bar a { color: #fff; text-decoration: none; font-weight: 800; font-size: 14px; }
+      .stage { height: 100dvh; overflow-y: auto; scroll-snap-type: y mandatory; }
+      .clip {
+        position: relative;
+        height: 100dvh;
+        scroll-snap-align: start;
+        overflow: hidden;
+        background: #000;
+      }
+      .clip .bg { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .side {
+        position: absolute;
+        right: 8px;
+        bottom: 120px;
+        width: 64px;
+        z-index: 6;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+      }
+      .ava {
+        width: 48px; height: 48px; border-radius: 50%;
+        object-fit: cover; border: 2px solid #fff; display: block;
+      }
+      .side button {
+        background: none; border: 0; color: #fff;
+        font-size: 11px; width: 64px;
+        text-shadow: 0 2px 6px #000;
+      }
+      .side button .ic { display: block; font-size: 26px; line-height: 1; }
+      .side button.on { color: #fe2c55; }
+      .meta {
+        position: absolute;
+        left: 12px;
+        right: 80px;
+        bottom: 28px;
+        z-index: 6;
+        direction: rtl;
+        text-align: right;
+      }
+      .meta .u { font-weight: 800; margin-bottom: 6px; }
+      .meta .ttl { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+      .meta .t { font-size: 14px; line-height: 1.5; }
+      .meta .tags { font-size: 12px; color: #fe2c55; margin-top: 6px; }
+      .sheet, .modal {
+        display: none; position: fixed; inset: 0; z-index: 30;
+        background: rgba(0,0,0,.45);
+      }
+      .sheet.open, .modal.open { display: block; }
+      .box {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        background: #161616; border-radius: 16px 16px 0 0;
+        padding: 14px; max-height: 50dvh; overflow: auto;
+        direction: rtl;
+      }
+      .c { margin-bottom: 8px; font-size: 14px; }
+      .add { display: flex; gap: 8px; margin-top: 10px; }
+      .add input {
+        flex: 1; background: #000; border: 1px solid #333; color: #fff;
+        border-radius: 10px; padding: 10px;
+      }
+      .add button, .person, .xbtn {
+        border: 0; border-radius: 10px; padding: 10px 12px;
+        background: #fe2c55; color: #fff; font-weight: 800;
+      }
+      .person {
+        display: flex; width: 100%; align-items: center; gap: 8px;
+        background: #222; margin-bottom: 6px; text-align: right;
+      }
+      .person img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+      .toast {
+        position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+        background: #222; padding: 8px 14px; border-radius: 999px;
+        display: none; z-index: 40; font-size: 13px;
+      }
+      .pause-mark {
+        position: absolute; inset: 0; display: grid; place-items: center;
+        pointer-events: none; z-index: 5; opacity: 0;
+      }
+      .pause-mark .orb {
+        width: 74px; height: 74px; border-radius: 50%;
+        background: rgba(20,20,20,.42);
+        border: 1px solid rgba(255,255,255,.18);
+        display: grid; place-items: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      }
+      .pause-mark svg { width: 26px; height: 26px; fill: #fff; }
+      .pause-mark.flash { animation: markFade .65s ease forwards; }
+      .pause-mark.flash .orb { animation: markPop .65s ease; }
+      @keyframes markFade {
+        0% { opacity: 0; }
+        14% { opacity: 1; }
+        55% { opacity: 1; }
+        100% { opacity: 0; }
+      }
+      @keyframes markPop {
+        0% { transform: scale(.78); }
+        18% { transform: scale(1); }
+        100% { transform: scale(1); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <a href="home.html">‹ رجوع</a>
+      <a href="home.html">ZIVV</a>
+      <a href="explore.html">استكشف</a>
+    </div>
+    <div class="stage" id="stage"></div>
+    <div class="toast" id="toast"></div>
+    <script src="js/core.js"></script>
+    <script src="js/creator.js"></script>
+    <script src="js/media.js"></script>
+    <script src="js/social.js"></script>
+    <script src="js/zivvy.js?v=19"></script>
+    <script>
+      let current = null;
+      function reelList() {
+        const tagged = ZIVV_CORE.postsFor("reels").filter((p) => p.status !== "removed");
+        if (tagged.some((p) => p.videoKind === "short" || (p.dests || []).includes("reels"))) {
+          return tagged.filter((p) => p.videoKind === "short" || (p.dests || []).includes("reels") || (!p.dests && p.type === "video"));
+        }
+        return tagged.filter((p) => p.image);
+      }
+
+      function toast(t) {
+        const el = document.getElementById("toast");
+        el.textContent = t;
+        el.style.display = "block";
+        setTimeout(() => (el.style.display = "none"), 2000);
+      }
+
+      function paint() {
+        const list = reelList();
+        const step = (window.ZIVV_ADS && ZIVV_ADS.ready && ZIVV_ADS.ready() && (ZIVV_ADS.config().reels !== false)) ? 3 : 0;
+        let html = "";
+        let adn = 0;
+        list.forEach((p, i) => {
+          const liked = ZIVV_CORE.likedByMe(p.id);
+          const media = p.videoId
+            ? `<video class="bg" poster="${p.image || ""}" data-media="${p.videoId}" playsinline loop ${p.muteOriginal ? "muted" : "muted"}></video>`
+            : `<img class="bg" src="${p.image || "posts/cinema.jpg"}" alt="">`;
+          html += `<section class="clip" data-id="${p.id}">
+            ${media}
+            <div class="pause-mark"><div class="orb"></div></div>
+            <div class="side">
+              <img class="ava" src="${p.avatar || "brand/logo-sm.png"}" alt="">
+              <button type="button" class="like-btn ${liked ? "on" : ""}" data-act="like"><span class="ic">${liked ? "♥" : "♡"}</span><span class="nlike">${ZIVV_CORE.likeCount(p)}</span></button>
+              <button type="button" data-act="comment"><span class="ic">💬</span><span class="ncom">${ZIVV_CORE.commentsOf(p).length}</span></button>
+              <button type="button" data-act="share"><span class="ic">↗</span><span class="nsh">${ZIVV_CORE.shareCount(p.id)}</span></button>
+              <button type="button" data-act="dl"><span class="ic">↓</span>تحميل</button>
+              <button type="button" data-act="block"><span class="ic">⚑</span>حظر</button>
+            </div>
+            <div class="meta">
+              <div class="u">@${p.user || ""}</div>
+              ${p.title ? `<div class="ttl">${p.title}</div>` : ""}
+              <div class="t">${p.text || ""}</div>
+              ${(p.tags || []).length ? `<div class="tags">${p.tags.map((t) => "#" + t).join(" ")}</div>` : ""}
+            </div>
+          </section>`;
+          if (step && (i + 1) % step === 0) {
+            adn += 1;
+            html += `<section class="clip ad-clip"><div class="ad-slot" id="adslot-reel-${adn}"></div><div class="meta"><div class="t">إعلان</div></div></section>`;
+          }
+        });
+        document.getElementById("stage").innerHTML = html || '<section class="clip"><div class="meta"><div class="t">مفيش شورتس لسه. انشر فيديو واختار شورتس.</div></div></section>';
+
+        if (window.ZIVV_MEDIA) ZIVV_MEDIA.hydrate(document.getElementById("stage"));
+        if (window.ZIVV_ADS) ZIVV_ADS.bind(document.getElementById("stage"));
+
+        document.querySelectorAll(".clip").forEach((el) => {
+          const post = list.find((x) => x.id === el.getAttribute("data-id"));
+          if (!post) return;
+          const vid = el.querySelector("video");
+          let userPaused = false;
+          if (vid) {
+            vid.muted = !!post.muteOriginal;
+            if (window.ZIVV_MEDIA && ZIVV_MEDIA.bindSound) ZIVV_MEDIA.bindSound(el, post);
+            const io = new IntersectionObserver((entries) => {
+              entries.forEach((en) => {
+                if (en.isIntersecting) {
+                  if (!userPaused) vid.play().catch(() => {});
+                } else {
+                  vid.pause();
+                }
+              });
+            }, { threshold: 0.6 });
+            io.observe(el);
+          }
+          function syncCounts() {
+            const liked = ZIVV_CORE.likedByMe(post.id);
+            const lb = el.querySelector('[data-act="like"]');
+            lb.classList.toggle("on", liked);
+            lb.querySelector(".ic").textContent = liked ? "♥" : "♡";
+            lb.querySelector(".nlike").textContent = ZIVV_CORE.likeCount(post);
+            el.querySelector(".ncom").textContent = ZIVV_CORE.commentsOf(post).length;
+            el.querySelector(".nsh").textContent = ZIVV_CORE.shareCount(post.id);
+          }
+          el.querySelector('[data-act="like"]').onclick = (e) => {
+            e.stopPropagation();
+            ZIVV_CORE.toggleLike(post.id);
+            syncCounts();
+          };
+          el.querySelector('[data-act="comment"]').onclick = (e) => {
+            e.stopPropagation();
+            ZIVV_SOCIAL.openComments(post, syncCounts);
+          };
+          el.querySelector('[data-act="share"]').onclick = (e) => {
+            e.stopPropagation();
+            ZIVV_SOCIAL.openShare(post, syncCounts);
+          };
+          el.querySelector('[data-act="block"]').onclick = (e) => {
+            e.stopPropagation();
+            if (!confirm("تبعت بلاغ باسمك لإدارة الموقع؟")) return;
+            ZIVV_CORE.reportPost(post);
+            toast("البلاغ باسم " + ZIVV_CORE.meName());
+          };
+          let lastTap = 0;
+          el.addEventListener("click", (e) => {
+            if (e.target.closest(".side")) return;
+            const now = Date.now();
+            if (now - lastTap < 280) {
+              if (!ZIVV_CORE.likedByMe(post.id)) ZIVV_CORE.toggleLike(post.id);
+              ZIVV_SOCIAL.popHeart(el);
+              syncCounts();
+            } else if (vid) {
+              if (vid.paused) {
+                userPaused = false;
+                vid.play().catch(() => {});
+                el.classList.remove("paused");
+              } else {
+                userPaused = true;
+                vid.pause();
+                el.classList.add("paused");
+              }
+            }
+            lastTap = now;
+          });
+        });
+      }
+
+      paint();
+    </script>
+  </body>
+</html>

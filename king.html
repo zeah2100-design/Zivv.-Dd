@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZIVV — صفحة الملك</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        background: #000; color: #f5f5f5; min-height: 100dvh; padding: 20px 16px 48px;
+      }
+      h1 {
+        font-size: 22px;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      h2 { font-size: 15px; margin: 20px 0 8px; }
+      .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+      .mute { color: #888; font-size: 13px; line-height: 1.65; margin-bottom: 10px; }
+      .card {
+        background: #111; border: 1px solid #262626; border-radius: 14px;
+        padding: 12px; margin-bottom: 8px;
+      }
+      .acts { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+      .btn, .ghost, .danger {
+        border: 0; border-radius: 10px; padding: 8px 12px; font-weight: 800; font-size: 13px; color: #fff;
+      }
+      .btn { background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4); }
+      .ghost { background: #161616; border: 1px solid #262626; }
+      .danger { background: #2a0d12; border: 1px solid #5a1a24; color: #ff8aa0; }
+      .gold { color: #fcaf45; font-weight: 800; }
+      .field, textarea.field {
+        width: 100%; background: #0a0a0a; border: 1px solid #262626; color: #fff;
+        border-radius: 10px; padding: 10px; margin: 6px 0; font-size: 13px;
+      }
+      textarea.field { min-height: 80px; font-family: inherit; }
+      .hidden { display: none !important; }
+      .who { font-size: 13px; color: #bbb; }
+      .pick {
+        display: flex; align-items: center; gap: 10px; width: 100%;
+        background: #0a0a0a; border: 1px solid #262626; color: #fff;
+        border-radius: 12px; padding: 8px; margin-bottom: 6px; text-align: start;
+      }
+      .pick.on { border-color: #e1306c; }
+      .pick img, .ava-sm {
+        width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex: 0 0 auto;
+      }
+      .pick b { display: block; font-size: 13px; }
+      .pick span { color: #888; font-size: 12px; }
+      .plist { max-height: 240px; overflow: auto; margin: 6px 0 8px; }
+    </style>
+  </head>
+  <body>
+    <div id="gate" class="gate hidden">
+      <h1>صفحة الملك</h1>
+      <p class="mute">اكتب كلمة المرور.</p>
+      <input class="field" id="gate-pass" type="text" autocomplete="off" placeholder="كلمة المرور ظاهرة وأنت بتكتب" />
+      <button class="btn" type="button" id="gate-go" style="width:100%">دخول</button>
+    </div>
+
+    <div id="app" class="hidden">
+      <div class="top">
+        <h1>صفحة الملك</h1>
+        <div class="acts" style="margin:0">
+          <a class="ghost" href="home.html" style="text-decoration:none;display:inline-flex;align-items:center">الرئيسية</a>
+          <button class="ghost" type="button" id="btn-pass">تغيير كلمة المرور</button>
+        </div>
+      </div>
+      <p class="mute">حظر · ذهبي · رسائل. الصفحة مش في القائمة العامة.</p>
+
+      <div id="pass-box" class="card hidden">
+        <h2 style="margin-top:0">تغيير كلمة المرور</h2>
+        <input class="field" id="old-pass" type="text" autocomplete="off" placeholder="كلمة المرور القديمة" />
+        <input class="field" id="new-pass" type="text" autocomplete="off" placeholder="كلمة المرور الجديدة" />
+        <input class="field" id="new-pass2" type="text" autocomplete="off" placeholder="تأكيد كلمة المرور الجديدة" />
+        <div class="acts">
+          <button class="btn" type="button" id="save-pass">حفظ</button>
+          <button class="ghost" type="button" id="hide-pass">إغلاق</button>
+        </div>
+      </div>
+
+      <div id="list"></div>
+    </div>
+
+    <script src="js/core.js"></script>
+    <script src="js/creator.js"></script>
+    <script>
+      const DEFAULT_PASS = "زياد أحمد صبحي";
+      function kingPass() {
+        return localStorage.getItem("zivv.kingPass") || DEFAULT_PASS;
+      }
+      function esc(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/\"/g, "&quot;");
+      }
+      function avatarOf(user) {
+        const u = String(user || "").replace(/^@/, "").toLowerCase();
+        const person = (ZIVV_CORE.PEOPLE || []).find((p) => p.user === u);
+        if (person && person.avatar) return person.avatar;
+        try {
+          const map = JSON.parse(localStorage.getItem("zivv.profiles") || "{}");
+          if (map[u] && map[u].avatar) return map[u].avatar;
+        } catch {}
+        const post = ZIVV_CORE.allPostsRaw().find((p) => String(p.user || "").toLowerCase() === u && p.avatar);
+        return (post && post.avatar) || "brand/logo-sm.png";
+      }
+      function everyone() {
+        const map = new Map();
+        (ZIVV_CORE.PEOPLE || []).forEach((p) => map.set(p.user, { name: p.name, user: p.user, avatar: p.avatar }));
+        try {
+          const users = JSON.parse(localStorage.getItem("zivv.users") || "{}");
+          Object.keys(users).forEach((email) => {
+            const u = users[email];
+            const user = String(u.username || email.split("@")[0]).replace(/^@/, "").toLowerCase();
+            map.set(user, { name: u.name || user, user, email, avatar: avatarOf(user) });
+          });
+        } catch {}
+        (ZIVV_CORE.peopleForShare() || []).forEach((p) => {
+          const cur = map.get(p.user) || { name: p.name || p.user, user: p.user };
+          cur.avatar = p.avatar || cur.avatar || avatarOf(p.user);
+          cur.name = p.name || cur.name;
+          map.set(p.user, cur);
+        });
+        ZIVV_CORE.allPostsRaw().forEach((p) => {
+          const u = String(p.user || "").toLowerCase();
+          if (!u) return;
+          const cur = map.get(u) || { name: p.name || u, user: u };
+          if (p.avatar) cur.avatar = p.avatar;
+          if (p.name) cur.name = p.name;
+          map.set(u, cur);
+        });
+        return Array.from(map.values()).map((p) => Object.assign(p, { avatar: p.avatar || avatarOf(p.user) }));
+      }
+      function goldActive() {
+        const set = new Set();
+        ZIVV_CORE.goldReqs().forEach((g) => {
+          if (g.status === "accepted") set.add(g.user);
+        });
+        try {
+          const cr = JSON.parse(localStorage.getItem("zivv.creator") || "{}");
+          Object.keys(cr).forEach((u) => { if (cr[u] && cr[u].gold) set.add(u); });
+        } catch {}
+        return Array.from(set).filter((u) => ZIVV_CREATOR.isGoldUser && ZIVV_CREATOR.isGoldUser(u));
+      }
+      function sendNote(user, text) {
+        ZIVV_CREATOR.pushNote(user, {
+          type: "official",
+          title: "رسالة من الملك",
+          text,
+          href: "alerts.html?t=official",
+        });
+      }
+
+      function paint() {
+        const pending = ZIVV_CORE.goldReqs().filter((x) => x.status === "pending");
+        const posts = ZIVV_CORE.allPostsRaw().filter((p) => p.status !== "removed").slice(0, 40);
+        const people = everyone();
+        const banned = ZIVV_CORE.bannedUsers();
+        const golds = goldActive();
+        const reports = JSON.parse(localStorage.getItem("zivv.reports") || "[]").filter((r) => r.dest === "king").slice(0, 16);
+
+        document.getElementById("list").innerHTML = `
+          <h2>طلبات الذهبي</h2>
+          ${
+            pending.length
+              ? pending.map((g) => `<div class="card">
+                  <div class="gold">@${esc(g.user)} — ${esc(g.name)}</div>
+                  <p class="mute">${esc(g.note || "")}${g.pay === "cash" ? " · نقدي" : ""}</p>
+                  <textarea class="field" id="gmsg-${esc(g.id)}" placeholder="اكتب رسالة السعر هنا…"></textarea>
+                  <div class="acts">
+                    <button class="btn" data-gsend="${esc(g.id)}" data-user="${esc(g.user)}">ابعت الرسالة</button>
+                    <button class="btn" data-ok="${esc(g.id)}">قبول</button>
+                    <button class="ghost" data-no="${esc(g.id)}">رفض</button>
+                  </div>
+                </div>`).join("")
+              : '<p class="mute">مفيش طلبات.</p>'
+          }
+
+          <h2>إلغاء اشتراك ذهبي</h2>
+          <div class="card">
+            ${
+              golds.length
+                ? golds.map((u) => {
+                    const left = ZIVV_CREATOR.goldLeft ? ZIVV_CREATOR.goldLeft(u) : { days: 0, hours: 0, minutes: 0 };
+                    return `<div class="acts" style="margin-top:6px">
+                    <span class="gold">@${esc(u)} · باقي ${left.days}ي ${left.hours}س ${left.minutes}د</span>
+                    <button class="danger" data-revoke="${esc(u)}">إلغاء الذهبي</button>
+                  </div>`;
+                  }).join("")
+                : '<p class="mute">مفيش حسابات ذهبية دلوقتي.</p>'
+            }
+          </div>
+
+          <h2>ابعت رسالة لأي شخص</h2>
+          <div class="card">
+            <select class="field" id="to-pick">
+              <option value="">اختار حساب</option>
+              ${people.map((p) => `<option value="${esc(p.user)}">@${esc(p.user)} — ${esc(p.name)}</option>`).join("")}
+            </select>
+            <input class="field" id="to-user" placeholder="أو اكتب اليوزر يدوي" />
+            <textarea class="field" id="to-text" placeholder="نص الرسالة — هتوصل في الإشعارات الرسمية"></textarea>
+            <button class="btn" type="button" id="send-any">ابعت</button>
+          </div>
+
+          <h2>حظر منشور</h2>
+          ${
+            posts.length
+              ? posts.map((p) => `<div class="card">
+                  <b>${esc((p.title || p.text || "منشور").slice(0, 70))}</b>
+                  <div class="who">@${esc(p.user)} · ${esc(p.type || "")}</div>
+                  <div class="acts"><button class="danger" data-post="${esc(p.id)}">حظر المنشور</button></div>
+                </div>`).join("")
+              : '<p class="mute">مفيش منشورات.</p>'
+          }
+
+          <h2>حظر حساب</h2>
+          <div class="card">
+            ${people.map((p) => {
+              const on = banned.indexOf(p.user) >= 0;
+              return `<div class="acts" style="margin-top:6px">
+                <span>@${esc(p.user)} — ${esc(p.name)}</span>
+                ${on
+                  ? `<button class="ghost" data-unban="${esc(p.user)}">فك الحظر</button>`
+                  : `<button class="danger" data-ban="${esc(p.user)}">حظر الحساب</button>`}
+              </div>`;
+            }).join("")}
+            <input class="field" id="ban-extra" placeholder="أو اكتب يوزر للحظر" />
+            <button class="danger" type="button" id="ban-go">حظر</button>
+          </div>
+
+          <h2>بلاغات</h2>
+          ${
+            reports.length
+              ? reports.map((r) => `<div class="card">
+                  <b>${esc(r.type || "بلاغ")}</b>
+                  <p class="mute">${esc(r.note || "")} · ${esc(r.targetName || r.postAuthor || r.targetUser || "")} · من ${esc(r.reporterName || "")}</p>
+                </div>`).join("")
+              : '<p class="mute">مفيش بلاغات.</p>'
+          }
+        `;
+
+        document.querySelectorAll("[data-gsend]").forEach((b) => {
+          b.onclick = () => {
+            const text = (document.getElementById("gmsg-" + b.getAttribute("data-gsend")) || {}).value || "";
+            if (!text.trim()) return alert("اكتب الرسالة.");
+            sendNote(b.getAttribute("data-user"), text.trim());
+            alert("الرسالة اتبعتت.");
+          };
+        });
+        document.querySelectorAll("[data-ok]").forEach((b) => {
+          b.onclick = () => { ZIVV_CORE.setGold(b.getAttribute("data-ok"), "accepted"); paint(); };
+        });
+        document.querySelectorAll("[data-no]").forEach((b) => {
+          b.onclick = () => { ZIVV_CORE.setGold(b.getAttribute("data-no"), "rejected"); paint(); };
+        });
+        document.querySelectorAll("[data-revoke]").forEach((b) => {
+          b.onclick = () => {
+            if (!confirm("تلغي الذهبي لـ @" + b.getAttribute("data-revoke") + "؟")) return;
+            ZIVV_CREATOR.revokeGold(b.getAttribute("data-revoke"));
+            paint();
+          };
+        });
+        document.getElementById("send-any").onclick = () => {
+          const user = document.getElementById("to-user").value.replace(/^@/, "").trim();
+          const text = document.getElementById("to-text").value.trim();
+          if (!user || !text) return alert("اختار شخص واكتب الرسالة.");
+          sendNote(user, text);
+          document.getElementById("to-text").value = "";
+          alert("اتبعتت على إشعارات @" + user);
+        };
+        const filter = document.getElementById("to-filter");
+        if (filter) {
+          filter.oninput = () => {
+            const q = filter.value.trim().toLowerCase();
+            document.querySelectorAll("#to-list .pick").forEach((b) => {
+              const hit = !q || b.textContent.toLowerCase().indexOf(q) >= 0;
+              b.style.display = hit ? "flex" : "none";
+            });
+          };
+        }
+        document.querySelectorAll("[data-pick]").forEach((b) => {
+          b.onclick = () => {
+            document.querySelectorAll("[data-pick]").forEach((x) => x.classList.remove("on"));
+            b.classList.add("on");
+            document.getElementById("to-user").value = b.getAttribute("data-pick");
+          };
+        });
+        document.querySelectorAll("[data-post]").forEach((b) => {
+          b.onclick = () => {
+            if (!confirm("تحظر المنشور؟ مش هيبان تاني.")) return;
+            ZIVV_CORE.blockPost(b.getAttribute("data-post"));
+            paint();
+          };
+        });
+        document.querySelectorAll("[data-ban]").forEach((b) => {
+          b.onclick = () => {
+            if (!confirm("تحظر الحساب @" + b.getAttribute("data-ban") + "؟")) return;
+            ZIVV_CORE.banUser(b.getAttribute("data-ban"));
+            paint();
+          };
+        });
+        document.querySelectorAll("[data-unban]").forEach((b) => {
+          b.onclick = () => { ZIVV_CORE.unbanUser(b.getAttribute("data-unban")); paint(); };
+        });
+        document.getElementById("ban-go").onclick = () => {
+          const u = document.getElementById("ban-extra").value.replace(/^@/, "").trim();
+          if (!u) return;
+          ZIVV_CORE.banUser(u);
+          paint();
+        };
+      }
+
+      function openApp() {
+        document.getElementById("gate").classList.add("hidden");
+        document.getElementById("app").classList.remove("hidden");
+        paint();
+      }
+      function askGate() {
+        document.getElementById("app").classList.add("hidden");
+        document.getElementById("gate").classList.remove("hidden");
+      }
+
+      document.getElementById("gate-go").onclick = () => {
+        const v = document.getElementById("gate-pass").value.trim();
+        if (v === kingPass().trim()) {
+          sessionStorage.setItem("zivv.kingOk", "1");
+          openApp();
+        } else alert("كلمة المرور غلط.");
+      };
+      document.getElementById("btn-pass").onclick = () => {
+        document.getElementById("pass-box").classList.toggle("hidden");
+      };
+      document.getElementById("hide-pass").onclick = () => {
+        document.getElementById("pass-box").classList.add("hidden");
+      };
+      document.getElementById("save-pass").onclick = () => {
+        const old = document.getElementById("old-pass").value.trim();
+        const a = document.getElementById("new-pass").value.trim();
+        const b = document.getElementById("new-pass2").value.trim();
+        if (old !== kingPass().trim()) return alert("كلمة المرور القديمة غلط.");
+        if (!a || a !== b) return alert("التأكيد مش مطابق.");
+        localStorage.setItem("zivv.kingPass", a);
+        document.getElementById("old-pass").value = "";
+        document.getElementById("new-pass").value = "";
+        document.getElementById("new-pass2").value = "";
+        document.getElementById("pass-box").classList.add("hidden");
+        alert("اتغيرت كلمة المرور.");
+      };
+
+      if (sessionStorage.getItem("zivv.kingOk") === "1") openApp();
+      else askGate();
+    </script>
+  </body>
+</html>

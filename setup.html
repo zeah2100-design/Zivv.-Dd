@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZIVV — ربط القاعدة</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/shell.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: #000; color: #f5f5f5; min-height: 100dvh; }
+      .field, textarea {
+        width: 100%; background: #121212; border: 1px solid #262626; color: #fff;
+        border-radius: 10px; padding: 12px; margin: 6px 0 12px; outline: none;
+      }
+      textarea { min-height: 90px; }
+      .btn {
+        width: 100%; border: 0; color: #fff; font-weight: 800; border-radius: 12px; padding: 12px;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+      }
+      .mute { color: #888; font-size: 13px; line-height: 1.7; margin: 8px 0 16px; }
+      .ok { color: #9f9; margin-top: 10px; }
+      .err { color: #ff8aa0; margin-top: 10px; }
+      ol { padding-right: 18px; color: #ddd; line-height: 1.8; font-size: 14px; margin-bottom: 16px; }
+      code { color: #fcaf45; }
+    </style>
+  </head>
+  <body>
+    <main class="page-pad">
+      <h1>قاعدة البيانات</h1>
+      <p class="mute">جيت هب مش قاعدة بيانات. هنربط ZIVV بـ Supabase (مجاني) عشان المنشورات واللايك والشات تشتغل بين الناس.</p>
+      <ol>
+        <li>افتح <b>supabase.com</b> وسجّل حساب</li>
+        <li>New project — اختار أقرب منطقة وباسورد للقاعدة</li>
+        <li>SQL Editor → New query → الصق محتوى ملف <code>sql/zivv.sql</code> → Run</li>
+        <li>Project Settings → API → انسخ <b>Project URL</b> و <b>anon public</b></li>
+        <li>حطهم تحت واحفظ</li>
+      </ol>
+      <label>Project URL</label>
+      <input class="field" id="url" dir="ltr" placeholder="https://xxxx.supabase.co" />
+      <label>anon public key</label>
+      <textarea id="anon" dir="ltr" placeholder="eyJhbGciOi..."></textarea>
+      <button class="btn" type="button" id="save">حفظ الربط</button>
+      <p id="status"></p>
+    </main>
+    <script src="js/shell.js"></script>
+    <script>
+      try {
+        const s = JSON.parse(localStorage.getItem("zivv.supabase") || "null");
+        if (s) {
+          document.getElementById("url").value = s.url || "";
+          document.getElementById("anon").value = s.anon || "";
+        }
+      } catch {}
+      document.getElementById("save").onclick = () => {
+        const url = document.getElementById("url").value.trim();
+        const anon = document.getElementById("anon").value.trim();
+        const st = document.getElementById("status");
+        if (!url || !anon) {
+          st.className = "err";
+          st.textContent = "حط الرابط والمفتاح.";
+          return;
+        }
+        if (url.indexOf("supabase.co") < 0) {
+          st.className = "err";
+          st.textContent = "الرابط لازم يكون من مشروع Supabase.";
+          return;
+        }
+        localStorage.setItem("zivv.supabase", JSON.stringify({ url, anon }));
+        st.className = "ok";
+        st.textContent = "اتربط. حدّث الصفحة الرئيسية. البيانات هتتزامن مع القاعدة.";
+      };
+    </script>
+  </body>
+</html>

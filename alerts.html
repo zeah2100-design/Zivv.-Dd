@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZIVV — الإشعارات</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/shell.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: #000; color: #f5f5f5; min-height: 100dvh; }
+      .wrap { width: min(520px, 100%); margin: 0 auto; padding: 16px 14px 80px; }
+      h1 {
+        font-size: 24px; font-weight: 800; margin-bottom: 12px;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+      .tabs button {
+        flex: 1; border: 1px solid #262626; background: #111; color: #aaa;
+        border-radius: 999px; padding: 8px 6px; font-size: 13px; font-weight: 800;
+      }
+      .tabs button.on { color: #fff; border-color: #e1306c; background: #1a0b12; }
+      .item {
+        display: flex; gap: 10px; align-items: center;
+        padding: 10px 4px; border-bottom: 1px solid #1a1a1a;
+        color: #fff; text-decoration: none;
+      }
+      .item img, .dot {
+        width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex: 0 0 auto;
+      }
+      .dot {
+        display: grid; place-items: center;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        font-size: 18px;
+      }
+      .thumb {
+        width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex: 0 0 auto; background: #151515;
+      }
+      .body { flex: 1; min-width: 0; }
+      .body b { font-size: 14px; }
+      .body p { color: #ccc; font-size: 13px; line-height: 1.45; }
+      .time { color: #777; font-size: 11px; margin-top: 3px; }
+      .unread { width: 8px; height: 8px; border-radius: 50%; background: #e1306c; flex: 0 0 auto; }
+      .empty { color: #888; text-align: center; padding: 36px 12px; font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>النشاط</h1>
+      <div class="tabs">
+        <button type="button" class="on" data-t="like">إعجابات</button>
+        <button type="button" data-t="comment">تعليقات</button>
+        <button type="button" data-t="follow">متابعات</button>
+        <button type="button" data-t="official">رسمي</button>
+      </div>
+      <div id="list"></div>
+    </main>
+    <script src="js/core.js"></script>
+    <script src="js/creator.js"></script>
+    <script src="js/shell.js"></script>
+    <script>
+      const me = ZIVV_CORE.author();
+      const people = ZIVV_CORE.PEOPLE;
+
+      function ago(at) {
+        const m = Math.max(1, Math.round((Date.now() - at) / 60000));
+        if (m < 60) return "منذ " + m + " د";
+        const h = Math.round(m / 60);
+        if (h < 24) return "منذ " + h + " س";
+        return "منذ " + Math.round(h / 24) + " ي";
+      }
+
+      function person(user) {
+        return people.find((p) => p.user === user) || ZIVV_CORE.peopleForShare().find((p) => p.user === user) ||
+          { name: user, user, avatar: "brand/logo-sm.png" };
+      }
+
+      function seedNotes() {
+        return [
+          { type: "like", user: "layla", text: "أعجبت بمنشورك", thumb: "posts/giza.webp", at: Date.now() - 18 * 60000, href: "home.html" },
+          { type: "like", user: "karim", text: "أعجب بمنشورك", thumb: "posts/studio.jpg", at: Date.now() - 2 * 3600000, href: "home.html" },
+          { type: "like", user: "maya", text: "أعجبت بصورتك", thumb: "posts/fashion.jpg", at: Date.now() - 26 * 3600000, href: "home.html" },
+          { type: "comment", user: "omar", text: "علّق: الصمت هنا أغلى من الإضاءة.", thumb: "posts/nile.jpg", at: Date.now() - 40 * 60000, href: "home.html" },
+          { type: "comment", user: "nora", text: "علّقت على منشورك", thumb: "posts/coffee.jpg", at: Date.now() - 5 * 3600000, href: "home.html" },
+          { type: "comment", user: "youssef", text: "رد على تعليقك", thumb: "posts/cinema.jpg", at: Date.now() - 2 * 86400000, href: "home.html" },
+          { type: "follow", user: "layla", text: "بدأت تتابعك", thumb: "", at: Date.now() - 50 * 60000, href: "profile.html?u=layla" },
+          { type: "follow", user: "karim", text: "بعت لك طلب صداقة", thumb: "", at: Date.now() - 3 * 3600000, href: "friends.html" },
+          { type: "follow", user: "maya", text: "قبلت طلب صداقتك", thumb: "", at: Date.now() - 86400000, href: "friends.html" }
+        ];
+      }
+
+      function liveNotes() {
+        const notes = [];
+        const myPosts = ZIVV_CORE.getPosts().filter((p) => (p.user || "").toLowerCase() === me.user.toLowerCase());
+        let likes = {};
+        try { likes = JSON.parse(localStorage.getItem("zivv.likes") || "{}"); } catch {}
+        myPosts.forEach((p) => {
+          (likes[p.id] || []).forEach((who, i) => {
+            notes.push({
+              type: "like",
+              user: String(who).split("@")[0],
+              text: "أعجب بمنشورك",
+              thumb: p.image || "",
+              at: Date.now() - (i + 1) * 70000,
+              href: "home.html"
+            });
+          });
+          ZIVV_CORE.commentsOf(p).forEach((c) => {
+            if ((c.by || "") === ZIVV_CORE.meKey()) return;
+            notes.push({
+              type: "comment",
+              user: c.name,
+              name: c.name,
+              text: "علّق: " + (c.text || "").slice(0, 60),
+              thumb: p.image || "",
+              at: c.at || Date.now(),
+              href: "home.html"
+            });
+          });
+        });
+        ZIVV_CORE.incomingFriendRequests().forEach((r) => {
+          notes.push({
+            type: "follow",
+            user: r.from,
+            name: r.fromName,
+            text: "بعت لك طلب صداقة",
+            thumb: "",
+            at: r.at || Date.now(),
+            href: "friends.html"
+          });
+        });
+        return notes;
+      }
+
+      function officialNotes() {
+        const list = (window.ZIVV_CREATOR && ZIVV_CREATOR.myNotes) ? ZIVV_CREATOR.myNotes() : [];
+        return list.map((n) => ({
+          type: "official",
+          user: "zivv",
+          name: "ZIVV",
+          text: ((n.title ? n.title + " — " : "") + (n.text || "")).replace(/\n/g, " · "),
+          thumb: "",
+          at: n.at || Date.now(),
+          href: n.href || "creators.html"
+        }));
+      }
+
+      function allNotes() {
+        const live = liveNotes();
+        const base = (live.length ? live : seedNotes()).concat(officialNotes());
+        return base.sort((a, b) => b.at - a.at);
+      }
+
+      let tab = new URLSearchParams(location.search).get("t") || "like";
+      if (["like", "comment", "follow", "official"].indexOf(tab) < 0) tab = "like";
+
+      function paint() {
+        const list = allNotes().filter((n) => n.type === tab);
+        document.getElementById("list").innerHTML = list.length
+          ? list.map((n) => {
+              const p = n.type === "official"
+                ? { name: "ZIVV", avatar: "brand/logo-sm.png" }
+                : person(String(n.user || "").toLowerCase().replace(/\s.*/, ""));
+              const name = n.name || p.name || n.user;
+              const ava = p.avatar || "brand/logo-sm.png";
+              const fresh = Date.now() - n.at < 6 * 3600000;
+              const icon = n.type === "follow" ? "👤" : n.type === "comment" ? "💬" : n.type === "official" ? "★" : "♥";
+              return `<a class="item" href="${n.href}">
+                <img src="${ava}" alt="">
+                <div class="body">
+                  <p><b>${name}</b> ${n.text}</p>
+                  <div class="time">${ago(n.at)}</div>
+                </div>
+                ${n.thumb ? `<img class="thumb" src="${n.thumb}" alt="">` : `<div class="dot">${icon}</div>`}
+                ${fresh ? '<span class="unread"></span>' : ""}
+              </a>`;
+            }).join("")
+          : '<p class="empty">مفيش إشعارات في القسم ده لسه.</p>';
+      }
+
+      document.querySelectorAll(".tabs button").forEach((b) => {
+        b.onclick = () => {
+          tab = b.getAttribute("data-t");
+          document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b));
+          paint();
+        };
+      });
+      document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x.getAttribute("data-t") === tab));
+      paint();
+    </script>
+  </body>
+</html>

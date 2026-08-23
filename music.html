@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZIVV — الموسيقى</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/shell.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        background: #000;
+        color: #f5f5f5;
+        min-height: 100dvh;
+        padding-bottom: 92px;
+      }
+      .wrap { width: min(640px, 100%); margin: 0 auto; padding: 12px 14px 20px; }
+      h1 {
+        font-size: 26px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .sub { color: #888; font-size: 13px; margin: 4px 0 12px; }
+      .find {
+        display: flex; gap: 8px; margin-bottom: 12px;
+      }
+      .find input {
+        flex: 1; background: #121212; border: 1px solid #262626; color: #fff;
+        border-radius: 999px; padding: 10px 14px; outline: none;
+      }
+      .find input:focus { border-color: #e1306c; }
+      .chips { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px; }
+      .chips::-webkit-scrollbar { display: none; }
+      .chips button {
+        flex: 0 0 auto; border: 1px solid #262626; background: #111; color: #ddd;
+        border-radius: 999px; padding: 7px 14px; font-size: 13px;
+      }
+      .chips button.on { border-color: #e1306c; color: #fff; background: #1a0b12; }
+      .hero {
+        position: relative; border-radius: 16px; overflow: hidden;
+        min-height: 180px; margin-bottom: 18px;
+      }
+      .hero img { width: 100%; height: 200px; object-fit: cover; display: block; filter: brightness(.55); }
+      .hero .info {
+        position: absolute; inset: auto 12px 12px 12px;
+      }
+      .hero .k { font-size: 11px; color: #fcaf45; font-weight: 800; letter-spacing: .08em; }
+      .hero h2 { font-size: 22px; margin: 4px 0; }
+      .playbig {
+        border: 0; border-radius: 999px; padding: 8px 16px; font-weight: 800; color: #fff;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+      }
+      h3 { font-size: 16px; margin: 6px 0 10px; }
+      .rail { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; }
+      .rail::-webkit-scrollbar { display: none; }
+      .card {
+        flex: 0 0 132px; background: none; border: 0; color: #fff; text-align: start;
+      }
+      .card img, .card .ph {
+        width: 132px; height: 132px; border-radius: 12px; object-fit: cover; display: block;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+      }
+      .card .ph { display: grid; place-items: center; font-size: 36px; }
+      .card b { display: block; font-size: 13px; margin-top: 6px; }
+      .card span { color: #888; font-size: 11px; }
+      .song {
+        display: flex; gap: 10px; align-items: center; width: 100%;
+        background: none; border: 0; color: #fff; text-align: start;
+        padding: 8px 0; border-bottom: 1px solid #1a1a1a;
+      }
+      .song img, .song .ph {
+        width: 48px; height: 48px; border-radius: 8px; object-fit: cover;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        display: grid; place-items: center; flex: 0 0 auto;
+      }
+      .song.on b { color: #e1306c; }
+      .song .meta { flex: 1; min-width: 0; }
+      .song .meta b, .song .meta span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .song .meta span { color: #888; font-size: 12px; }
+      .mute { color: #888; font-size: 13px; }
+      .bar {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+        background: #0a0a0a; border-top: 1px solid #262626;
+      }
+      .bar img, .bar .ph {
+        width: 46px; height: 46px; border-radius: 8px; object-fit: cover;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        display: grid; place-items: center;
+      }
+      .bar .t { flex: 1; min-width: 0; }
+      .bar .t b, .bar .t span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .bar .t span { color: #888; font-size: 11px; }
+      .ctrls { display: flex; gap: 4px; align-items: center; }
+      .ctrls button {
+        width: 38px; height: 38px; border: 0; background: none; color: #fff; font-size: 18px;
+      }
+      .ctrls .go {
+        width: 42px; height: 42px; border-radius: 50%;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+      }
+      .prog { position: absolute; top: 0; left: 0; height: 2px; background: #e1306c; width: 0; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>الموسيقى</h1>
+      <p class="sub">صالة ZIVV — استماع بستايل إنستجرام.</p>
+      <div class="find"><input id="q" type="search" placeholder="دور على أغنية أو فنان…" /></div>
+      <div class="chips" id="chips"></div>
+      <div id="home"></div>
+    </main>
+    <div class="bar" id="player">
+      <div class="prog" id="prog"></div>
+      <img id="p-art" alt="" hidden />
+      <div class="ph" id="p-ph">♪</div>
+      <div class="t">
+        <b id="p-title">اختار مقطع</b>
+        <span id="p-artist">ZIVV Lounge</span>
+      </div>
+      <div class="ctrls">
+        <button type="button" id="prev">⏮</button>
+        <button type="button" class="go" id="toggle">▶</button>
+        <button type="button" id="next">⏭</button>
+      </div>
+    </div>
+    <audio id="audio"></audio>
+    <script src="js/core.js"></script>
+    <script src="js/media.js"></script>
+    <script src="js/shell.js"></script>
+    <script>
+      const COVERS = {
+        m1: "posts/nile.jpg",
+        m2: "posts/giza.webp",
+        m3: "posts/studio.jpg",
+        m4: "posts/nile2.jpg",
+        m5: "posts/cinema.jpg",
+        m6: "posts/fashion.jpg"
+      };
+      const FREQ = { m1: 196, m2: 147, m3: 220, m4: 165, m5: 110, m6: 247 };
+
+      const lounge = ZIVV_CORE.MUSIC.map((m) => ({
+        id: m.id,
+        title: m.title,
+        artist: m.artist,
+        tags: m.tags,
+        cover: COVERS[m.id] || "posts/studio.jpg",
+        kind: "lounge",
+        freq: FREQ[m.id] || 180
+      }));
+
+      const userTracks = (ZIVV_CORE.postsFor("music") || [])
+        .filter((p) => p.audioId || p.audio || p.type === "audio")
+        .map((p) => ({
+          id: p.id,
+          title: p.title || p.text || "مقطع",
+          artist: p.name || p.user,
+          tags: (p.tags || []).join(" "),
+          cover: p.image || "posts/studio.jpg",
+          kind: "user",
+          audioId: p.audioId || "",
+          audio: p.audio || ""
+        }));
+
+      const all = lounge.concat(userTracks);
+      const mixes = [
+        { id: "mix1", title: "مزيج منتصف الليل", cover: "posts/studio.jpg", ids: ["m3", "m5", "m2"] },
+        { id: "mix2", title: "على النيل", cover: "posts/nile.jpg", ids: ["m1", "m4"] },
+        { id: "mix3", title: "ذهب وحرير", cover: "posts/fashion.jpg", ids: ["m6", "m2"] },
+        { id: "mix4", title: "بعد ١٨", cover: "posts/cinema.jpg", ids: ["m5", "m3", "m1"] }
+      ];
+
+      let tab = "all";
+      let queue = all.slice();
+      let idx = -1;
+      let playing = false;
+      let ctx = null;
+      let osc = null;
+      let gain = null;
+
+      const audio = document.getElementById("audio");
+      const chips = [
+        ["all", "الكل"],
+        ["lounge", "صالة ZIVV"],
+        ["user", "منشوراتك"],
+        ["mix", "مزيج"]
+      ];
+
+      function stopTone() {
+        try { if (osc) osc.stop(); } catch {}
+        osc = null;
+        if (gain) try { gain.disconnect(); } catch {}
+        gain = null;
+      }
+
+      function playTone(freq) {
+        stopTone();
+        audio.pause();
+        ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === "suspended") ctx.resume();
+        osc = ctx.createOscillator();
+        gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        gain.gain.value = 0.05;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+      }
+
+      async function playAt(i) {
+        if (i < 0 || i >= queue.length) return;
+        idx = i;
+        const t = queue[idx];
+        playing = true;
+        document.getElementById("p-title").textContent = t.title;
+        document.getElementById("p-artist").textContent = t.artist;
+        const art = document.getElementById("p-art");
+        const ph = document.getElementById("p-ph");
+        if (t.cover) {
+          art.src = t.cover; art.hidden = false; ph.hidden = true;
+        } else { art.hidden = true; ph.hidden = false; }
+        document.getElementById("toggle").textContent = "⏸";
+        paintList();
+        stopTone();
+        if (t.kind === "user" && (t.audioId || t.audio)) {
+          if (t.audioId && window.ZIVV_MEDIA) {
+            const url = await ZIVV_MEDIA.getUrl(t.audioId);
+            audio.src = url || t.audio || "";
+          } else audio.src = t.audio || "";
+          audio.play().catch(() => playTone(t.freq || 180));
+        } else {
+          audio.pause();
+          playTone(t.freq || 180);
+        }
+      }
+
+      function pause() {
+        playing = false;
+        audio.pause();
+        stopTone();
+        document.getElementById("toggle").textContent = "▶";
+      }
+
+      function resume() {
+        if (idx < 0) return playAt(0);
+        const t = queue[idx];
+        playing = true;
+        document.getElementById("toggle").textContent = "⏸";
+        if (t.kind === "user" && audio.src) audio.play().catch(() => {});
+        else playTone(t.freq || 180);
+      }
+
+      document.getElementById("toggle").onclick = () => (playing ? pause() : resume());
+      document.getElementById("next").onclick = () => {
+        if (!queue.length) return;
+        playAt((idx + 1) % queue.length);
+      };
+      document.getElementById("prev").onclick = () => {
+        if (!queue.length) return;
+        playAt((idx - 1 + queue.length) % queue.length);
+      };
+      audio.onended = () => document.getElementById("next").click();
+      audio.ontimeupdate = () => {
+        if (!audio.duration) return;
+        document.getElementById("prog").style.width = (100 * audio.currentTime / audio.duration) + "%";
+      };
+
+      function filtered() {
+        const q = document.getElementById("q").value.trim().toLowerCase();
+        let list = all.slice();
+        if (tab === "lounge") list = lounge.slice();
+        if (tab === "user") list = userTracks.slice();
+        if (q) {
+          list = list.filter((t) =>
+            (t.title + " " + t.artist + " " + (t.tags || "")).toLowerCase().includes(q)
+          );
+        }
+        return list;
+      }
+
+      function paintList() {
+        document.querySelectorAll(".song").forEach((el) => {
+          el.classList.toggle("on", el.getAttribute("data-id") === (queue[idx] && queue[idx].id));
+        });
+      }
+
+      function paint() {
+        document.getElementById("chips").innerHTML = chips.map(([k, l]) =>
+          `<button type="button" class="${k === tab ? "on" : ""}" data-t="${k}">${l}</button>`
+        ).join("");
+        document.querySelectorAll("#chips button").forEach((b) => {
+          b.onclick = () => { tab = b.getAttribute("data-t"); paint(); };
+        });
+
+        const list = tab === "mix" ? lounge.slice() : filtered();
+        const feat = list[0] || lounge[0];
+        const home = document.getElementById("home");
+        home.innerHTML = `
+          ${feat ? `<div class="hero">
+            <img src="${feat.cover}" alt="">
+            <div class="info">
+              <div class="k">استمع الآن</div>
+              <h2>${feat.title}</h2>
+              <p class="mute">${feat.artist}</p>
+              <button class="playbig" type="button" id="hero-play">تشغيل</button>
+            </div>
+          </div>` : ""}
+          <h3>مزيج سريع</h3>
+          <div class="rail">${mixes.map((m) =>
+            `<button class="card" type="button" data-mix="${m.id}">
+              <img src="${m.cover}" alt=""><b>${m.title}</b><span>مزيج ZIVV</span>
+            </button>`).join("")}</div>
+          <h3>${tab === "user" ? "منشورات بعلامة موسيقى" : "الأغاني"}</h3>
+          <div id="songs">${list.length ? list.map((t) =>
+            `<button class="song ${queue[idx] && queue[idx].id === t.id ? "on" : ""}" type="button" data-id="${t.id}">
+              ${t.cover ? `<img src="${t.cover}" alt="">` : `<div class="ph">♪</div>`}
+              <div class="meta"><b>${t.title}</b><span>${t.artist}</span></div>
+            </button>`).join("") : '<p class="mute">مفيش مقاطع في القسم ده. انشر صوت بعلامة #موسيقى.</p>'}</div>`;
+
+        const hp = document.getElementById("hero-play");
+        if (hp && feat) hp.onclick = () => {
+          queue = list.length ? list : all.slice();
+          playAt(Math.max(0, queue.findIndex((x) => x.id === feat.id)));
+        };
+        document.querySelectorAll(".song").forEach((b) => {
+          b.onclick = () => {
+            queue = list.length ? list : all.slice();
+            const i = queue.findIndex((x) => x.id === b.getAttribute("data-id"));
+            playAt(i < 0 ? 0 : i);
+          };
+        });
+        document.querySelectorAll("[data-mix]").forEach((b) => {
+          b.onclick = () => {
+            const mix = mixes.find((m) => m.id === b.getAttribute("data-mix"));
+            queue = mix.ids.map((id) => all.find((t) => t.id === id)).filter(Boolean);
+            playAt(0);
+          };
+        });
+      }
+
+      document.getElementById("q").oninput = paint;
+      paint();
+    </script>
+  </body>
+</html>

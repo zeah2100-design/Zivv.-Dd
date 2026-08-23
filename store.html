@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZIVV — المتجر</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/shell.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: #000; color: #f5f5f5; min-height: 100dvh; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+      .card { display: block; background: #0a0a0a; border: 1px solid #262626; border-radius: 14px; overflow: hidden; color: #fff; text-decoration: none; }
+      .card img { width: 100%; height: 130px; object-fit: cover; }
+      .card div { padding: 8px; font-size: 13px; }
+      .mute { color: #888; font-size: 13px; line-height: 1.6; }
+      .price { color: #e1306c; font-weight: 800; }
+      .add {
+        display: inline-block; margin-top: 12px; text-decoration: none;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        color: #fff; font-weight: 800; border-radius: 10px; padding: 8px 14px; font-size: 13px;
+      }
+      .hero img { width: 100%; max-height: 280px; object-fit: cover; border-radius: 14px; }
+      .phone, .msg {
+        display: block; margin-top: 10px; text-align: center; text-decoration: none;
+        border-radius: 12px; padding: 12px; font-weight: 800; color: #fff;
+      }
+      .phone { background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4); }
+      .msg { background: #161616; border: 1px solid #333; }
+      .back { color: #c13584; font-size: 13px; text-decoration: none; }
+      .specs { margin: 12px 0; padding-right: 18px; color: #ddd; line-height: 1.8; }
+    </style>
+  </head>
+  <body>
+    <main class="page-pad" id="root"></main>
+    <script src="js/core.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/shell.js"></script>
+    <script>
+      const root = document.getElementById("root");
+      const id = new URLSearchParams(location.search).get("id");
+      const item = id ? ZIVV_STORE.byId(id) : null;
+
+      if (item) {
+        root.innerHTML = `
+          <a class="back" href="store.html">رجوع للمتجر</a>
+          <div class="hero" style="margin-top:12px"><img src="${item.image}" alt=""></div>
+          <h1 style="margin-top:12px">${item.title}</h1>
+          <p class="mute">${item.cat || "عام"} · ${item.seller}</p>
+          <p class="price" style="font-size:20px;margin:8px 0">${item.price} ج.م</p>
+          <p class="mute">${item.desc || ""}</p>
+          ${(item.specs || []).length ? `<b>المواصفات</b><ul class="specs">${item.specs.map((s) => `<li>${s}</li>`).join("")}</ul>` : ""}
+          <b>رقم التواصل</b>
+          <p class="mute" style="margin:6px 0 0">${item.phone || "—"}</p>
+          ${item.phone ? `<a class="phone" href="tel:${item.phone}">اتصال</a>` : ""}
+          <a class="msg" href="chat.html?u=${encodeURIComponent(item.sellerUser)}&product=${encodeURIComponent(item.id)}">تواصل</a>
+        `;
+      } else {
+        const list = ZIVV_STORE.allProducts();
+        root.innerHTML = `
+          <h1>المتجر الإلكتروني</h1>
+          <p class="mute">منتجات الناس. مفيش شراء من الموقع — تواصل مع صاحب المنتج.</p>
+          <a class="add" href="publish.html">+ نشر منتج</a>
+          <div class="grid">${list.map((p) =>
+            `<a class="card" href="store.html?id=${p.id}">
+              <img src="${p.image}" alt="">
+              <div><b>${p.title}</b><div class="price">${p.price} ج.م</div><div class="mute">${p.seller}</div></div>
+            </a>`
+          ).join("")}</div>`;
+      }
+    </script>
+  </body>
+</html>

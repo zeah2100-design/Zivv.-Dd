@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZIVV — استكشف</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/shell.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        background:
+          radial-gradient(900px 420px at 10% -10%, rgba(252,175,69,.1), transparent 50%),
+          radial-gradient(800px 380px at 110% 110%, rgba(131,58,180,.16), transparent 46%),
+          #000;
+        color: #f5f5f5;
+        min-height: 100dvh;
+      }
+      .wrap { width: min(560px, 100%); margin: 0 auto; padding: 16px 14px 80px; }
+      h1 {
+        font-size: 22px;
+        margin-bottom: 6px;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .lead { color: #a8a8a8; font-size: 13px; margin-bottom: 14px; line-height: 1.6; }
+      .tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 14px; }
+      .tabs::-webkit-scrollbar { display: none; }
+      .tabs button {
+        flex: 0 0 auto;
+        border: 1px solid #262626;
+        background: #111;
+        color: #ddd;
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 13px;
+      }
+      .tabs button.on { border-color: #e1306c; color: #fff; }
+      .mosaic { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; }
+      .cell {
+        position: relative;
+        aspect-ratio: 1;
+        overflow: hidden;
+        background: #151515;
+        display: block;
+        color: #fff;
+        text-decoration: none;
+      }
+      .cell img { width: 100%; height: 100%; object-fit: cover; }
+      .cell .badge {
+        position: absolute;
+        top: 6px;
+        inset-inline-start: 6px;
+        font-size: 10px;
+        background: rgba(0,0,0,.55);
+        border-radius: 999px;
+        padding: 2px 6px;
+      }
+      .cell .play { position: absolute; top: 6px; inset-inline-end: 6px; }
+      .cell.wide { grid-column: span 2; aspect-ratio: 2/1; }
+      .ad-cell .ad-slot { width: 100%; height: 100%; }
+      .textcell {
+        padding: 10px;
+        font-size: 12px;
+        line-height: 1.5;
+        display: flex;
+        align-items: flex-end;
+        background: linear-gradient(160deg, #1a0b12, #000);
+      }
+      .musiclist, .plist { display: grid; gap: 8px; }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: #0a0a0a;
+        border: 1px solid #262626;
+        border-radius: 12px;
+        padding: 10px;
+        color: #fff;
+        text-decoration: none;
+      }
+      .row img, .note {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        object-fit: cover;
+      }
+      .note {
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+      }
+      .price { color: #e1306c; font-weight: 800; font-size: 13px; }
+      .mute { color: #888; font-size: 12px; }
+      .hero img { width: 100%; max-height: 280px; object-fit: cover; border-radius: 14px; }
+      .warn {
+        margin: 12px 0;
+        padding: 10px 12px;
+        border: 1px solid rgba(225,48,108,.4);
+        border-radius: 10px;
+        color: #ffb3c8;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      .specs { margin: 12px 0; padding-right: 18px; color: #ddd; font-size: 14px; line-height: 1.8; }
+      .phone {
+        display: block;
+        margin-top: 14px;
+        text-align: center;
+        text-decoration: none;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        color: #fff;
+        font-weight: 800;
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .back { color: #c13584; font-size: 13px; text-decoration: none; }
+      .empty { color: #888; padding: 20px 0; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap" id="root"></main>
+    <script src="js/core.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/ads.js?v=19"></script>
+    <script src="js/shell.js"></script>
+    <script>
+      const FALLBACK_POSTS = [];
+
+      function posts() {
+        const live = (window.ZIVV_CORE && ZIVV_CORE.getPosts()) || [];
+        return live.length ? live : FALLBACK_POSTS;
+      }
+
+      const root = document.getElementById("root");
+      const qs = new URLSearchParams(location.search);
+      const productId = qs.get("id");
+
+      function productDetail(p) {
+        root.innerHTML = `
+          <a class="back" href="explore.html">رجوع للاستكشاف</a>
+          <div class="hero" style="margin-top:12px"><img src="${p.image}" alt=""></div>
+          <h1 style="margin-top:12px">${p.title}</h1>
+          <p class="mute">${p.cat} · الناشر: ${p.seller}</p>
+          <p class="price" style="font-size:20px;margin:8px 0">${p.price} ج.م</p>
+          <p class="lead">${p.desc}</p>
+          <div class="warn">ممنوع إعادة نسخ هذا المنشور أو المنتج. للتواصل مع الناشر فقط — مفيش شراء من الموقع.</div>
+          <b>مواصفات المنتج</b>
+          <ul class="specs">${(p.specs || []).map((s) => `<li>${s}</li>`).join("")}</ul>
+          <b>رقم الناشر</b>
+          <p class="mute" style="margin:6px 0 0">${p.phone}</p>
+          <a class="phone" href="tel:${p.phone}">اتصال</a>
+          <a class="phone" href="chat.html?u=${encodeURIComponent(p.sellerUser)}&product=${encodeURIComponent(p.id)}" style="margin-top:8px;background:#161616;border:1px solid #333">تواصل</a>
+        `;
+      }
+
+      function exploreHome() {
+        let tab = "all";
+        const tabs = [
+          ["all", "الكل"],
+          ["photo", "صور"],
+          ["video", "فيديو"],
+          ["post", "منشورات"],
+          ["music", "موسيقى"],
+          ["product", "منتجات"],
+        ];
+
+        function items() {
+          const p = posts();
+          const photos = p.filter((x) => x.image && x.type !== "video");
+          const videos = p.filter((x) => x.type === "video");
+          const texts = p.filter((x) => x.type === "text" || (!x.image && x.type !== "video"));
+          const music = ZIVV_CORE.MUSIC;
+          const products = ZIVV_STORE.allProducts();
+          if (tab === "photo") return photos.map((x) => ({ kind: "photo", x }));
+          if (tab === "video") return videos.map((x) => ({ kind: "video", x }));
+          if (tab === "post") return p.map((x) => ({ kind: x.type === "video" ? "video" : x.image ? "photo" : "text", x }));
+          if (tab === "music") return music.map((x) => ({ kind: "music", x }));
+          if (tab === "product") return products.map((x) => ({ kind: "product", x }));
+          const mix = [];
+          photos.forEach((x) => mix.push({ kind: "photo", x }));
+          videos.forEach((x) => mix.push({ kind: "video", x }));
+          texts.forEach((x) => mix.push({ kind: "text", x }));
+          products.forEach((x) => mix.push({ kind: "product", x }));
+          music.forEach((x) => mix.push({ kind: "music", x }));
+          return mix;
+        }
+
+        function paint() {
+          const list = items();
+          const mosaic = list.filter((i) => i.kind === "photo" || i.kind === "video" || i.kind === "product" || i.kind === "text");
+          const musicRows = list.filter((i) => i.kind === "music");
+
+          root.innerHTML = `
+            <h1>استكشف</h1>
+            <p class="lead">منشورات، صور، فيديو، موسيقى، ومنتجات المتجر.</p>
+            <div class="tabs">${tabs
+              .map(([k, l]) => `<button type="button" class="${k === tab ? "on" : ""}" data-t="${k}">${l}</button>`)
+              .join("")}</div>
+            <div class="mosaic" id="mosaic"></div>
+            <div class="musiclist" id="musiclist" style="margin-top:12px"></div>
+          `;
+
+          document.querySelectorAll(".tabs button").forEach((b) => {
+            b.onclick = () => {
+              tab = b.getAttribute("data-t");
+              paint();
+            };
+          });
+
+          document.getElementById("mosaic").innerHTML = mosaic
+            .map((i, idx) => {
+              if (i.kind === "product") {
+                const p = i.x;
+                return `<a class="cell ${idx % 7 === 0 ? "wide" : ""}" href="explore.html?id=${p.id}">
+                  <img src="${p.image}" alt=""><span class="badge">منتج</span></a>`;
+              }
+              if (i.kind === "text") {
+                return `<a class="cell textcell" href="home.html"><span class="badge">منشور</span>${(i.x.text || "").slice(0, 80)}</a>`;
+              }
+              const p = i.x;
+              return `<a class="cell" href="home.html">
+                <img src="${p.image}" alt="">
+                <span class="badge">${i.kind === "video" ? "فيديو" : "صورة"}</span>
+                ${i.kind === "video" ? '<span class="play">▶</span>' : ""}
+              </a>`;
+            })
+            .join("") + ((window.ZIVV_ADS && ZIVV_ADS.mosaicHtml && ZIVV_ADS.mosaicHtml()) || "");
+          if (window.ZIVV_ADS) ZIVV_ADS.bind(document.getElementById("mosaic"));
+
+          document.getElementById("musiclist").innerHTML = musicRows
+            .map((i) => {
+              const m = i.x;
+              return `<a class="row" href="music.html"><div class="note">♪</div><div><b>${m.title}</b><div class="mute">${m.artist}</div></div></a>`;
+            })
+            .join("");
+
+          if (!mosaic.length && !musicRows.length) {
+            document.getElementById("mosaic").innerHTML = '<p class="empty">مفيش محتوى في القسم ده.</p>';
+          }
+        }
+        paint();
+      }
+
+      const item = productId ? ZIVV_STORE.byId(productId) : null;
+      if (item) productDetail(item);
+      else exploreHome();
+    </script>
+  </body>
+</html>

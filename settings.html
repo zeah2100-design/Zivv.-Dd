@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZIVV — الإعدادات</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/shell.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        background: #000;
+        color: #f5f5f5;
+        min-height: 100dvh;
+      }
+      .wrap { width: min(460px, 100%); margin: 0 auto; padding: 18px 16px 96px; }
+      h1 {
+        font-size: 22px; font-weight: 800; letter-spacing: .04em; margin-bottom: 4px;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .sub { color: #777; font-size: 13px; margin-bottom: 18px; }
+      .card {
+        background: #0a0a0a;
+        border: 1px solid #1f1f1f;
+        border-radius: 16px;
+        padding: 14px;
+        margin-bottom: 12px;
+      }
+      .card h2 { font-size: 13px; font-weight: 800; color: #aaa; margin-bottom: 12px; letter-spacing: .04em; }
+      .me {
+        display: flex; align-items: center; gap: 12px;
+      }
+      .me img {
+        width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+        border: 2px solid #222;
+      }
+      .me img.gold { border-color: #fcaf45; }
+      .me b { display: block; font-size: 16px; }
+      .me span { color: #888; font-size: 12px; }
+      .acc {
+        display: flex; align-items: center; gap: 10px; width: 100%;
+        background: #111; border: 1px solid #242424; color: #fff;
+        border-radius: 12px; padding: 10px; margin-bottom: 8px; text-align: start;
+      }
+      .acc.on { border-color: #e1306c; }
+      .acc img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+      .acc b { display: block; font-size: 14px; }
+      .acc i { color: #888; font-style: normal; font-size: 12px; }
+      .acc .now { margin-inline-start: auto; font-size: 11px; color: #fcaf45; font-weight: 800; }
+      .langs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .lang {
+        border: 1px solid #2a2a2a; background: #111; color: #ddd;
+        border-radius: 12px; padding: 11px; font-weight: 800;
+      }
+      .lang.on {
+        color: #fff; border-color: transparent;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+      }
+      .gold-box {
+        position: relative; overflow: hidden;
+        background: linear-gradient(165deg, #16110a, #0a0a0a 55%);
+        border: 1px solid #3a2a14;
+      }
+      .feat { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid #1c1c1c; }
+      .feat:first-of-type { border-top: 0; }
+      .dot {
+        width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex: 0 0 auto;
+        background: linear-gradient(135deg, #fcaf45, #e1306c);
+      }
+      .feat b { display: block; font-size: 13px; }
+      .feat span { color: #999; font-size: 12px; line-height: 1.55; }
+      .go, .ghost, .danger {
+        display: block; width: 100%; text-align: center; text-decoration: none;
+        border-radius: 12px; padding: 11px; font-weight: 800; font-size: 13px; margin-top: 8px;
+      }
+      .go {
+        border: 0; color: #fff;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+      }
+      .ghost { border: 1px solid #2a2a2a; background: #141414; color: #eee; }
+      .danger { border: 1px solid #4a1820; background: #16080b; color: #ff8aa0; }
+      .empty { color: #666; font-size: 13px; padding: 6px 0 2px; }
+      .idrow { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid #1c1c1c; font-size: 13px; }
+      .idrow:first-of-type { border-top: 0; }
+      .idrow span { color: #888; }
+      .idrow b { color: #eee; font-weight: 700; text-align: end; }
+      .clock {
+        display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+        margin: 4px 0 12px;
+      }
+      .tick {
+        background: #110d08; border: 1px solid #3a2a14; border-radius: 12px;
+        text-align: center; padding: 10px 4px;
+      }
+      .tick b {
+        display: block; font-size: 22px; font-weight: 800; color: #fcaf45; letter-spacing: .04em;
+      }
+      .tick span { color: #888; font-size: 11px; }
+      .clock.off { opacity: .45; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1 id="t-title">الإعدادات</h1>
+      <p class="sub" id="t-sub">حسابك، اللغة، والذهبي.</p>
+
+      <section class="card">
+        <h2 id="t-now">الحساب الحالي</h2>
+        <div class="me" id="me"></div>
+      </section>
+
+      <section class="card">
+        <h2 id="t-id">بيانات الدخول المحفوظة</h2>
+        <p class="sub" id="t-idsub">لو نسيت العلامة أو الاسم، راجعهم هنا.</p>
+        <div id="idbox"></div>
+      </section>
+
+      <section class="card">
+        <h2 id="t-switch">تبديل الحسابات</h2>
+        <div id="accounts"></div>
+        <a class="ghost" href="index.html" id="t-add">إضافة حساب</a>
+      </section>
+
+      <section class="card gold-box">
+        <h2 id="t-gold">الاشتراك الذهبي</h2>
+        <div id="gold-status"></div>
+        <div class="clock" id="gold-clock">
+          <div class="tick"><b id="gd">00</b><span id="gd-l">يوم</span></div>
+          <div class="tick"><b id="gh">00</b><span id="gh-l">ساعة</span></div>
+          <div class="tick"><b id="gm">00</b><span id="gm-l">دقيقة</span></div>
+        </div>
+        <div class="feat"><div class="dot"></div><div><b id="g0">مدة شهر</b><span id="g0s">الاشتراك بيبان شهر، وبعدها بيروح تلقائي لحد ما تجدّده.</span></div></div>
+        <div class="feat"><div class="dot"></div><div><b id="g1">شارة وإطار ذهبي</b><span id="g1s">اسمك وصورتك يتميزوا عن الحساب العادي.</span></div></div>
+        <div class="feat"><div class="dot"></div><div><b id="g2">ظهور أقوى</b><span id="g2s">منشوراتك توصل أبعد في الفيد.</span></div></div>
+        <div class="feat"><div class="dot"></div><div><b id="g3">إعلان على منشورك</b><span id="g3s">تقدر تحط إعلان بنفسك على منشوراتك فقط. مفيش إعلانات شبكة جوّه التطبيق.</span></div></div>
+        <div class="feat"><div class="dot"></div><div><b id="g4">زيفي الذهبي</b><span id="g4s">رد أسرع، إجابات أطول، ذاكرة محادثة أكبر، بحث أوسع، وقراءة مقالات أكتر. الحساب العادي رد أقصر وأبطأ.</span></div></div>
+        <button class="go" type="button" id="gold-btn">الاشتراك الذهبي</button>
+      </section>
+
+      <section class="card">
+        <h2 id="t-lang">اللغة</h2>
+        <div class="langs">
+          <button class="lang" type="button" id="btn-ar">عربي</button>
+          <button class="lang" type="button" id="btn-en">English</button>
+        </div>
+      </section>
+
+      <button class="danger" type="button" id="out">خروج من الحساب ده</button>
+    </main>
+    <script src="js/core.js"></script>
+    <script src="js/creator.js"></script>
+    <script src="js/shell.js"></script>
+    <script>
+      const T = {
+        ar: {
+          title: "الإعدادات", sub: "حسابك، اللغة، والذهبي.",
+          now: "الحساب الحالي", sw: "تبديل الحسابات", add: "إضافة حساب",
+          gold: "الاشتراك الذهبي", lang: "اللغة",
+          out: "خروج من الحساب ده", current: "الحالي",
+          goldOn: "مفعّل الشهر ده. العداد تحت لحد ما يخلص.",
+          goldWait: "طلب نقدي واصل للملك. استنى رسالته في الإشعارات.",
+          goldOff: "مش مفعّل. مدته شهر. ١٠٬٠٠٠ نقطة أو نقدي والملك يكتب السعر.",
+          goldEnd: "الذهبي خلص. جدّده عشان المميزات ترجع.",
+          goldBtnOn: "مفعّل", goldBtn: "اشترك ذهبي", goldBtnRenew: "جدّد الاشتراك",
+          day: "يوم", hour: "ساعة", min: "دقيقة",
+          g0: "مدة شهر", g0s: "الاشتراك بيبان شهر، وبعدها بيروح تلقائي لحد ما تجدّده.",
+          g1: "شارة وإطار ذهبي", g1s: "اسمك وصورتك يتميزوا عن الحساب العادي.",
+          g2: "ظهور أقوى", g2s: "منشوراتك توصل أبعد في الفيد.",
+          g3: "إعلان على منشورك", g3s: "تقدر تحط إعلان بنفسك على منشوراتك فقط. مفيش إعلانات شبكة جوّه التطبيق.",
+          g4: "زيفي الذهبي", g4s: "الذهبي يستخدم زيفي براحته: محادثات عادية ومباشرة من غير حد. العادي: ١٠ محادثات في اليوم، كل واحدة ساعة، و١٠ صور.",
+          none: "مفيش حسابات تانية على الجهاز. سجّل حساب ثاني عشان تبدّل.",
+          id: "بيانات الدخول المحفوظة",
+          idsub: "لو نسيت الاسم أو العلامة أو كلمة المرور، راجعهم هنا.",
+          idFirst: "الاسم", idLast: "اسم العائلة", idAge: "السن",
+          idMail: "البريد", idMark: "العلامة المميزة", idPass: "كلمة المرور"
+        },
+        en: {
+          title: "Settings", sub: "Accounts, language, and Gold.",
+          now: "This account", sw: "Switch accounts", add: "Add account",
+          gold: "Gold", lang: "Language",
+          out: "Log out of this account", current: "Now",
+          goldOn: "Active — perks are on.",
+          goldWait: "Cash request sent. Wait for the King's message.",
+          goldOff: "Off. 10,000 points, or cash — the King writes the price.",
+          goldBtnOn: "Active", goldBtn: "Get Gold",
+          g1: "Gold badge & frame", g1s: "Your name and photo stand out.",
+          g2: "More reach", g2s: "Your posts go further in the feed.",
+          g3: "Ads on your posts", g3s: "Promote only your own posts. No network ads in the app.",
+          g4: "Zivvy Gold", g4s: "Faster replies, longer answers, more memory, wider search, more articles. Regular is shorter and slower.",
+          none: "No other accounts on this device. Sign in to another to switch.",
+          id: "Saved login details",
+          idsub: "If you forget your mark or name, check them here.",
+          idFirst: "First name", idLast: "Family name", idAge: "Age",
+          idMail: "Email", idMark: "Unique mark", idPass: "Password"
+        }
+      };
+
+      function langNow() { return localStorage.getItem("zivv.lang") === "en" ? "en" : "ar"; }
+      function users() {
+        try { return JSON.parse(localStorage.getItem("zivv.users") || "{}"); }
+        catch { return {}; }
+      }
+      function session() {
+        try { return JSON.parse(localStorage.getItem("zivv.session") || "null") || {}; }
+        catch { return {}; }
+      }
+      function profiles() {
+        try { return JSON.parse(localStorage.getItem("zivv.profiles") || "{}"); }
+        catch { return {}; }
+      }
+      function userKey(u) {
+        return String((u && (u.username || (u.email || "").split("@")[0])) || "").replace(/^@/, "").toLowerCase();
+      }
+      function avatarOf(u) {
+        const key = userKey(u);
+        const p = profiles()[key] || {};
+        return p.avatar || "brand/logo-sm.png";
+      }
+
+      function apply(lang) {
+        localStorage.setItem("zivv.lang", lang);
+        const p = T[lang];
+        document.documentElement.lang = lang === "ar" ? "ar" : "en";
+        document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+        document.getElementById("t-title").textContent = p.title;
+        document.getElementById("t-sub").textContent = p.sub;
+        document.getElementById("t-now").textContent = p.now;
+        document.getElementById("t-switch").textContent = p.sw;
+        document.getElementById("t-add").textContent = p.add;
+        document.getElementById("t-gold").textContent = p.gold;
+        document.getElementById("t-id").textContent = p.id;
+        document.getElementById("t-idsub").textContent = p.idsub;
+        document.getElementById("t-lang").textContent = p.lang;
+        document.getElementById("out").textContent = p.out;
+        document.getElementById("g0").textContent = p.g0;
+        document.getElementById("g0s").textContent = p.g0s;
+        document.getElementById("g1").textContent = p.g1;
+        document.getElementById("g1s").textContent = p.g1s;
+        document.getElementById("g2").textContent = p.g2;
+        document.getElementById("g2s").textContent = p.g2s;
+        document.getElementById("g3").textContent = p.g3;
+        document.getElementById("g3s").textContent = p.g3s;
+        document.getElementById("g4").textContent = p.g4;
+        document.getElementById("g4s").textContent = p.g4s;
+        document.getElementById("gd-l").textContent = p.day;
+        document.getElementById("gh-l").textContent = p.hour;
+        document.getElementById("gm-l").textContent = p.min;
+        document.getElementById("btn-ar").classList.toggle("on", lang === "ar");
+        document.getElementById("btn-en").classList.toggle("on", lang === "en");
+
+        const s = session();
+        const gold = !!(window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser && ZIVV_CREATOR.isGoldUser());
+        const pending = window.ZIVV_CORE && ZIVV_CORE.goldStatus && ZIVV_CORE.goldStatus() === "pending";
+        document.getElementById("me").innerHTML =
+          `<img class="${gold ? "gold" : ""}" src="${avatarOf(s)}" alt="">
+           <div><b>${s.name || s.email || "—"}</b><span>${s.email || ""}</span></div>`;
+
+        document.getElementById("idbox").innerHTML =
+          `<div class="idrow"><span>${p.idFirst}</span><b>${s.first || "—"}</b></div>
+           <div class="idrow"><span>${p.idLast}</span><b>${s.last || "—"}</b></div>
+           <div class="idrow"><span>${p.idAge}</span><b>${s.age != null ? s.age : "—"}</b></div>
+           <div class="idrow"><span>${p.idMail}</span><b>${s.email || "—"}</b></div>
+           <div class="idrow"><span>${p.idMark}</span><b>${s.mark || "—"}</b></div>
+           <div class="idrow"><span>${p.idPass}</span><b>${s.password || "—"}</b></div>`;
+
+        const db = users();
+        const emails = Object.keys(db);
+        const box = document.getElementById("accounts");
+        if (!emails.length) box.innerHTML = `<p class="empty">${p.none}</p>`;
+        else {
+          box.innerHTML = emails.map((email) => {
+            const u = db[email];
+            const on = (s.email || "") === email;
+            return `<button class="acc ${on ? "on" : ""}" type="button" data-e="${email}">
+              <img src="${avatarOf(u)}" alt="">
+              <div><b>${u.name || email}</b><i>${email}</i></div>
+              ${on ? `<span class="now">${p.current}</span>` : ""}
+            </button>`;
+          }).join("");
+          box.querySelectorAll(".acc").forEach((b) => {
+            b.onclick = () => {
+              const email = b.getAttribute("data-e");
+              if ((s.email || "") === email) return;
+              const u = db[email];
+              if (!u) return;
+              localStorage.setItem("zivv.session", JSON.stringify(u));
+              location.reload();
+            };
+          });
+        }
+
+        const left = window.ZIVV_CREATOR && ZIVV_CREATOR.goldLeft ? ZIVV_CREATOR.goldLeft() : { gold: gold, days: 0, hours: 0, minutes: 0 };
+        const ended = !gold && !pending && left && left.until;
+        document.getElementById("gold-status").innerHTML =
+          `<p class="sub" style="margin:0 0 8px">${gold ? p.goldOn : pending ? p.goldWait : ended ? p.goldEnd : p.goldOff}</p>`;
+        paintClock();
+        const gb = document.getElementById("gold-btn");
+        gb.textContent = gold ? p.goldBtnOn : p.goldBtnRenew && ended ? p.goldBtnRenew : p.goldBtn;
+        gb.disabled = !!gold;
+        gb.style.opacity = gold ? ".55" : "1";
+      }
+
+      function pad(n) { return String(Math.max(0, n || 0)).padStart(2, "0"); }
+      function paintClock() {
+        const left = window.ZIVV_CREATOR && ZIVV_CREATOR.goldLeft ? ZIVV_CREATOR.goldLeft() : { gold: false, days: 0, hours: 0, minutes: 0 };
+        document.getElementById("gd").textContent = pad(left.days);
+        document.getElementById("gh").textContent = pad(left.hours);
+        document.getElementById("gm").textContent = pad(left.minutes);
+        document.getElementById("gold-clock").classList.toggle("off", !left.gold);
+        if (left.gold) {
+          document.body.classList.add("gold-me");
+        } else {
+          document.body.classList.remove("gold-me");
+        }
+      }
+
+      document.getElementById("btn-ar").onclick = () => apply("ar");
+      document.getElementById("btn-en").onclick = () => apply("en");
+      document.getElementById("gold-btn").onclick = () => {
+        if (window.ZIVV_CREATOR && ZIVV_CREATOR.openPay) ZIVV_CREATOR.openPay();
+      };
+      document.getElementById("out").onclick = () => {
+        localStorage.removeItem("zivv.session");
+        location.href = "index.html";
+      };
+      apply(langNow());
+    </script>
+  </body>
+</html>

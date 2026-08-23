@@ -1,0 +1,13 @@
+/* ZIVV brand — same colors as the Z+V logo */
+:root {
+  --zivv-yellow: #fcaf45;
+  --zivv-orange: #f77737;
+  --zivv-pink: #e1306c;
+  --zivv-magenta: #c13584;
+  --zivv-purple: #833ab4;
+  --zivv-ig: linear-gradient(135deg, #fcaf45 0%, #f77737 22%, #e1306c 55%, #c13584 78%, #833ab4 100%);
+  --zivv-black: #000000;
+  --zivv-ink: #f5f5f5;
+  --zivv-mute: #a8a8a8;
+  --zivv-line: #262626;
+}
