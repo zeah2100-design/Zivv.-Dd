@@ -1248,6 +1248,45 @@
     write("zivv.bells", map);
     return !!on;
   }
+  function updatePost(id, patch) {
+    const posts = allPostsRaw();
+    const p = posts.find((x) => x.id === id);
+    if (!p) return null;
+    if (String(p.user || "").toLowerCase() !== meUser()) return null;
+    Object.assign(p, patch || {});
+    if (patch && (patch.title != null || patch.text != null || patch.tags != null)) {
+      const review = reviewPost(p);
+      p.tags = review.tags;
+      if (review.scan.level === "ban") {
+        p.status = "removed";
+        write("zivv.feed", posts);
+        return { blocked: true, note: review.scan.note };
+      }
+      if (review.scan.level === "warn") {
+        p.status = "warned";
+        p.warnNote = review.scan.note;
+      }
+    }
+    if (isFriendsOnly(p)) {
+      p.visibility = "friends";
+      p.priv = true;
+      p.dests = ["profile"];
+    }
+    write("zivv.feed", posts);
+    return p;
+  }
+  function deletePost(id) {
+    const posts = allPostsRaw();
+    const p = posts.find((x) => x.id === id);
+    if (!p) return false;
+    if (String(p.user || "").toLowerCase() !== meUser()) return false;
+    p.status = "removed";
+    write("zivv.feed", posts);
+    return true;
+  }
+  function hidePost(id) {
+    return updatePost(id, { visibility: "friends", priv: true, dests: ["profile"] });
+  }
   function notifyNewPost(post) {
     if (!post || post.blocked || !post.user) return;
     const authorU = String(post.user || "").replace(/^@/, "").toLowerCase();
@@ -1285,6 +1324,9 @@
     reviewPost,
     author,
     addPost,
+    updatePost,
+    deletePost,
+    hidePost,
     likedByMe,
     likeCount,
     toggleLike,

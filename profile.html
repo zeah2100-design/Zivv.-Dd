@@ -70,6 +70,12 @@
       }
       .locked-box b { display: block; margin-bottom: 6px; font-size: 16px; }
       .locked-box p { color: #999; font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
+      .sheet .optb {
+        display: block; width: 100%; text-align: start; margin-bottom: 8px;
+        background: #161616; border: 1px solid #2a2a2a; color: #fff;
+        border-radius: 12px; padding: 12px; font-weight: 800;
+      }
+      .sheet .optb.bad { color: #ff8aa0; border-color: #5a1a24; background: #16080b; }
     </style>
   </head>
   <body>
@@ -101,6 +107,24 @@
         <input id="p-img" type="file" accept="image/*" style="display:block;margin:8px 0;color:#aaa" />
         <button class="btn" type="submit" style="width:100%">نشر المنتج</button>
         <button class="ghost" type="button" id="p-close" style="width:100%;margin-top:8px">إغلاق</button>
+      </form>
+    </div>
+    <div class="modal" id="post-menu">
+      <div class="sheet">
+        <h3>المنشور</h3>
+        <button class="optb" type="button" id="pm-edit">تعديل</button>
+        <button class="optb" type="button" id="pm-hide">إخفاء — للخاص</button>
+        <button class="optb bad" type="button" id="pm-del">حذف</button>
+        <button class="ghost" type="button" id="pm-x" style="width:100%;margin-top:4px">إلغاء</button>
+      </div>
+    </div>
+    <div class="modal" id="post-edit">
+      <form class="sheet" id="post-edit-form">
+        <h3>تعديل المنشور</h3>
+        <input id="pe-title" placeholder="العنوان" />
+        <textarea id="pe-text" rows="4" placeholder="الوصف"></textarea>
+        <button class="btn" type="submit" style="width:100%">حفظ</button>
+        <button class="ghost" type="button" id="pe-x" style="width:100%;margin-top:8px">إلغاء</button>
       </form>
     </div>
     <div class="toast" id="toast"></div>
@@ -393,14 +417,42 @@
         });
       }
 
-      function cellHtml(p) {
-        if (p.image) {
-          const href = p.type === "audio" ? "music.html" : p.type === "video" ? "reels.html" : "home.html";
-          return `<a class="cell" href="${href}"><img src="${p.image}" alt="">${p.type === "video" ? '<span class="play">▶</span>' : p.type === "audio" ? '<span class="play">♪</span>' : ""}</a>`;
-        }
-        return `<div class="cell txt">${(p.title || p.text || "").slice(0, 70)}</div>`;
+      let menuId = "";
+      let holdTimer = 0;
+      let held = false;
+      function closeMenus() {
+        document.getElementById("post-menu").classList.remove("open");
+        document.getElementById("post-edit").classList.remove("open");
       }
-
+      function openPostMenu(id) {
+        menuId = id;
+        document.getElementById("post-menu").classList.add("open");
+      }
+      function cellHtml(p) {
+        const inner = p.image
+          ? `<img src="${p.image}" alt="">${p.type === "video" ? '<span class="play">▶</span>' : p.type === "audio" ? '<span class="play">♪</span>' : ""}`
+          : `<div class="txt">${(p.title || p.text || "").slice(0, 70)}</div>`;
+        return `<div class="cell" data-pid="${p.id}">${inner}</div>`;
+      }
+      function bindCells() {
+        document.querySelectorAll("#grid .cell[data-pid]").forEach((el) => {
+          const id = el.getAttribute("data-pid");
+          el.onclick = () => {
+            if (held) return;
+            const p = allMine().find((x) => x.id === id);
+            if (!p) return;
+            location.href = p.type === "audio" ? "music.html" : p.type === "video" ? "reels.html" : "home.html";
+          };
+          if (!mine) return;
+          el.addEventListener("pointerdown", () => {
+            held = false;
+            holdTimer = setTimeout(() => { held = true; openPostMenu(id); }, 500);
+          });
+          el.addEventListener("pointerup", () => clearTimeout(holdTimer));
+          el.addEventListener("pointerleave", () => clearTimeout(holdTimer));
+          el.addEventListener("contextmenu", (e) => { e.preventDefault(); held = true; openPostMenu(id); });
+        });
+      }
       function paintGrid() {
         if (tab === "shop") {
           const goods = productsOf();
@@ -423,12 +475,14 @@
           document.getElementById("grid").innerHTML = list.length
             ? list.map(cellHtml).join("")
             : '<p class="empty">مفيش منشورات خاصة. من النشر اختار «خاص».</p>';
+          bindCells();
           return;
         }
         const list = publicPosts().filter((p) => tab === "all" || p.type === tab || (tab === "photo" && p.image && p.type !== "video"));
         document.getElementById("grid").innerHTML = list.length
           ? list.map(cellHtml).join("")
           : '<p class="empty">مفيش منشورات في القسم ده.</p>';
+        bindCells();
       }
 
       function compress(dataUrl, max, cb) {
@@ -495,6 +549,44 @@
         const r = new FileReader();
         r.onload = () => compress(r.result, 900, finish);
         r.readAsDataURL(file);
+      };
+      document.getElementById("pm-x").onclick = closeMenus;
+      document.getElementById("post-menu").onclick = (e) => { if (e.target.id === "post-menu") closeMenus(); };
+      document.getElementById("pm-edit").onclick = () => {
+        const p = (ZIVV_CORE.allPostsRaw ? ZIVV_CORE.allPostsRaw() : ZIVV_CORE.getPosts()).find((x) => x.id === menuId);
+        if (!p) return;
+        document.getElementById("pe-title").value = p.title || "";
+        document.getElementById("pe-text").value = p.text || "";
+        document.getElementById("post-menu").classList.remove("open");
+        document.getElementById("post-edit").classList.add("open");
+      };
+      document.getElementById("pm-hide").onclick = () => {
+        if (ZIVV_CORE.hidePost) ZIVV_CORE.hidePost(menuId);
+        closeMenus();
+        paintHead();
+        paintGrid();
+        toast("اتخفى وراح للخاص");
+      };
+      document.getElementById("pm-del").onclick = () => {
+        if (!confirm("تحذف المنشور نهائي؟")) return;
+        if (ZIVV_CORE.deletePost) ZIVV_CORE.deletePost(menuId);
+        closeMenus();
+        paintHead();
+        paintGrid();
+        toast("اتمسح المنشور");
+      };
+      document.getElementById("pe-x").onclick = closeMenus;
+      document.getElementById("post-edit-form").onsubmit = (e) => {
+        e.preventDefault();
+        const r = ZIVV_CORE.updatePost && ZIVV_CORE.updatePost(menuId, {
+          title: document.getElementById("pe-title").value.trim(),
+          text: document.getElementById("pe-text").value.trim()
+        });
+        closeMenus();
+        if (r && r.blocked) toast(r.note || "المنشور اترفض");
+        else toast("اتعدل المنشور");
+        paintHead();
+        paintGrid();
       };
       document.getElementById("e-close").onclick = () => document.getElementById("edit").classList.remove("open");
       document.getElementById("edit-form").onsubmit = (e) => {
