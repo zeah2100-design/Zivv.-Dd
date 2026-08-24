@@ -506,11 +506,11 @@
       function paint(u) {
         $("done-name").textContent = u.name || u.email;
         const hint = document.querySelector("#done .hint");
-        if (hint) hint.textContent = "الحساب جاهز. هتفتح الصفحة الرئيسية.";
+        if (hint) hint.textContent = lang === "en" ? "You're set. Opening Home." : "الحساب جاهز. هتفتح الصفحة الرئيسية.";
         const go = document.querySelector("#done .btn");
         if (go) {
           go.setAttribute("href", "home.html");
-          go.textContent = "الصفحة الرئيسية";
+          go.textContent = lang === "en" ? "Home" : "الصفحة الرئيسية";
         }
         show("done");
         setTimeout(function () {
@@ -519,11 +519,17 @@
       }
 
       apply();
-      const s = JSON.parse(localStorage.getItem("zivv.session") || "null");
-      if (s && (s.email || s.mark) && s.password) {
-        pending = s;
-        if (s.onboarding) paint(s);
-        else show("form-quiz");
+      const adding = new URLSearchParams(location.search).get("add") === "1" || sessionStorage.getItem("zivv.addAccount") === "1";
+      if (adding) {
+        sessionStorage.removeItem("zivv.addAccount");
+        setTab("signup");
+      } else {
+        const s = JSON.parse(localStorage.getItem("zivv.session") || "null");
+        if (s && (s.email || s.mark) && s.password) {
+          pending = s;
+          if (s.onboarding) paint(s);
+          else show("form-quiz");
+        }
       }
     </script>
   </body>

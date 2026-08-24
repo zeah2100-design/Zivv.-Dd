@@ -329,11 +329,11 @@
     </main>
 
     <nav class="nav">
-      <a class="on" href="home.html">⌂<span>الرئيسية</span></a>
-      <a href="explore.html">⌕<span>اكتشف</span></a>
+      <a class="on" href="home.html">⌂<span data-i18n="home">الرئيسية</span></a>
+      <a href="explore.html">⌕<span data-i18n="explore">اكتشف</span></a>
       <a href="publish.html"><span class="plus">+</span></a>
-      <a href="reels.html">▷<span>الشريط</span></a>
-      <a href="profile.html">◉<span>حسابي</span></a>
+      <a href="reels.html">▷<span data-i18n="reels">الشريط</span></a>
+      <a href="profile.html">◉<span data-i18n="profile">حسابي</span></a>
     </nav>
 
     <div class="toast" id="toast"></div>
@@ -345,6 +345,7 @@
       </div>
     </div>
 
+    <script src="js/i18n.js"></script>
     <script src="js/core.js"></script>
     <script src="js/media.js"></script>
     <script src="js/social.js"></script>
@@ -378,8 +379,10 @@
       let posts = livePosts();
 
       function applyChrome() {
-        document.documentElement.lang = "ar";
-        document.documentElement.dir = "rtl";
+        const en = localStorage.getItem("zivv.lang") === "en";
+        document.documentElement.lang = en ? "en" : "ar";
+        document.documentElement.dir = en ? "ltr" : "rtl";
+        if (window.ZIVV_I18N) ZIVV_I18N.apply();
       }
 
       function homeList() {

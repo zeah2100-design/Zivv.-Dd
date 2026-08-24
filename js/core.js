@@ -305,7 +305,11 @@
     const live = read("zivv.feed", []);
     const list = live.length ? live : [];
     const banned = bannedUsers();
-    return list.filter((p) => p && p.status !== "removed" && banned.indexOf(String(p.user || "").toLowerCase()) < 0);
+    return list.filter((p) => {
+      if (!p || p.status === "removed") return false;
+      if (banned.indexOf(String(p.user || "").toLowerCase()) >= 0) return false;
+      return canViewUser(p.user);
+    });
   }
   function allPostsRaw() {
     const live = read("zivv.feed", []);
@@ -457,7 +461,7 @@
       if (post.videoKind === "short") post.dests = ["reels", "explore"];
       else post.dests = ["home", "explore"];
     }
-    const posts = getPosts();
+    const posts = allPostsRaw();
     posts.unshift(post);
     try {
       write("zivv.feed", posts);
@@ -727,6 +731,28 @@
   function saveFriendReqs(list) {
     write("zivv.friendReqs", list);
   }
+  function isPrivate(user) {
+    const u = String(user || meUser() || "").replace(/^@/, "").toLowerCase();
+    if (!u) return false;
+    const map = read("zivv.profiles", {});
+    return !!(map[u] && map[u].locked);
+  }
+  function setPrivate(on) {
+    const u = meUser();
+    if (!u) return false;
+    const map = read("zivv.profiles", {});
+    map[u] = Object.assign({}, map[u] || {}, { locked: !!on });
+    write("zivv.profiles", map);
+    return !!on;
+  }
+  function canViewUser(user) {
+    const u = String(user || "").replace(/^@/, "").toLowerCase();
+    if (!u) return true;
+    if (u === meUser()) return true;
+    if (!isPrivate(u)) return true;
+    return areFriends(meUser(), u);
+  }
+
   function areFriends(a, b) {
     const ua = String(a || "").replace(/^@/, "").toLowerCase();
     const ub = String(b || "").replace(/^@/, "").toLowerCase();
@@ -1089,6 +1115,9 @@
     kingOwner,
     isKingUser,
     claimKing,
+    isPrivate,
+    setPrivate,
+    canViewUser,
   };
 
   function saveFile(href, filename) {

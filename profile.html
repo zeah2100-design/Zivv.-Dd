@@ -59,6 +59,12 @@
       .sheet input, .sheet textarea { width: 100%; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; padding: 10px; margin: 6px 0 10px; }
       .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #161616; border: 1px solid #333; padding: 8px 14px; border-radius: 999px; display: none; z-index: 70; font-size: 13px; }
       input[type="file"] { display: none; }
+      .locked-box {
+        margin: 18px 0 8px; padding: 16px;
+        background: #111; border: 1px solid #2a2a2a; border-radius: 14px;
+      }
+      .locked-box b { display: block; margin-bottom: 6px; font-size: 16px; }
+      .locked-box p { color: #999; font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
     </style>
   </head>
   <body>
@@ -93,6 +99,7 @@
       </form>
     </div>
     <div class="toast" id="toast"></div>
+    <script src="js/i18n.js"></script>
     <script src="js/core.js"></script>
     <script src="js/store.js"></script>
     <script src="js/creator.js"></script>
@@ -126,10 +133,11 @@
         cover: patch.cover || ""
       };
 
-      const posts = ZIVV_CORE.getPosts().filter((p) =>
+      const allowed = mine || !ZIVV_CORE.canViewUser || ZIVV_CORE.canViewUser(target);
+      const posts = allowed ? ZIVV_CORE.getPosts().filter((p) =>
         (p.user || "").toLowerCase() === profile.user.toLowerCase() ||
         (mine && (p.user || "").toLowerCase() === myUser.toLowerCase())
-      );
+      ) : [];
       function productsOf() {
         return ZIVV_STORE.bySeller(profile.user);
       }
@@ -138,11 +146,61 @@
 
       function persistPatch(more) {
         const map = extra();
-        map[target] = Object.assign({}, map[target] || {}, {
+        const prev = map[target] || {};
+        map[target] = Object.assign({}, prev, {
           name: profile.name, user: profile.user, city: profile.city, bio: profile.bio,
-          avatar: profile.avatar, cover: profile.cover
+          avatar: profile.avatar, cover: profile.cover,
+          locked: prev.locked
         }, more || {});
         saveExtra(map);
+      }
+
+      function ii(key, fallback) {
+        return (window.ZIVV_I18N && ZIVV_I18N.t(key)) || fallback;
+      }
+
+      function paintLocked() {
+        const gold = !!(window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser && ZIVV_CREATOR.isGoldUser(profile.user));
+        const fr = ZIVV_CORE.friendStatus(profile.user);
+        const friendBtn =
+          fr === "friends" ? `<button class="ghost" type="button" disabled>${ii("friendsNow", "أصدقاء")}</button>`
+          : fr === "outgoing" ? `<button class="ghost" type="button" disabled>${ii("friendSent", "طلب صداقة اتبعت")}</button>`
+          : fr === "incoming" ? `<button class="btn" id="btn-accept" type="button">قبول الصداقة</button>
+             <button class="ghost" id="btn-reject" type="button">رفض</button>`
+          : `<button class="ghost" id="btn-friend" type="button">${ii("requestFriend", "طلب صداقة")}</button>`;
+        document.getElementById("cover").innerHTML = `<div style="width:100%;height:100%;background:#141414"></div>`;
+        document.getElementById("head").innerHTML = `
+          <div class="ava-wrap">
+            <img class="ava ${gold ? "gold" : ""}" src="${profile.avatar}" alt="">
+          </div>
+          <div class="name">${profile.name}${gold ? '<span class="badge-gold">ذهبي</span>' : ""}</div>
+          <div class="user">@${profile.user}</div>
+          <div class="locked-box">
+            <b>🔒 ${ii("locked", "الحساب مقفول")}</b>
+            <p>${ii("lockedHint", "صاحب الحساب قفله. الأصدقاء بس اللي يقدروا يشوفوا الملف والمنشورات.")}</p>
+            <div class="acts">${friendBtn}</div>
+          </div>`;
+        document.getElementById("shop-sec").innerHTML = "";
+        document.getElementById("tabs").innerHTML = "";
+        document.getElementById("grid").innerHTML = "";
+        const frb = document.getElementById("btn-friend");
+        if (frb) frb.onclick = () => {
+          ZIVV_CORE.sendFriendRequest(profile.user, profile.name);
+          toast("طلب الصداقة اتبعت. هتقدر تشوف الحساب بعد ما يقبل.");
+          paintLocked();
+        };
+        const acc = document.getElementById("btn-accept");
+        if (acc) acc.onclick = () => {
+          const req = ZIVV_CORE.incomingFriendRequests().find((r) => r.from === profile.user.toLowerCase());
+          if (req) ZIVV_CORE.setFriendRequest(req.id, "accepted");
+          location.reload();
+        };
+        const rej = document.getElementById("btn-reject");
+        if (rej) rej.onclick = () => {
+          const req = ZIVV_CORE.incomingFriendRequests().find((r) => r.from === profile.user.toLowerCase());
+          if (req) ZIVV_CORE.setFriendRequest(req.id, "rejected");
+          paintLocked();
+        };
       }
 
       function paintHead() {

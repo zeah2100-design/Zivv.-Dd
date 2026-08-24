@@ -11,25 +11,28 @@
     document.body.getAttribute("data-page") === "ai" ||
     file === "ai.html";
 
+  function L(ar, en) {
+    return localStorage.getItem("zivv.lang") === "en" ? en : ar;
+  }
   const PAGES = [
-    { href: "publish.html", label: "نشر منشور", icon: "+" },
-    { href: "creators.html", label: "صناع المحتوى", icon: "★" },
-    { href: "explore.html", label: "استكشف", icon: "⌕" },
-    { href: "reels.html", label: "الشريط", icon: "▷" },
-    { href: "profile.html", label: "الملف الشخصي", icon: "◉" },
-    { href: "settings.html", label: "الإعدادات", icon: "⚙" },
-    { href: "chat.html", label: "الدردشة", icon: "💬" },
-    { href: "private.html", label: "دردشة خاصة", icon: "🔒" },
-    { href: "store.html", label: "المتجر الإلكتروني", icon: "🛍" },
-    { href: "ai.html", label: "دردشة الذكاء", icon: "✦" },
-    { href: "alerts.html", label: "الإشعارات", icon: "🔔" },
-    { href: "friends.html", label: "الأصدقاء", icon: "👥" },
-    { href: "music.html", label: "الموسيقى", icon: "♪" },
-    { href: "stories.html", label: "الحالات", icon: "◉" },
+    { href: "publish.html", label: L("نشر منشور", "New post"), icon: "+" },
+    { href: "creators.html", label: L("صناع المحتوى", "Creators"), icon: "★" },
+    { href: "explore.html", label: L("استكشف", "Explore"), icon: "⌕" },
+    { href: "reels.html", label: L("الشريط", "Reels"), icon: "▷" },
+    { href: "profile.html", label: L("الملف الشخصي", "Profile"), icon: "◉" },
+    { href: "settings.html", label: L("الإعدادات", "Settings"), icon: "⚙" },
+    { href: "chat.html", label: L("الدردشة", "Chat"), icon: "💬" },
+    { href: "private.html", label: L("دردشة خاصة", "Private chat"), icon: "🔒" },
+    { href: "store.html", label: L("المتجر الإلكتروني", "Store"), icon: "🛍" },
+    { href: "ai.html", label: L("دردشة الذكاء", "Zivvy AI"), icon: "✦" },
+    { href: "alerts.html", label: L("الإشعارات", "Notifications"), icon: "🔔" },
+    { href: "friends.html", label: L("الأصدقاء", "Friends"), icon: "👥" },
+    { href: "music.html", label: L("الموسيقى", "Music"), icon: "♪" },
+    { href: "stories.html", label: L("الحالات", "Stories"), icon: "◉" },
   ];
 
   const menu = PAGES.map((p) =>
-    file === p.href ? { href: "home.html", label: "الرئيسية", icon: "⌂" } : p
+    file === p.href ? { href: "home.html", label: L("الرئيسية", "Home"), icon: "⌂" } : p
   );
 
   function prefs() {
@@ -159,16 +162,16 @@
     ? `
       <label class="opt">
         <input type="checkbox" id="pref-hide-videos" />
-        <span>لا أريد رؤية الفيديوهات</span>
+        <span>${L("لا أريد رؤية الفيديوهات", "Hide videos")}</span>
       </label>
       <label class="opt">
         <input type="checkbox" id="pref-photos-only" />
-        <span>لا أريد رؤية إلا الصور</span>
+        <span>${L("لا أريد رؤية إلا الصور", "Photos only")}</span>
       </label>`
     : "";
 
   const searchHome = isSearch
-    ? `<a class="opt home-mark" href="home.html"><span class="price">⌂</span><span>الرجوع للصفحة الرئيسية</span></a>`
+    ? `<a class="opt home-mark" href="home.html"><span class="price">⌂</span><span>${L("الرجوع للصفحة الرئيسية", "Back to Home")}</span></a>`
     : "";
 
   const sideIcon = isAI
@@ -176,18 +179,18 @@
     : svg('<path d="M4 6h16M7 12h10M10 18h4"/>');
   const sidePanel = isAI
     ? `<div class="panel filters" id="panel-filters">
-        <h3>سجل المحادثات</h3>
+        <h3>${L("سجل المحادثات", "Chat history")}</h3>
         <div id="ai-history-list"></div>
       </div>`
     : `<div class="panel filters" id="panel-filters">
-        <h3>خيارات الفيد</h3>
+        <h3>${L("خيارات الفيد", "Feed options")}</h3>
         <label class="opt">
           <input type="checkbox" id="pref-hide-ai" />
-          <span>تقليل منشورات الذكاء الاصطناعي</span>
+          <span>${L("تقليل منشورات الذكاء الاصطناعي", "Hide AI posts")}</span>
         </label>
         <label class="opt">
           <input type="checkbox" id="pref-mix" />
-          <span>خوارزمية زيفي: ٦٠٪ متابعة · ٢٩٪ عشوائي · ١١٪ هاشتاج</span>
+          <span>${L("خوارزمية زيفي: ٦٠٪ متابعة · ٢٩٪ عشوائي · ١١٪ هاشتاج", "Zivvy mix: 60% following · 29% random · 11% tags")}</span>
         </label>
         ${homeFilters}
         ${searchHome}
@@ -213,7 +216,7 @@
     </div>
     ${sidePanel}
     <div class="panel apps" id="panel-apps">
-      <h3>الصفحات</h3>
+      <h3>${L("الصفحات", "Pages")}</h3>
       <div class="grid">
         ${menu
           .map((p) => `<a class="tile" href="${p.href}" data-href="${p.href}"><i>${p.icon}</i>${p.label}</a>`)
@@ -422,6 +425,14 @@
     const s = document.createElement("script");
     s.src = src;
     document.head.appendChild(s);
+  }
+  if (!window.ZIVV_I18N) {
+    const i = document.createElement("script");
+    i.src = "js/i18n.js";
+    i.onload = () => { if (window.ZIVV_I18N) ZIVV_I18N.apply(); };
+    document.head.appendChild(i);
+  } else {
+    ZIVV_I18N.apply();
   }
   loadScript("js/supabase-config.js");
   loadScript("js/ads.js?v=19");

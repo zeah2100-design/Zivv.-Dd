@@ -120,7 +120,7 @@
       <section class="card">
         <h2 id="t-switch">تبديل الحسابات</h2>
         <div id="accounts"></div>
-        <a class="ghost" href="index.html" id="t-add">إضافة حساب</a>
+        <a class="ghost" href="index.html?add=1" id="t-add">إضافة حساب</a>
       </section>
 
       <section class="card gold-box">
@@ -145,6 +145,12 @@
       </section>
 
       <section class="card">
+        <h2 id="t-lock">قفل الحساب</h2>
+        <p class="sub" id="t-locksub">لو قفلت الحساب، محدش هيشوف بروفايلك ولا منشوراتك غير الأصدقاء.</p>
+        <button class="ghost" type="button" id="lock-btn">قفل الحساب</button>
+      </section>
+
+      <section class="card">
         <h2 id="t-lang">اللغة</h2>
         <div class="langs">
           <button class="lang" type="button" id="btn-ar">عربي</button>
@@ -154,6 +160,7 @@
 
       <button class="danger" type="button" id="out">خروج من الحساب ده</button>
     </main>
+    <script src="js/i18n.js"></script>
     <script src="js/core.js"></script>
     <script src="js/db.js"></script>
     <script src="js/creator.js"></script>
@@ -180,26 +187,39 @@
           id: "بيانات الدخول المحفوظة",
           idsub: "لو نسيت الاسم أو العلامة أو كلمة المرور، راجعهم هنا.",
           idFirst: "الاسم", idLast: "اسم العائلة", idAge: "السن",
-          idMail: "البريد", idMark: "العلامة المميزة", idPass: "كلمة المرور"
+          idMail: "البريد", idMark: "العلامة المميزة", idPass: "كلمة المرور",
+          lock: "قفل الحساب",
+          locksub: "لو قفلت الحساب، محدش هيشوف بروفايلك ولا منشوراتك غير الأصدقاء.",
+          lockOn: "الحساب مقفول — الأصدقاء بس",
+          lockOff: "الحساب مفتوح — قفل الحساب",
+          db: "قاعدة البيانات"
         },
         en: {
           title: "Settings", sub: "Accounts, language, and Gold.",
           now: "This account", sw: "Switch accounts", add: "Add account",
           gold: "Gold", lang: "Language",
           out: "Log out of this account", current: "Now",
-          goldOn: "Active — perks are on.",
+          goldOn: "Active this month. The timer below is until it ends.",
           goldWait: "Cash request sent. Wait for the King's message.",
-          goldOff: "Off. 10,000 points, or cash — the King writes the price.",
-          goldBtnOn: "Active", goldBtn: "Get Gold",
+          goldOff: "Off. Lasts 1 month. 10,000 points, or cash — the King writes the price.",
+          goldEnd: "Gold ended. Renew to get the perks back.",
+          goldBtnOn: "Active", goldBtn: "Get Gold", goldBtnRenew: "Renew Gold",
+          day: "days", hour: "hours", min: "min",
+          g0: "One month", g0s: "Gold lasts one month, then it turns off until you renew.",
           g1: "Gold badge & frame", g1s: "Your name and photo stand out.",
           g2: "More reach", g2s: "Your posts go further in the feed.",
           g3: "Ads on your posts", g3s: "Promote only your own posts. No network ads in the app.",
-          g4: "Zivvy Gold", g4s: "Faster replies, longer answers, more memory, wider search, more articles. Regular is shorter and slower.",
+          g4: "Zivvy Gold", g4s: "Gold uses Zivvy freely: regular and live chats with no cap. Regular: 10 chats a day, 1 hour each, and 10 images.",
           none: "No other accounts on this device. Sign in to another to switch.",
           id: "Saved login details",
           idsub: "If you forget your mark or name, check them here.",
           idFirst: "First name", idLast: "Family name", idAge: "Age",
-          idMail: "Email", idMark: "Unique mark", idPass: "Password"
+          idMail: "Email", idMark: "Unique mark", idPass: "Password",
+          lock: "Lock account",
+          locksub: "If you lock it, only accepted friends can see your profile and posts.",
+          lockOn: "Locked — friends only",
+          lockOff: "Public — lock account",
+          db: "Database"
         }
       };
 
@@ -239,7 +259,11 @@
         document.getElementById("t-id").textContent = p.id;
         document.getElementById("t-idsub").textContent = p.idsub;
         document.getElementById("t-lang").textContent = p.lang;
+        document.getElementById("t-db").textContent = p.db || (lang === "en" ? "Database" : "قاعدة البيانات");
+        document.getElementById("t-lock").textContent = p.lock;
+        document.getElementById("t-locksub").textContent = p.locksub;
         document.getElementById("out").textContent = p.out;
+        paintLock(p);
         document.getElementById("g0").textContent = p.g0;
         document.getElementById("g0s").textContent = p.g0s;
         document.getElementById("g1").textContent = p.g1;
@@ -317,6 +341,18 @@
             ? "Database on. Mode: " + mode + " · " + usersN + " accounts · " + postsN + " posts · " + fansN + " followers."
             : "قاعدة البيانات شغالة. الوضع: " + (mode === "api" ? "سيرفر" : mode === "supabase" ? "Supabase" : "محلي على الجهاز") + " · " + usersN + " حساب · " + postsN + " منشور · " + fansN + " متابع حقيقي.";
         }
+        window.dispatchEvent(new CustomEvent("zivv-lang"));
+        if (window.ZIVV_I18N) ZIVV_I18N.apply();
+      }
+
+      function paintLock(p) {
+        p = p || T[langNow()];
+        const on = !!(window.ZIVV_CORE && ZIVV_CORE.isPrivate && ZIVV_CORE.isPrivate());
+        const btn = document.getElementById("lock-btn");
+        if (!btn) return;
+        btn.textContent = on ? p.lockOn : p.lockOff;
+        btn.classList.toggle("go", on);
+        btn.classList.toggle("ghost", !on);
       }
 
       function pad(n) { return String(Math.max(0, n || 0)).padStart(2, "0"); }
@@ -338,6 +374,16 @@
       document.getElementById("gold-btn").onclick = () => {
         if (window.ZIVV_CREATOR && ZIVV_CREATOR.openPay) ZIVV_CREATOR.openPay();
       };
+      document.getElementById("lock-btn").onclick = () => {
+        if (!window.ZIVV_CORE || !ZIVV_CORE.setPrivate) return;
+        ZIVV_CORE.setPrivate(!ZIVV_CORE.isPrivate());
+        paintLock();
+      };
+      document.getElementById("t-add").addEventListener("click", (e) => {
+        e.preventDefault();
+        sessionStorage.setItem("zivv.addAccount", "1");
+        location.href = "index.html?add=1";
+      });
       document.getElementById("out").onclick = () => {
         localStorage.removeItem("zivv.session");
         location.href = "index.html";

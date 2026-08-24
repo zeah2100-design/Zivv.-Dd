@@ -6,7 +6,9 @@
     catch { return []; }
   }
   function allProducts() {
-    return PRODUCTS.concat(userCatalog());
+    const list = PRODUCTS.concat(userCatalog());
+    if (!window.ZIVV_CORE || !ZIVV_CORE.canViewUser) return list;
+    return list.filter((p) => ZIVV_CORE.canViewUser(p.sellerUser || p.user || ""));
   }
   function cats() {
     return ["الكل"].concat([...new Set(allProducts().map((p) => p.cat).filter(Boolean))]);
