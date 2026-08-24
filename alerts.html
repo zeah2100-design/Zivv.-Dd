@@ -15,10 +15,11 @@
         background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
         -webkit-background-clip: text; background-clip: text; color: transparent;
       }
-      .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+      .tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; }
+      .tabs::-webkit-scrollbar { display: none; }
       .tabs button {
-        flex: 1; border: 1px solid #262626; background: #111; color: #aaa;
-        border-radius: 999px; padding: 8px 6px; font-size: 13px; font-weight: 800;
+        flex: 0 0 auto; border: 1px solid #262626; background: #111; color: #aaa;
+        border-radius: 999px; padding: 8px 12px; font-size: 12px; font-weight: 800;
       }
       .tabs button.on { color: #fff; border-color: #e1306c; background: #1a0b12; }
       .item {
@@ -26,19 +27,20 @@
         padding: 10px 4px; border-bottom: 1px solid #1a1a1a;
         color: #fff; text-decoration: none;
       }
-      .item img, .dot {
+      .item img.ava {
         width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex: 0 0 auto;
+        background: #151515;
       }
       .dot {
+        width: 48px; height: 48px; border-radius: 50%;
         display: grid; place-items: center;
         background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-        font-size: 18px;
+        font-size: 18px; flex: 0 0 auto;
       }
       .thumb {
         width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex: 0 0 auto; background: #151515;
       }
       .body { flex: 1; min-width: 0; }
-      .body b { font-size: 14px; }
       .body p { color: #ccc; font-size: 13px; line-height: 1.45; }
       .time { color: #777; font-size: 11px; margin-top: 3px; }
       .unread { width: 8px; height: 8px; border-radius: 50%; background: #e1306c; flex: 0 0 auto; }
@@ -47,22 +49,21 @@
   </head>
   <body>
     <main class="wrap">
-      <h1>النشاط</h1>
+      <h1 data-i18n="alerts">الإشعارات</h1>
       <div class="tabs">
-        <button type="button" class="on" data-t="like">إعجابات</button>
-        <button type="button" data-t="comment">تعليقات</button>
-        <button type="button" data-t="follow">متابعات</button>
-        <button type="button" data-t="official">رسمي</button>
+        <button type="button" class="on" data-t="all">الكل</button>
+        <button type="button" data-t="post">منشورات</button>
+        <button type="button" data-t="friend">أصدقاء</button>
+        <button type="button" data-t="message">رسائل</button>
+        <button type="button" data-t="official">الملك</button>
       </div>
       <div id="list"></div>
     </main>
+    <script src="js/i18n.js"></script>
     <script src="js/core.js"></script>
     <script src="js/creator.js"></script>
     <script src="js/shell.js"></script>
     <script>
-      const me = ZIVV_CORE.author();
-      const people = ZIVV_CORE.PEOPLE;
-
       function ago(at) {
         const m = Math.max(1, Math.round((Date.now() - at) / 60000));
         if (m < 60) return "منذ " + m + " د";
@@ -70,107 +71,91 @@
         if (h < 24) return "منذ " + h + " س";
         return "منذ " + Math.round(h / 24) + " ي";
       }
-
       function person(user) {
-        return people.find((p) => p.user === user) || ZIVV_CORE.peopleForShare().find((p) => p.user === user) ||
-          { name: user, user, avatar: "brand/logo-sm.png" };
+        return ZIVV_CORE.personOf ? ZIVV_CORE.personOf(user) : { name: user, user, avatar: "brand/logo-sm.png" };
       }
-
-      function liveNotes() {
-        const notes = [];
-        const myPosts = ZIVV_CORE.getPosts().filter((p) => (p.user || "").toLowerCase() === me.user.toLowerCase());
-        let likes = {};
-        try { likes = JSON.parse(localStorage.getItem("zivv.likes") || "{}"); } catch {}
-        myPosts.forEach((p) => {
-          (likes[p.id] || []).forEach((who, i) => {
-            notes.push({
-              type: "like",
-              user: String(who).split("@")[0],
-              text: "أعجب بمنشورك",
-              thumb: p.image || "",
-              at: Date.now() - (i + 1) * 70000,
-              href: "home.html"
-            });
-          });
-          ZIVV_CORE.commentsOf(p).forEach((c) => {
-            if ((c.by || "") === ZIVV_CORE.meKey()) return;
-            notes.push({
-              type: "comment",
-              user: c.name,
-              name: c.name,
-              text: "علّق: " + (c.text || "").slice(0, 60),
-              thumb: p.image || "",
-              at: c.at || Date.now(),
-              href: "home.html"
-            });
-          });
-        });
+      function liveExtras() {
+        const extra = [];
         ZIVV_CORE.incomingFriendRequests().forEach((r) => {
-          notes.push({
-            type: "follow",
-            user: r.from,
-            name: r.fromName,
+          extra.push({
+            type: "friend",
+            from: r.from,
+            fromName: r.fromName,
             text: "بعت لك طلب صداقة",
-            thumb: "",
+            href: "friends.html",
             at: r.at || Date.now(),
-            href: "friends.html"
+            unread: true,
           });
         });
-        return notes;
+        const official = (window.ZIVV_CREATOR && ZIVV_CREATOR.myNotes) ? ZIVV_CREATOR.myNotes() : [];
+        official.forEach((n) => {
+          extra.push({
+            type: n.type || "official",
+            from: n.from || "king",
+            fromName: n.title || "الملك",
+            text: n.text || n.title || "",
+            href: n.href || "alerts.html?t=official",
+            at: n.at || Date.now(),
+            unread: n.unread !== false,
+            avatar: "",
+          });
+        });
+        return extra;
       }
-
-      function officialNotes() {
-        const list = (window.ZIVV_CREATOR && ZIVV_CREATOR.myNotes) ? ZIVV_CREATOR.myNotes() : [];
-        return list.map((n) => ({
-          type: "official",
-          user: "zivv",
-          name: "ZIVV",
-          text: ((n.title ? n.title + " — " : "") + (n.text || "")).replace(/\n/g, " · "),
-          thumb: "",
-          at: n.at || Date.now(),
-          href: n.href || "creators.html"
-        }));
-      }
-
       function allNotes() {
-        return liveNotes().concat(officialNotes()).sort((a, b) => b.at - a.at);
+        const stored = (ZIVV_CORE.myNotes ? ZIVV_CORE.myNotes() : []).slice();
+        const seen = new Set(stored.map((n) => n.id || (n.type + n.from + n.at + n.text)));
+        liveExtras().forEach((n) => {
+          const k = n.id || (n.type + n.from + n.at + n.text);
+          if (!seen.has(k)) {
+            seen.add(k);
+            stored.push(n);
+          }
+        });
+        return stored.sort((a, b) => (b.at || 0) - (a.at || 0));
       }
 
-      let tab = new URLSearchParams(location.search).get("t") || "like";
-      if (["like", "comment", "follow", "official"].indexOf(tab) < 0) tab = "like";
+      let tab = new URLSearchParams(location.search).get("t") || "all";
+      if (["all", "post", "friend", "message", "official", "like", "comment", "follow"].indexOf(tab) < 0) tab = "all";
+      if (tab === "like" || tab === "comment" || tab === "follow") tab = "all";
+
+      function match(n) {
+        if (tab === "all") return true;
+        if (tab === "official") return n.type === "official" || n.type === "gold";
+        return n.type === tab;
+      }
 
       function paint() {
-        const list = allNotes().filter((n) => n.type === tab);
+        const list = allNotes().filter(match);
         document.getElementById("list").innerHTML = list.length
           ? list.map((n) => {
-              const p = n.type === "official"
-                ? { name: "ZIVV", avatar: "brand/logo-sm.png" }
-                : person(String(n.user || "").toLowerCase().replace(/\s.*/, ""));
-              const name = n.name || p.name || n.user;
-              const ava = p.avatar || "brand/logo-sm.png";
-              const fresh = Date.now() - n.at < 6 * 3600000;
-              const icon = n.type === "follow" ? "👤" : n.type === "comment" ? "💬" : n.type === "official" ? "★" : "♥";
-              return `<a class="item" href="${n.href}">
-                <img src="${ava}" alt="">
+              const p = person(n.from);
+              const name = n.fromName || p.name || n.from || "ZIVV";
+              const ava = n.avatar || p.avatar || "brand/logo-sm.png";
+              const king = n.type === "official" || n.from === "king" || n.from === "zivv";
+              const icon = n.type === "friend" ? "👥" : n.type === "message" ? "💬" : n.type === "post" ? "✦" : n.type === "comment" ? "💬" : "★";
+              return `<a class="item" href="${n.href || "alerts.html"}">
+                ${king ? `<div class="dot">${icon}</div>` : `<img class="ava" src="${ava}" alt="">`}
                 <div class="body">
-                  <p><b>${name}</b> ${n.text}</p>
-                  <div class="time">${ago(n.at)}</div>
+                  <p><b>${name}</b> ${n.text || n.title || ""}</p>
+                  <div class="time">${ago(n.at || Date.now())}</div>
                 </div>
-                ${n.thumb ? `<img class="thumb" src="${n.thumb}" alt="">` : `<div class="dot">${icon}</div>`}
-                ${fresh ? '<span class="unread"></span>' : ""}
+                ${n.thumb ? `<img class="thumb" src="${n.thumb}" alt="">` : ""}
+                ${n.unread ? '<span class="unread"></span>' : ""}
               </a>`;
             }).join("")
-          : '<p class="empty">مفيش إشعارات في القسم ده لسه.</p>';
+          : '<p class="empty">مفيش إشعارات هنا لسه.</p>';
+        if (ZIVV_CORE.markNotesRead) ZIVV_CORE.markNotesRead(tab === "all" ? "" : tab);
       }
 
       document.querySelectorAll(".tabs button").forEach((b) => {
+        b.classList.toggle("on", b.getAttribute("data-t") === tab);
         b.onclick = () => {
           tab = b.getAttribute("data-t");
           document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b));
           paint();
         };
       });
-      document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x.getAttribute("data-t") === tab));
       paint();
     </script>
   </body>

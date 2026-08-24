@@ -41,6 +41,11 @@
         border-radius: 999px; padding: 2px 8px; font-weight: 800;
       }
       .ghost { background: #161616; color: #fff; border: 1px solid #262626; }
+      .bell {
+        width: 38px; height: 38px; border-radius: 10px; border: 1px solid #262626;
+        background: #161616; color: #fff; font-size: 16px; padding: 0;
+      }
+      .bell.on { border-color: #fcaf45; color: #fcaf45; background: #16110a; }
       .danger { background: #2a0d12; color: #ff8aa0; border: 1px solid #5a1a24; }
       .tabs { display: flex; border-bottom: 1px solid #262626; margin-top: 16px; }
       .tabs button { flex: 1; background: none; border: 0; color: #777; padding: 10px; font-weight: 800; }
@@ -249,6 +254,7 @@
                  <a class="ghost" href="friends.html">الأصدقاء</a>
                  <a class="ghost" href="settings.html">الإعدادات</a>`
               : `<button class="btn" id="btn-follow" type="button">${on ? "إلغاء المتابعة" : "متابعة"}</button>
+                 <button class="bell ${ZIVV_CORE.isBellOn && ZIVV_CORE.isBellOn(profile.user) ? "on" : ""}" id="btn-bell" type="button" title="إشعار المنشورات الجديدة">🔔</button>
                  ${friendBtn}
                  ${msgBtn}
                  <button class="danger" id="btn-block" type="button">حظر</button>`}
@@ -273,6 +279,19 @@
         if (fol) fol.onclick = () => {
           if (ZIVV_CORE.isFollowing(profile.user)) ZIVV_CORE.unfollowUser(profile.user);
           else ZIVV_CORE.followUser(profile.user);
+          paintHead();
+        };
+        const bell = document.getElementById("btn-bell");
+        if (bell) bell.onclick = () => {
+          if (!ZIVV_CORE.isFollowing(profile.user)) {
+            ZIVV_CORE.followUser(profile.user);
+            ZIVV_CORE.setBell(profile.user, true);
+            toast("هتوصلك إشعار لما ينشر منشور جديد");
+          } else {
+            const next = !ZIVV_CORE.isBellOn(profile.user);
+            ZIVV_CORE.setBell(profile.user, next);
+            toast(next ? "الجرس شغال — هتوصلك إشعار لأي منشور جديد" : "الجرس اتقفل");
+          }
           paintHead();
         };
         const frb = document.getElementById("btn-friend");

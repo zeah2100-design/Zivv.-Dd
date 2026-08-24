@@ -79,6 +79,12 @@
       .song .meta { flex: 1; min-width: 0; }
       .song .meta b, .song .meta span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .song .meta span { color: #888; font-size: 12px; }
+      .song .acts { display: flex; gap: 4px; }
+      .song .acts button {
+        background: #151515; border: 1px solid #2a2a2a; color: #ddd;
+        border-radius: 8px; padding: 6px 8px; font-size: 12px;
+      }
+      .song .acts button.on { color: #e1306c; border-color: #e1306c; }
       .mute { color: #888; font-size: 13px; }
       .bar {
         position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
@@ -130,6 +136,7 @@
     <audio id="audio"></audio>
     <script src="js/core.js"></script>
     <script src="js/media.js"></script>
+    <script src="js/social.js"></script>
     <script src="js/shell.js"></script>
     <script>
       const COVERS = {
@@ -154,16 +161,20 @@
 
       const userTracks = (ZIVV_CORE.postsFor("music") || [])
         .filter((p) => p.audioId || p.audio || p.type === "audio")
-        .map((p) => ({
-          id: p.id,
-          title: p.title || p.text || "مقطع",
-          artist: p.name || p.user,
-          tags: (p.tags || []).join(" "),
-          cover: p.image || "posts/studio.jpg",
-          kind: "user",
-          audioId: p.audioId || "",
-          audio: p.audio || ""
-        }));
+        .map((p) => {
+          const who = ZIVV_CORE.personOf ? ZIVV_CORE.personOf(p.user) : { name: p.name, avatar: p.avatar };
+          return {
+            id: p.id,
+            title: p.title || p.text || "مقطع",
+            artist: who.name || p.name || p.user,
+            tags: (p.tags || []).join(" "),
+            cover: p.image || who.avatar || "posts/studio.jpg",
+            kind: "user",
+            audioId: p.audioId || "",
+            audio: p.audio || "",
+            post: p
+          };
+        });
 
       const all = lounge.concat(userTracks);
       const mixes = [
@@ -315,11 +326,22 @@
               <img src="${m.cover}" alt=""><b>${m.title}</b><span>مزيج ZIVV</span>
             </button>`).join("")}</div>
           <h3>${tab === "user" ? "منشورات بعلامة موسيقى" : "الأغاني"}</h3>
-          <div id="songs">${list.length ? list.map((t) =>
-            `<button class="song ${queue[idx] && queue[idx].id === t.id ? "on" : ""}" type="button" data-id="${t.id}">
+          <div id="songs">${list.length ? list.map((t) => {
+            const post = t.post || { id: t.id, likes: 0, comments: [], user: t.artist };
+            const liked = ZIVV_CORE.likedByMe(post.id);
+            const likes = ZIVV_CORE.likeCount(post);
+            const comms = ZIVV_CORE.commentsOf(post).length;
+            return `<div class="song ${queue[idx] && queue[idx].id === t.id ? "on" : ""}" data-id="${t.id}">
               ${t.cover ? `<img src="${t.cover}" alt="">` : `<div class="ph">♪</div>`}
-              <div class="meta"><b>${t.title}</b><span>${t.artist}</span></div>
-            </button>`).join("") : '<p class="mute">مفيش مقاطع في القسم ده. انشر صوت بعلامة #موسيقى.</p>'}</div>`;
+              <button class="meta" type="button" data-play="${t.id}" style="background:none;border:0;color:#fff;text-align:start;flex:1">
+                <b>${t.title}</b><span>${t.artist}</span>
+              </button>
+              <div class="acts">
+                <button type="button" class="${liked ? "on" : ""}" data-like="${post.id}">${liked ? "♥" : "♡"} ${likes}</button>
+                <button type="button" data-c="${post.id}">💬 ${comms}</button>
+              </div>
+            </div>`;
+          }).join("") : '<p class="mute">مفيش مقاطع في القسم ده. انشر صوت بعلامة #موسيقى وحط غلاف.</p>'}</div>`;
 
         const hp = document.getElementById("hero-play");
         if (hp && feat) hp.onclick = () => {

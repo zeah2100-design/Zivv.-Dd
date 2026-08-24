@@ -388,7 +388,7 @@
           empty.innerHTML = 'اختار فيديو من جهازك<div><button class="pick" id="pick-btn" type="button">اختيار فيديو</button></div>';
           fileEl.accept = "video/*";
         } else if (kind === "audio") {
-          empty.innerHTML = 'اختار مقطع صوت<div><button class="pick" id="pick-btn" type="button">اختيار صوت</button></div>';
+          empty.innerHTML = 'اختار مقطع صوت<div><button class="pick" id="pick-btn" type="button">اختيار صوت</button></div><div style="margin-top:8px"><button class="pick" id="pick-cover" type="button">غلاف الأغنية</button></div>';
           fileEl.accept = "audio/*";
         } else if (kind === "product") {
           empty.innerHTML = 'صورة المنتج<div><button class="pick" id="pick-btn" type="button">اختيار صورة المنتج</button></div>';
@@ -674,6 +674,7 @@
               await ZIVV_MEDIA.put(id, audioFile);
               partial.audioId = id;
             }
+            if (imageData) partial.image = imageData;
           } else if (kind === "link") {
             partial.link = href;
             try { partial.linkTitle = new URL(href).hostname.replace(/^www\./, ""); } catch {}

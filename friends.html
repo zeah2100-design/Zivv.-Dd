@@ -69,6 +69,7 @@
       let tab = "all";
 
       function person(user) {
+        if (ZIVV_CORE.personOf) return ZIVV_CORE.personOf(user);
         return ZIVV_CORE.peopleForShare().find((p) => p.user === user) ||
           ZIVV_CORE.PEOPLE.find((p) => p.user === user) ||
           { name: user, user, avatar: "brand/logo-sm.png", city: "" };

@@ -121,8 +121,9 @@
     const row = (c, reply) => {
       const liked = ZIVV_CORE.commentLiked(post.id, c.id);
       const n = ZIVV_CORE.commentLikeCount(post.id, c.id);
+      const ava = c.avatar || (ZIVV_CORE.personOf && ZIVV_CORE.personOf(c.byUser || c.by).avatar) || "brand/logo-sm.png";
       return `<div class="zivv-c ${reply ? "reply" : ""}" data-cid="${c.id}">
-        <img src="brand/logo-sm.png" alt="">
+        <img src="${ava}" alt="">
         <div>
           <div class="nm">${c.name} <span class="tm">${ago(c.at)}</span></div>
           <div class="tx">${c.text}</div>

@@ -415,7 +415,7 @@
           return `
             <article class="post" data-id="${p.id}">
               <div class="post-h">
-                <div class="ava ${window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser(p.user) ? "gold" : ""}"><img src="${p.avatar || "brand/logo-sm.png"}" alt=""></div>
+                <div class="ava ${window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser(p.user) ? "gold" : ""}"><img src="${(ZIVV_CORE.personOf && ZIVV_CORE.personOf(p.user).avatar) || p.avatar || "brand/logo-sm.png"}" alt=""></div>
                 <div>
                   <div class="who ${window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser(p.user) ? "gold-name" : ""}">${p.name}${window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser(p.user) ? '<span class="gold-tag">مميز</span>' : ""}${p.ai ? '<span class="ai-tag">AI</span>' : ""}</div>
                   <div class="meta">@${p.user || "you"} · ${p.time}${p.place ? " · " + p.place : ""}${p.following === false ? " · مقترح" : ""}</div>

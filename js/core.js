@@ -474,6 +474,7 @@
       write("zivv.feed", slim);
     }
     rememberTags(post.tags);
+    notifyNewPost(post);
     return post;
   }
 
@@ -558,43 +559,91 @@
     return read("zivv.shares", []).filter((s) => s.postId === postId).length;
   }
 
+  function personOf(user) {
+    const u = String(user || "").replace(/^@/, "").toLowerCase();
+    if (!u) return { name: "مستخدم", user: "", avatar: "brand/logo-sm.png" };
+    const prof = read("zivv.profiles", {})[u] || {};
+    let fromUsers = null;
+    try {
+      const db = read("zivv.users", {});
+      Object.keys(db).forEach((email) => {
+        const x = db[email] || {};
+        const un = String(x.username || (email || "").split("@")[0] || "")
+          .replace(/^@/, "")
+          .toLowerCase();
+        if (un === u || String(x.email || "").toLowerCase() === u) fromUsers = x;
+      });
+    } catch {}
+    const known = PEOPLE.find((p) => String(p.user || "").toLowerCase() === u);
+    const me = meUser();
+    const ses = u === me ? session() : {};
+    return {
+      name: prof.name || ses.name || (fromUsers && fromUsers.name) || (known && known.name) || u,
+      user: prof.user || (fromUsers && fromUsers.username) || (known && known.user) || u,
+      avatar: prof.avatar || (known && known.avatar) || "brand/logo-sm.png",
+      city: prof.city || (known && known.city) || "",
+    };
+  }
+  function avatarOf(user) {
+    return personOf(user).avatar;
+  }
+
   function peopleForShare() {
     const map = new Map();
-    PEOPLE.forEach((p) => map.set(p.user, p));
-    read("zivv.followUsers", []).forEach((u) => {
-      if (map.has(u)) return;
-      const p = read("zivv.profiles", {})[u] || {};
-      map.set(u, { name: p.name || u, user: u, avatar: p.avatar || "brand/logo-sm.png" });
+    function put(user) {
+      const u = String(user || "").replace(/^@/, "").toLowerCase();
+      if (!u || u === "guest") return;
+      map.set(u, personOf(u));
+    }
+    PEOPLE.forEach((p) => put(p.user));
+    Object.keys(read("zivv.profiles", {})).forEach(put);
+    try {
+      const db = read("zivv.users", {});
+      Object.keys(db).forEach((email) => {
+        const x = db[email] || {};
+        put(x.username || (email || "").split("@")[0]);
+      });
+    } catch {}
+    read("zivv.followUsers", []).forEach(put);
+    followingOf(meUser()).forEach(put);
+    followersOf(meUser()).forEach(put);
+    myFriends().forEach(put);
+    Object.keys(read("zivv.chats", {})).forEach((k) => {
+      if (k.indexOf("::") >= 0) k.split("::").forEach(put);
+      else put(k);
     });
-    Object.keys(read("zivv.chats", {})).forEach((u) => {
-      if (!map.has(u)) map.set(u, { name: u, user: u, avatar: "brand/logo-sm.png" });
+    Object.keys(read("zivv.privateChats", {})).forEach((k) => {
+      if (k.indexOf("::") >= 0) k.split("::").forEach(put);
+      else put(k);
     });
-    Object.keys(read("zivv.privateChats", {})).forEach((u) => {
-      if (!map.has(u)) map.set(u, { name: u, user: u, avatar: "brand/logo-sm.png" });
-    });
-    read("zivv.chatFriends", []).forEach((u) => {
-      if (!map.has(u)) {
-        const p = read("zivv.profiles", {})[u] || {};
-        map.set(u, { name: p.name || u, user: u, avatar: p.avatar || "brand/logo-sm.png" });
-      }
-    });
+    const me = meUser();
+    if (map.has(me)) map.delete(me);
     return Array.from(map.values());
   }
 
   function chatKey(priv) {
     return priv ? "zivv.privateChats" : "zivv.chats";
   }
+  function pairKey(a, b) {
+    const ua = String(a || "").replace(/^@/, "").toLowerCase();
+    const ub = String(b || "").replace(/^@/, "").toLowerCase();
+    return ua < ub ? ua + "::" + ub : ub + "::" + ua;
+  }
 
   function sendMessage(toUser, payload, priv) {
     const key = chatKey(priv);
     const chats = read(key, {});
-    const thread = chats[toUser] || [];
+    const other = String(toUser || "").replace(/^@/, "").toLowerCase();
+    const pair = pairKey(meUser(), other);
+    const thread = chats[pair] || chats[other] || [];
+    const a = author();
     const msg = Object.assign(
       {
         id: "m_" + Date.now(),
         from: meKey(),
-        fromUser: author().user,
-        name: meName(),
+        fromUser: a.user,
+        name: a.name || meName(),
+        avatar: a.avatar,
         kind: "text",
         text: "",
         at: Date.now(),
@@ -603,26 +652,61 @@
       payload || {}
     );
     thread.push(msg);
-    chats[toUser] = thread;
+    chats[pair] = thread;
     write(key, chats);
+    if (other && other !== meUser()) {
+      pushNote(other, {
+        type: "message",
+        from: a.user,
+        fromName: a.name,
+        avatar: a.avatar,
+        text: msg.kind === "text" ? "بعت لك رسالة: " + String(msg.text || "").slice(0, 70) : "بعت لك مرفق",
+        href: (priv ? "private.html" : "chat.html") + "?u=" + encodeURIComponent(a.user),
+      });
+    }
     return msg;
   }
 
   function threadWith(user, priv) {
-    return read(chatKey(priv), {})[user] || [];
+    const other = String(user || "").replace(/^@/, "").toLowerCase();
+    const key = chatKey(priv);
+    const chats = read(key, {});
+    const pair = pairKey(meUser(), other);
+    if (!chats[pair]) {
+      const merged = (chats[other] || []).slice();
+      if (merged.length) {
+        chats[pair] = merged.sort((a, b) => (a.at || 0) - (b.at || 0));
+        write(key, chats);
+      }
+    }
+    return chats[pair] || [];
   }
 
   function inbox(priv) {
+    const me = meUser();
     const chats = read(chatKey(priv), {});
-    const people = peopleForShare();
-    return Object.keys(chats)
-      .map((user) => {
-        const thread = chats[user] || [];
-        const last = thread[thread.length - 1] || {};
-        const person = people.find((p) => p.user === user) || { name: user, user, avatar: "brand/logo-sm.png" };
-        return { user, person, last, count: thread.length };
-      })
-      .sort((a, b) => (b.last.at || 0) - (a.last.at || 0));
+    const rows = [];
+    Object.keys(chats).forEach((k) => {
+      const thread = chats[k] || [];
+      if (!thread.length) return;
+      let other = "";
+      if (k.indexOf("::") >= 0) {
+        const parts = k.split("::");
+        if (parts[0] !== me && parts[1] !== me) return;
+        other = parts[0] === me ? parts[1] : parts[0];
+      } else {
+        if (k === me) return;
+        other = k;
+      }
+      const last = thread[thread.length - 1] || {};
+      rows.push({ user: other, person: personOf(other), last, count: thread.length });
+    });
+    const map = new Map();
+    rows.forEach((r) => {
+      const prev = map.get(r.user);
+      if (!prev || (r.last.at || 0) >= (prev.last.at || 0)) map.set(r.user, r);
+    });
+    return Array.from(map.values()).sort((a, b) => (b.last.at || 0) - (a.last.at || 0));
   }
 
   function meUser() {
@@ -669,6 +753,7 @@
     if (list.indexOf(t) < 0) list.push(t);
     g[me] = list;
     saveFollowGraph(g);
+    setBell(t, true);
     return true;
   }
   function unfollowUser(user) {
@@ -677,6 +762,7 @@
     const g = followGraph();
     g[me] = followingOf(me).filter((x) => x !== t);
     saveFollowGraph(g);
+    setBell(t, false);
     return true;
   }
   function followerCount(user) {
@@ -791,6 +877,15 @@
       at: Date.now(),
     });
     saveFriendReqs(list);
+    const a = author();
+    pushNote(to, {
+      type: "friend",
+      from: me,
+      fromName: a.name,
+      avatar: a.avatar,
+      text: "بعت لك طلب صداقة",
+      href: "friends.html",
+    });
     return "outgoing";
   }
   function setFriendRequest(id, status) {
@@ -798,6 +893,17 @@
     const r = list.find((x) => x.id === id);
     if (r) r.status = status;
     saveFriendReqs(list);
+    if (r && status === "accepted") {
+      const a = author();
+      pushNote(r.from, {
+        type: "friend",
+        from: r.to,
+        fromName: a.name,
+        avatar: a.avatar,
+        text: "قبل طلب الصداقة. تقدروا تدردشوا.",
+        href: "chat.html?u=" + encodeURIComponent(r.to),
+      });
+    }
     return r || null;
   }
   function incomingFriendRequests() {
@@ -1042,6 +1148,87 @@
     }
     bag.sort((a, b) => b.score - a.score);
     return bag;
+  }
+
+  function pushNote(to, payload) {
+    const dest = String(to || "").replace(/^@/, "").toLowerCase();
+    if (!dest) return null;
+    const list = read("zivv.notes", []);
+    const a = author();
+    const note = Object.assign(
+      {
+        id: "n_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        to: dest,
+        type: "official",
+        title: "",
+        text: "",
+        from: a.user,
+        fromName: a.name,
+        avatar: a.avatar,
+        thumb: "",
+        href: "alerts.html",
+        postId: "",
+        at: Date.now(),
+        unread: true,
+      },
+      payload || {}
+    );
+    list.unshift(note);
+    write("zivv.notes", list.slice(0, 200));
+    return note;
+  }
+  function myNotes() {
+    const u = meUser();
+    const mail = String((session().email || "").toLowerCase());
+    return read("zivv.notes", []).filter((n) => n.to === u || n.to === mail);
+  }
+  function markNotesRead(type) {
+    const u = meUser();
+    const list = read("zivv.notes", []);
+    list.forEach((n) => {
+      if (n.to === u && (!type || n.type === type)) n.unread = false;
+    });
+    write("zivv.notes", list);
+  }
+  function bellsMap() {
+    return read("zivv.bells", {});
+  }
+  function isBellOn(author) {
+    return isBellOnFor(meUser(), author);
+  }
+  function isBellOnFor(follower, author) {
+    const f = String(follower || "").replace(/^@/, "").toLowerCase();
+    const a = String(author || "").replace(/^@/, "").toLowerCase();
+    const mine = bellsMap()[f] || {};
+    if (Object.prototype.hasOwnProperty.call(mine, a)) return !!mine[a];
+    return true;
+  }
+  function setBell(author, on) {
+    const me = meUser();
+    const a = String(author || "").replace(/^@/, "").toLowerCase();
+    if (!me || !a) return false;
+    const map = bellsMap();
+    map[me] = Object.assign({}, map[me] || {}, { [a]: !!on });
+    write("zivv.bells", map);
+    return !!on;
+  }
+  function notifyNewPost(post) {
+    if (!post || post.blocked || !post.user) return;
+    const authorU = String(post.user || "").replace(/^@/, "").toLowerCase();
+    followersOf(authorU).forEach((fan) => {
+      if (!fan || fan === authorU) return;
+      if (!isBellOnFor(fan, authorU)) return;
+      pushNote(fan, {
+        type: "post",
+        from: authorU,
+        fromName: post.name,
+        avatar: post.avatar || personOf(authorU).avatar,
+        text: "نشر منشور جديد" + (post.title ? " — " + post.title : ""),
+        thumb: post.image || "",
+        href: post.type === "audio" ? "music.html" : post.videoKind === "short" ? "reels.html" : "home.html",
+        postId: post.id,
+      });
+    });
   }
 
   window.ZIVV_CORE = {

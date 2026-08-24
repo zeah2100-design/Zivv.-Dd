@@ -11,8 +11,9 @@
   const UNLOCK_KEY = "zivv.privateUnlock";
 
   function person(user) {
+    if (ZIVV_CORE.personOf) return ZIVV_CORE.personOf(user);
     return (
-      ZIVV_CORE.peopleForShare().find((p) => p.user === user) || {
+      ZIVV_CORE.peopleForShare().find((p) => String(p.user).toLowerCase() === String(user).toLowerCase()) || {
         name: user,
         user,
         avatar: "brand/logo-sm.png",
@@ -245,21 +246,30 @@
       }
     }
 
+    function ago(at) {
+      if (!at) return "";
+      const d = new Date(at);
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mm = String(d.getMinutes()).padStart(2, "0");
+      return hh + ":" + mm;
+    }
     function draw() {
+      const live = person(u);
       const thread = ZIVV_CORE.threadWith(u, priv);
+      const meAva = ZIVV_CORE.author().avatar || "brand/logo-sm.png";
       root.innerHTML = `
         <a class="back" href="${page}">رجوع</a>
-        <div class="who">
-          <img src="${p.avatar}" alt="">
+        <a class="who" href="profile.html?u=${encodeURIComponent(live.user)}">
+          <img src="${live.avatar}" alt="">
           <div>
-            <h1>${p.name}</h1>
-            <div class="mute">@${p.user}${priv ? " · خاصة" : ""}</div>
+            <h1>${live.name}</h1>
+            <div class="mute">@${live.user}${priv ? " · خاصة" : ""}</div>
           </div>
-        </div>
+        </a>
         <div class="thread" id="thread"></div>
         <form class="composer" id="send">
           <button class="att" id="att" type="button" title="صورة أو فيديو أو ملف">📎</button>
-          <input id="msg" placeholder="اكتب رسالة…" />
+          <input id="msg" placeholder="اكتب رسالة…" autocomplete="off" />
           <button type="submit">إرسال</button>
         </form>
         <input id="file" type="file" accept="image/*,video/*,*/*" hidden />`;
@@ -268,7 +278,9 @@
       box.innerHTML =
         thread
           .map((m) => {
-            const mine = m.from === me;
+            const mine = m.from === me || String(m.fromUser || "").toLowerCase() === String(ZIVV_CORE.author().user || "").toLowerCase();
+            const who = mine ? { name: ZIVV_CORE.meName(), avatar: meAva } : live;
+            const ava = m.avatar || who.avatar || "brand/logo-sm.png";
             let media = "";
             if (m.kind === "image" && (m.image || m.mediaId)) {
               media = `<img class="att-img" ${m.mediaId ? `data-media="${m.mediaId}"` : `src="${m.image}"`} alt="">`;
@@ -279,9 +291,12 @@
             } else if (m.kind === "share" || m.kind === "product") {
               media = `<div class="share-card">${m.image ? `<img src="${m.image}" alt="">` : ""}<span>${m.preview || m.text}</span></div>`;
             }
-            return `<div class="bubble ${mine ? "me" : "them"}">${m.text ? `<div>${m.text}</div>` : ""}${media}</div>`;
+            return `<div class="msg ${mine ? "me" : "them"}">
+              <img class="msg-ava" src="${ava}" alt="">
+              <div class="bubble ${mine ? "me" : "them"}">${m.text ? `<div>${m.text}</div>` : ""}${media}<div class="when">${ago(m.at)}</div></div>
+            </div>`;
           })
-          .join("") || '<p class="mute">ابدأ المحادثة.</p>';
+          .join("") || '<p class="mute">ابدأ المحادثة الحقيقية. الرسائل بتتحفظ على الجهاز بين الحسابات.</p>';
 
       if (window.ZIVV_MEDIA) ZIVV_MEDIA.hydrate(box);
       box.scrollTop = box.scrollHeight;
@@ -327,6 +342,16 @@
       };
     }
     draw();
+    if (window._zivvChatTick) clearInterval(window._zivvChatTick);
+    window._zivvChatTick = setInterval(() => {
+      if (!document.getElementById("thread")) return;
+      const n = ZIVV_CORE.threadWith(u, priv).length;
+      if (n !== (window._zivvChatN || 0)) {
+        window._zivvChatN = n;
+        draw();
+      }
+    }, 1500);
+    window._zivvChatN = ZIVV_CORE.threadWith(u, priv).length;
   }
 
   function start() {
