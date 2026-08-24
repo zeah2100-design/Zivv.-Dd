@@ -135,6 +135,7 @@
       .pair span { color: #888; font-size: 12px; line-height: 1.4; }
       .dest.bad { border-color: #5a1a24; color: #ff8aa0; background: #2a0d12; }
       .dest.ok { border-color: #2a5a34; }
+      .cover-mini { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; margin: 8px auto 0; display: none; }
     </style>
   </head>
   <body>
@@ -188,6 +189,12 @@
         <img id="prev-img" alt="" hidden />
         <video id="prev-vid" muted playsinline controls hidden></video>
         <audio id="prev-aud" controls hidden></audio>
+        <img class="cover-mini" id="prev-cover" alt="غلاف" />
+      </div>
+
+      <div class="pair" id="vis-box">
+        <button type="button" class="on" data-vis="public"><b>عام</b><span>الكل يقدر يشوفه في مكانه</span></button>
+        <button type="button" data-vis="friends"><b>خاص</b><span>الأصدقاء بس — في قسم الخاص</span></button>
       </div>
 
       <div class="link-box" id="link-box" hidden>
@@ -251,6 +258,7 @@
       let muteOriginal = false;
       let objectUrl = "";
       let aiChoice = "";
+      let visibility = "public";
 
       const fileEl = document.getElementById("file");
       const drop = document.getElementById("drop");
@@ -388,7 +396,7 @@
           empty.innerHTML = 'اختار فيديو من جهازك<div><button class="pick" id="pick-btn" type="button">اختيار فيديو</button></div>';
           fileEl.accept = "video/*";
         } else if (kind === "audio") {
-          empty.innerHTML = 'اختار مقطع صوت<div><button class="pick" id="pick-btn" type="button">اختيار صوت</button></div><div style="margin-top:8px"><button class="pick" id="pick-cover" type="button">غلاف الأغنية</button></div>';
+          empty.innerHTML = 'اختار مقطع صوت وغلاف الأغنية لازم<div><button class="pick" id="pick-btn" type="button">اختيار صوت</button></div><div style="margin-top:8px"><button class="pick" id="pick-cover" type="button">غلاف الأغنية — مطلوب</button></div>';
           fileEl.accept = "audio/*";
         } else if (kind === "product") {
           empty.innerHTML = 'صورة المنتج<div><button class="pick" id="pick-btn" type="button">اختيار صورة المنتج</button></div>';
@@ -396,6 +404,27 @@
         }
         const pb = document.getElementById("pick-btn");
         if (pb) pb.onclick = () => fileEl.click();
+        const pc = document.getElementById("pick-cover");
+        if (pc) pc.onclick = (e) => {
+          e.stopPropagation();
+          const inp = document.createElement("input");
+          inp.type = "file";
+          inp.accept = "image/*";
+          inp.onchange = () => {
+            const f = inp.files && inp.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onload = () => compress(r.result, 900, (data) => {
+              imageData = data;
+              const cov = document.getElementById("prev-cover");
+              if (cov) { cov.src = data; cov.style.display = "block"; }
+              toast("اتحط غلاف الأغنية");
+              paintDest();
+            });
+            r.readAsDataURL(f);
+          };
+          inp.click();
+        };
         paintDest();
       }
 
@@ -529,10 +558,11 @@
           setKind("audio");
           audioFile = file;
           videoFile = null;
-          imageData = "";
           prevAud.src = objectUrl;
           prevAud.hidden = false;
           showMedia();
+          const cov = document.getElementById("prev-cover");
+          if (cov && imageData) { cov.src = imageData; cov.style.display = "block"; }
         } else {
           toast("الملف ده مش مدعوم");
         }
@@ -547,6 +577,15 @@
       document.getElementById("p-price").oninput = paintDest;
       document.getElementById("p-phone").oninput = paintDest;
       document.getElementById("p-specs").oninput = paintDest;
+      document.getElementById("vis-box").onclick = (e) => {
+        const b = e.target.closest("button[data-vis]");
+        if (!b) return;
+        visibility = b.getAttribute("data-vis");
+        document.querySelectorAll("#vis-box button").forEach((x) => x.classList.toggle("on", x === b));
+        const dest = document.getElementById("dest");
+        if (visibility === "friends") dest.innerHTML = "هينشر في: <b>الخاص — الأصدقاء بس</b>";
+        else paintDest();
+      };
       document.getElementById("ai-box").onclick = (e) => {
         const b = e.target.closest("button[data-ai]");
         if (!b) return;
@@ -600,6 +639,7 @@
         if (kind === "video" && !videoFile) return toast("اختار فيديو الأول");
         if (kind === "video" && !videoKind) return toast("حدد: شورتس ولا فيديو عادي");
         if (kind === "audio" && !audioFile) return toast("اختار صوت الأول");
+        if (kind === "audio" && !imageData) return toast("غلاف الأغنية مطلوب");
         if (kind === "link" && !href) return toast("حط رابط صحيح يبدأ بـ http");
         if (kind === "product" && !imageData) return toast("حط صورة للمنتج");
         if (kind === "product" && !document.getElementById("p-phone").value.trim()) return toast("حط رقم تواصل للمنتج");
@@ -642,6 +682,8 @@
           place: place || "",
           ai: kind !== "product" && (aiChoice === "yes" || !!(review.aiScan && review.aiScan.ai)),
           promoted: !!(window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser() && document.getElementById("promo").checked),
+          visibility: visibility,
+          priv: visibility === "friends",
         };
 
         try {

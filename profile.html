@@ -139,10 +139,22 @@
       };
 
       const allowed = mine || !ZIVV_CORE.canViewUser || ZIVV_CORE.canViewUser(target);
-      const posts = allowed ? ZIVV_CORE.getPosts().filter((p) =>
-        (p.user || "").toLowerCase() === profile.user.toLowerCase() ||
-        (mine && (p.user || "").toLowerCase() === myUser.toLowerCase())
-      ) : [];
+      const isFriend = mine || !!(ZIVV_CORE.areFriends && ZIVV_CORE.areFriends(myUser, profile.user));
+      function allMine() {
+        if (!allowed) return [];
+        return ZIVV_CORE.getPosts().filter((p) =>
+          (p.user || "").toLowerCase() === profile.user.toLowerCase() ||
+          (mine && (p.user || "").toLowerCase() === myUser.toLowerCase())
+        );
+      }
+      function publicPosts() {
+        return allMine().filter((p) => !(ZIVV_CORE.isFriendsOnly && ZIVV_CORE.isFriendsOnly(p)));
+      }
+      function privatePosts() {
+        if (!mine && !isFriend) return [];
+        return allMine().filter((p) => ZIVV_CORE.isFriendsOnly && ZIVV_CORE.isFriendsOnly(p));
+      }
+      const posts = publicPosts();
       function productsOf() {
         return ZIVV_STORE.bySeller(profile.user);
       }
@@ -236,7 +248,7 @@
           <div class="user">@${profile.user}${profile.city ? " · " + profile.city : ""}${goods.length ? " · بائع" : ""}</div>
           <p class="bio">${profile.bio}</p>
           <div class="stats">
-            <span><b>${posts.length}</b> منشور</span>
+            <span><b>${publicPosts().length}</b> منشور</span>
             <span><b>${fans}</b> متابع</span>
             <span><b>${goods.length}</b> منتج</span>
           </div>
@@ -370,6 +382,7 @@
           ["all", "المنشورات"],
           ["photo", "صور"],
           ["video", "فيديو"],
+          ["priv", "الخاص"],
           ["shop", "المنتجات"]
         ];
         document.getElementById("tabs").innerHTML = items.map(([k, l]) =>
@@ -378,6 +391,14 @@
         document.querySelectorAll("#tabs button").forEach((b) => {
           b.onclick = () => { tab = b.getAttribute("data-t"); paintTabs(); paintGrid(); };
         });
+      }
+
+      function cellHtml(p) {
+        if (p.image) {
+          const href = p.type === "audio" ? "music.html" : p.type === "video" ? "reels.html" : "home.html";
+          return `<a class="cell" href="${href}"><img src="${p.image}" alt="">${p.type === "video" ? '<span class="play">▶</span>' : p.type === "audio" ? '<span class="play">♪</span>' : ""}</a>`;
+        }
+        return `<div class="cell txt">${(p.title || p.text || "").slice(0, 70)}</div>`;
       }
 
       function paintGrid() {
@@ -393,12 +414,20 @@
             : '<p class="empty">مفيش منتجات.</p>';
           return;
         }
-        const list = posts.filter((p) => tab === "all" || p.type === tab || (tab === "photo" && p.image && p.type !== "video"));
+        if (tab === "priv") {
+          if (!mine && !isFriend) {
+            document.getElementById("grid").innerHTML = '<p class="empty">قسم الخاص للأصدقاء بس.</p>';
+            return;
+          }
+          const list = privatePosts();
+          document.getElementById("grid").innerHTML = list.length
+            ? list.map(cellHtml).join("")
+            : '<p class="empty">مفيش منشورات خاصة. من النشر اختار «خاص».</p>';
+          return;
+        }
+        const list = publicPosts().filter((p) => tab === "all" || p.type === tab || (tab === "photo" && p.image && p.type !== "video"));
         document.getElementById("grid").innerHTML = list.length
-          ? list.map((p) => p.image
-              ? `<a class="cell" href="${p.type === "video" ? "reels.html" : "home.html"}"><img src="${p.image}" alt="">${p.type === "video" ? '<span class="play">▶</span>' : ""}</a>`
-              : `<div class="cell txt">${(p.text || "").slice(0, 70)}</div>`)
-              .join("")
+          ? list.map(cellHtml).join("")
           : '<p class="empty">مفيش منشورات في القسم ده.</p>';
       }
 

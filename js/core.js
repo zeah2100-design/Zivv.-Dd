@@ -129,14 +129,15 @@
       else dests.add("home");
     }
     if (type === "photo" || type === "text" || type === "link") dests.add("home");
-    if (type === "audio") {
-      dests.add("home");
-      dests.add("music");
-    }
+    if (type === "audio") dests.add("music");
     if (hit(TAG_DEST.reels) && type === "video" && vk !== "video") dests.add("reels");
     if (hit(TAG_DEST.music) || type === "audio") dests.add("music");
     if (hit(TAG_DEST.store) || type === "product") dests.add("store");
-    if (type === "product") dests.delete("home");
+    if (type === "product" || type === "audio") dests.delete("home");
+    if (type === "audio") {
+      dests.delete("explore");
+      dests.add("music");
+    }
     if (vk === "short") {
       dests.add("reels");
       dests.delete("home");
@@ -301,15 +302,24 @@
     logRemoved({ id: postId, note: "حظر منشور من الملك", at: Date.now() });
     return true;
   }
+  function isFriendsOnly(p) {
+    if (!p) return false;
+    const v = String(p.visibility || p.audience || "");
+    return !!(p.priv === true || v === "friends" || v === "private" || v === "خاص");
+  }
+  function canSeePost(p) {
+    if (!p || p.status === "removed") return false;
+    const u = String(p.user || "").replace(/^@/, "").toLowerCase();
+    if (bannedUsers().indexOf(u) >= 0) return false;
+    if (!canViewUser(u)) return false;
+    if (!isFriendsOnly(p)) return true;
+    if (u === meUser()) return true;
+    return areFriends(meUser(), u);
+  }
   function getPosts() {
     const live = read("zivv.feed", []);
     const list = live.length ? live : [];
-    const banned = bannedUsers();
-    return list.filter((p) => {
-      if (!p || p.status === "removed") return false;
-      if (banned.indexOf(String(p.user || "").toLowerCase()) >= 0) return false;
-      return canViewUser(p.user);
-    });
+    return list.filter(canSeePost);
   }
   function allPostsRaw() {
     const live = read("zivv.feed", []);
@@ -319,18 +329,27 @@
   function postsFor(dest) {
     return getPosts().filter((p) => {
       if (!p || p.status === "removed") return false;
-      if (dest === "explore") return true;
+      if (dest === "explore") {
+        if (isFriendsOnly(p)) return false;
+        if (p.type === "audio" || p.audioId || p.audio) return false;
+        return true;
+      }
       if (dest === "reels") {
         return p.videoKind === "short" || (p.type === "video" && (p.dests || []).includes("reels")) || (!p.dests && p.type === "video" && p.videoKind !== "video");
       }
       if (dest === "home") {
+        if (isFriendsOnly(p)) return false;
+        if (p.type === "audio" || p.audioId || p.audio) return false;
         if (p.videoKind === "short") return false;
         if (p.type === "video") return p.videoKind !== "short";
         const d = p.dests;
         if (!d || !d.length) return true;
         return d.includes("home");
       }
-      if (dest === "music") return p.type === "audio" || (p.dests || []).includes("music");
+      if (dest === "music") {
+        if (isFriendsOnly(p)) return false;
+        return p.type === "audio" || !!(p.audioId || p.audio) || (p.dests || []).includes("music");
+      }
       const d = p.dests;
       if (!d || !d.length) return true;
       return d.includes(dest);
@@ -460,6 +479,12 @@
     if (post.type === "video") {
       if (post.videoKind === "short") post.dests = ["reels", "explore"];
       else post.dests = ["home", "explore"];
+    }
+    if (post.type === "audio") post.dests = ["music"];
+    if (isFriendsOnly(post)) {
+      post.visibility = "friends";
+      post.priv = true;
+      post.dests = ["profile"];
     }
     const posts = allPostsRaw();
     posts.unshift(post);
@@ -1305,6 +1330,16 @@
     isPrivate,
     setPrivate,
     canViewUser,
+    isFriendsOnly,
+    canSeePost,
+    personOf,
+    avatarOf,
+    pushNote,
+    myNotes,
+    markNotesRead,
+    isBellOn,
+    setBell,
+    notifyNewPost,
   };
 
   function saveFile(href, filename) {

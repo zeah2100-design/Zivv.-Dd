@@ -389,6 +389,8 @@
         posts = livePosts();
         return posts.filter((p) => {
           if (p.status === "removed") return false;
+          if (p.type === "audio" || p.audioId || p.audio) return false;
+          if (ZIVV_CORE.isFriendsOnly && ZIVV_CORE.isFriendsOnly(p)) return false;
           if (p.videoKind === "short") return false;
           if (p.type === "video" || p.videoId) return p.videoKind !== "short";
           if (p.dests && p.dests.length && !p.dests.includes("home")) return false;
