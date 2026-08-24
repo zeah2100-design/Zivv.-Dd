@@ -8,5 +8,5 @@
       anon = saved.anon;
     }
   } catch {}
-  window.ZIVV_SUPABASE_CFG = { url: url.trim(), anon: anon.trim() };
+  window.ZIVV_SUPABASE_CFG = { url: String(url || "").trim().replace(/\/$/, ""), anon: String(anon || "").trim() };
 })();

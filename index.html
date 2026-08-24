@@ -436,7 +436,7 @@
       $("btn-ar").onclick = () => { lang = "ar"; apply(); };
       $("btn-en").onclick = () => { lang = "en"; apply(); };
 
-      $("form-login").onsubmit = (e) => {
+      $("form-login").onsubmit = async (e) => {
         e.preventDefault();
         const first = cleanName($("login-first").value);
         const last = cleanName($("login-last").value);
@@ -444,7 +444,10 @@
         const mark = cleanName($("login-mark").value);
         const pass = $("login-pass").value;
         if (!age || age < 18) { msg(t().needAge, "err"); return; }
-        const u = findUser(first, last, mark, pass, age);
+        let u = findUser(first, last, mark, pass, age);
+        if (!u && window.ZIVV_DB && ZIVV_DB.loginRemote) {
+          try { u = await ZIVV_DB.loginRemote(first, last, mark, pass, age); } catch {}
+        }
         if (!u) { msg(t().missing, "err"); return; }
         pending = u;
         localStorage.setItem("zivv.session", JSON.stringify(u));
@@ -477,7 +480,8 @@
         saveUsers(db);
         pending = u;
         localStorage.setItem("zivv.session", JSON.stringify(u));
-        if (window.ZIVV_DB) ZIVV_DB.upsertProfile(u);
+        if (window.ZIVV_DB && ZIVV_DB.upsertAccount) ZIVV_DB.upsertAccount(u);
+        else if (window.ZIVV_DB) ZIVV_DB.upsertProfile(u);
         msg("", "");
         show("form-quiz");
       };

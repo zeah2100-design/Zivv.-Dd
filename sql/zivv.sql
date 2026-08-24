@@ -1,12 +1,25 @@
 -- ZIVV — شغّل الملف ده في Supabase: SQL Editor → Run
--- Project Settings → API: انسخ Project URL و anon key بعد كده في setup.html
+-- Project Settings → API: انسخ Project URL و anon key في setup.html
 
 create extension if not exists "pgcrypto";
+
+create table if not exists public.accounts (
+  email text primary key,
+  username text unique,
+  first_name text,
+  last_name text,
+  name text,
+  age int,
+  mark text,
+  password text,
+  onboarding jsonb,
+  created_at timestamptz default now()
+);
 
 create table if not exists public.profiles (
   id uuid primary key default gen_random_uuid(),
   auth_id uuid unique,
-  email text unique not null,
+  email text unique,
   username text unique,
   name text,
   avatar text,
@@ -14,6 +27,7 @@ create table if not exists public.profiles (
   bio text,
   city text,
   age int,
+  locked boolean default false,
   onboarding jsonb,
   created_at timestamptz default now()
 );
@@ -38,12 +52,14 @@ create table if not exists public.posts (
   link text,
   place text,
   status text default 'ok',
+  visibility text,
+  priv boolean default false,
   extra jsonb default '{}'::jsonb,
   created_at timestamptz default now()
 );
 
 create table if not exists public.likes (
-  post_id text not null references public.posts(id) on delete cascade,
+  post_id text not null,
   user_key text not null,
   created_at timestamptz default now(),
   primary key (post_id, user_key)
@@ -51,7 +67,7 @@ create table if not exists public.likes (
 
 create table if not exists public.comments (
   id text primary key,
-  post_id text not null references public.posts(id) on delete cascade,
+  post_id text not null,
   parent_id text,
   name text,
   user_key text,
@@ -125,7 +141,9 @@ create table if not exists public.reports (
 
 create table if not exists public.stories (
   id text primary key,
+  username text,
   name text,
+  avatar text,
   kind text,
   body text,
   image_url text,
@@ -133,11 +151,47 @@ create table if not exists public.stories (
   created_at timestamptz default now()
 );
 
+create table if not exists public.friend_reqs (
+  id text primary key,
+  from_user text,
+  from_name text,
+  to_user text,
+  to_name text,
+  status text default 'pending',
+  created_at timestamptz default now()
+);
+
+create table if not exists public.notes (
+  id text primary key,
+  dest text,
+  type text,
+  title text,
+  body text,
+  from_user text,
+  from_name text,
+  avatar text,
+  href text,
+  post_id text,
+  unread boolean default true,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.gold_reqs (
+  id text primary key,
+  username text,
+  name text,
+  status text,
+  note text,
+  created_at timestamptz default now()
+);
+
 create index if not exists posts_created_idx on public.posts (created_at desc);
 create index if not exists comments_post_idx on public.comments (post_id, created_at);
 create index if not exists messages_thread_idx on public.messages (thread_user, created_at);
 create index if not exists products_seller_idx on public.products (seller_user);
+create index if not exists accounts_mark_idx on public.accounts (mark);
 
+alter table public.accounts enable row level security;
 alter table public.profiles enable row level security;
 alter table public.posts enable row level security;
 alter table public.likes enable row level security;
@@ -149,14 +203,17 @@ alter table public.messages enable row level security;
 alter table public.products enable row level security;
 alter table public.reports enable row level security;
 alter table public.stories enable row level security;
+alter table public.friend_reqs enable row level security;
+alter table public.notes enable row level security;
+alter table public.gold_reqs enable row level security;
 
--- قراءة عامة + كتابة للزوار (anon) عشان الموقع يشتغل قبل ما نفعّل صلاحيات أدق
 do $$
 declare t text;
 begin
   foreach t in array array[
-    'profiles','posts','likes','comments','comment_likes',
-    'follows','shares','messages','products','reports','stories'
+    'accounts','profiles','posts','likes','comments','comment_likes',
+    'follows','shares','messages','products','reports','stories',
+    'friend_reqs','notes','gold_reqs'
   ]
   loop
     execute format('drop policy if exists zivv_read on public.%I', t);

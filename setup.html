@@ -18,6 +18,11 @@
         width: 100%; border: 0; color: #fff; font-weight: 800; border-radius: 12px; padding: 12px;
         background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
       }
+      .ghost {
+        display: block; width: 100%; margin-top: 8px; text-align: center; text-decoration: none;
+        border: 1px solid #2a2a2a; background: #141414; color: #eee;
+        border-radius: 12px; padding: 11px; font-weight: 800;
+      }
       .mute { color: #888; font-size: 13px; line-height: 1.7; margin: 8px 0 16px; }
       .ok { color: #9f9; margin-top: 10px; }
       .err { color: #ff8aa0; margin-top: 10px; }
@@ -27,23 +32,24 @@
   </head>
   <body>
     <main class="page-pad">
-      <h1>قاعدة البيانات</h1>
-      <p class="mute">جيت هب مش قاعدة بيانات. هنربط ZIVV بـ Supabase (مجاني) عشان المنشورات واللايك والشات تشتغل بين الناس.</p>
+      <h1>قاعدة البيانات الحقيقية</h1>
+      <p class="mute">GitHub و Vercel مش قاعدة. القاعدة الحقيقية PostgreSQL على Supabase — حسابات، منشورات، لايك، شات، متابعة.</p>
       <ol>
-        <li>افتح <b>supabase.com</b> وسجّل حساب</li>
-        <li>New project — اختار أقرب منطقة وباسورد للقاعدة</li>
-        <li>SQL Editor → New query → الصق محتوى ملف <code>sql/zivv.sql</code> → Run</li>
+        <li>افتح <b>supabase.com</b> وسجّل</li>
+        <li>New project — أقرب منطقة وباسورد للقاعدة</li>
+        <li>SQL Editor → New query → الصق ملف <code>sql/zivv.sql</code> → Run</li>
         <li>Project Settings → API → انسخ <b>Project URL</b> و <b>anon public</b></li>
-        <li>حطهم تحت واحفظ</li>
+        <li>حطهم هنا واضغط اختبار وحفظ</li>
       </ol>
       <label>Project URL</label>
       <input class="field" id="url" dir="ltr" placeholder="https://xxxx.supabase.co" />
       <label>anon public key</label>
       <textarea id="anon" dir="ltr" placeholder="eyJhbGciOi..."></textarea>
-      <button class="btn" type="button" id="save">حفظ الربط</button>
+      <button class="btn" type="button" id="save">اختبار وحفظ</button>
+      <a class="ghost" href="settings.html">رجوع للإعدادات</a>
       <p id="status"></p>
     </main>
-    <script src="js/shell.js"></script>
+    <script src="js/shell.js?v=26"></script>
     <script>
       try {
         const s = JSON.parse(localStorage.getItem("zivv.supabase") || "null");
@@ -52,8 +58,8 @@
           document.getElementById("anon").value = s.anon || "";
         }
       } catch {}
-      document.getElementById("save").onclick = () => {
-        const url = document.getElementById("url").value.trim();
+      document.getElementById("save").onclick = async () => {
+        const url = document.getElementById("url").value.trim().replace(/\/$/, "");
         const anon = document.getElementById("anon").value.trim();
         const st = document.getElementById("status");
         if (!url || !anon) {
@@ -66,9 +72,23 @@
           st.textContent = "الرابط لازم يكون من مشروع Supabase.";
           return;
         }
-        localStorage.setItem("zivv.supabase", JSON.stringify({ url, anon }));
-        st.className = "ok";
-        st.textContent = "اتربط. حدّث الصفحة الرئيسية. البيانات هتتزامن مع القاعدة.";
+        st.className = "mute";
+        st.textContent = "بجرّب الاتصال بالقاعدة…";
+        try {
+          const r = await fetch(url + "/rest/v1/posts?select=id&limit=1", {
+            headers: { apikey: anon, Authorization: "Bearer " + anon }
+          });
+          const raw = await r.text();
+          if (!r.ok) throw new Error(raw.slice(0, 180) || ("HTTP " + r.status));
+          localStorage.setItem("zivv.supabase", JSON.stringify({ url, anon }));
+          window.ZIVV_SUPABASE_CFG = { url, anon };
+          st.className = "ok";
+          st.textContent = "القاعدة الحقيقية اشتغلت. هتتزامن الحسابات والمنشورات.";
+          setTimeout(() => { location.href = "settings.html"; }, 700);
+        } catch (e) {
+          st.className = "err";
+          st.textContent = "الربط فشل. شغّل sql/zivv.sql الأول. " + String(e.message || e);
+        }
       };
     </script>
   </body>

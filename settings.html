@@ -142,6 +142,7 @@
       <section class="card">
         <h2 id="t-db">قاعدة البيانات</h2>
         <p class="sub" id="db-line" style="margin:0">جاري الفحص…</p>
+        <a class="ghost" href="setup.html" id="t-dbgo">ربط قاعدة حقيقية (Supabase)</a>
       </section>
 
       <section class="card">
@@ -177,7 +178,8 @@
     <script src="js/core.js?v=25"></script>
     <script src="js/cc.js?v=25"></script>
     <script src="js/pwa.js?v=25"></script>
-    <script src="js/db.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/db.js?v=26"></script>
     <script src="js/creator.js"></script>
     <script src="js/shell.js?v=25"></script>
     <script>
@@ -208,6 +210,7 @@
           lockOn: "الحساب مقفول — الأصدقاء بس",
           lockOff: "الحساب مفتوح — قفل الحساب",
           db: "قاعدة البيانات",
+          dbgo: "ربط قاعدة حقيقية (Supabase)",
           cc: "ترجمة الفيديوهات",
           ccsub: "الترجمة تظهر على الفيديو بلغة التطبيق — عربي أو إنجليزي.",
           ccOn: "الترجمة شغالة — اضغط عشان تقفلها",
@@ -244,6 +247,7 @@
           lockOn: "Locked — friends only",
           lockOff: "Public — lock account",
           db: "Database",
+          dbgo: "Connect a real database (Supabase)",
           cc: "Video translation",
           ccsub: "Captions on videos follow the app language — Arabic or English.",
           ccOn: "Translation on — tap to turn off",
@@ -300,6 +304,8 @@
         paintPwa(p);
         runDemo(lang);
         document.getElementById("t-db").textContent = p.db || (lang === "en" ? "Database" : "قاعدة البيانات");
+        const dbgo = document.getElementById("t-dbgo");
+        if (dbgo) dbgo.textContent = p.dbgo || dbgo.textContent;
         document.getElementById("t-lock").textContent = p.lock;
         document.getElementById("t-locksub").textContent = p.locksub;
         document.getElementById("out").textContent = p.out;
@@ -377,9 +383,19 @@
         const mode = (window.ZIVV_DB && ZIVV_DB.mode) || "local";
         const dbEl = document.getElementById("db-line");
         if (dbEl) {
-          dbEl.textContent = lang === "en"
-            ? "Database on. Mode: " + mode + " · " + usersN + " accounts · " + postsN + " posts · " + fansN + " followers."
-            : "قاعدة البيانات شغالة. الوضع: " + (mode === "api" ? "سيرفر" : mode === "supabase" ? "Supabase" : "محلي على الجهاز") + " · " + usersN + " حساب · " + postsN + " منشور · " + fansN + " متابع حقيقي.";
+          if (mode === "supabase") {
+            dbEl.textContent = lang === "en"
+              ? "Live Postgres (Supabase). " + usersN + " accounts · " + postsN + " posts · " + fansN + " followers."
+              : "قاعدة Postgres حقيقية شغالة. " + usersN + " حساب · " + postsN + " منشور · " + fansN + " متابع.";
+          } else if (mode === "api") {
+            dbEl.textContent = lang === "en"
+              ? "Server database on. " + usersN + " accounts · " + postsN + " posts."
+              : "قاعدة السيرفر شغالة. " + usersN + " حساب · " + postsN + " منشور.";
+          } else {
+            dbEl.textContent = lang === "en"
+              ? "Local only on this device. Connect Supabase to make it real."
+              : "دلوقتي محلي على الجهاز بس. اربط Supabase عشان تبقى حقيقية بين الناس.";
+          }
         }
         window.dispatchEvent(new CustomEvent("zivv-lang"));
         if (window.ZIVV_I18N) ZIVV_I18N.apply();

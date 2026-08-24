@@ -199,6 +199,7 @@
         }, partial || {}));
         try { saveAll(list); }
         catch { toast("الملف كبير. جرّب أصغر."); return; }
+        if (window.ZIVV_DB && ZIVV_DB.pushStory) ZIVV_DB.pushStory(list[0]).catch(() => {});
         toast("اتنشرت الحالة");
         render();
       }
