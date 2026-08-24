@@ -667,6 +667,7 @@
               partial.videoId = id;
               partial.type = "video";
             }
+            if (!partial.videoId) throw new Error("no video id");
           } else if (kind === "audio") {
             if (audioFile && window.ZIVV_MEDIA) {
               const id = "aud_" + Date.now();

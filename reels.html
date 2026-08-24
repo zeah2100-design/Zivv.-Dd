@@ -137,13 +137,10 @@
       let current = null;
       function reelList() {
         const all = (ZIVV_CORE.getPosts ? ZIVV_CORE.getPosts() : []).filter((p) => p.status !== "removed");
-        const shorts = all.filter((p) =>
+        return all.filter((p) =>
           p.videoKind === "short" ||
-          ((p.dests || []).includes("reels") && p.type === "video") ||
-          (p.type === "video" && p.videoId && p.videoKind !== "video")
+          ((p.dests || []).includes("reels") && (p.type === "video" || p.videoId))
         );
-        if (shorts.length) return shorts;
-        return ZIVV_CORE.postsFor("reels").filter((p) => p.status !== "removed" && (p.videoId || p.image));
       }
 
       function toast(t) {

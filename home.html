@@ -387,8 +387,8 @@
         return posts.filter((p) => {
           if (p.status === "removed") return false;
           if (p.videoKind === "short") return false;
-          if ((p.dests || []).includes("reels") && !(p.dests || []).includes("home") && p.type === "video") return false;
-          if (p.dests && p.dests.length && !p.dests.includes("home") && p.type !== "video") return false;
+          if (p.type === "video" || p.videoId) return p.videoKind !== "short";
+          if (p.dests && p.dests.length && !p.dests.includes("home")) return false;
           return true;
         });
       }

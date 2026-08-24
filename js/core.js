@@ -122,22 +122,25 @@
     const hit = (keys) => tags.some((t) => keys.some((k) => t === norm(k) || t.includes(norm(k))));
     const dests = new Set(["explore"]);
     const type = p.type || "text";
-    const vk = p.videoKind || "";
+    const vk = String(p.videoKind || "");
 
-    if (type === "video" && vk === "short") dests.add("reels");
-    else if (type === "video") dests.add("home");
-    else if (vk === "short" || (type === "video" && hit(TAG_DEST.reels))) dests.add("reels");
-    if (vk === "video") dests.add("home");
-    if (type === "video" && vk !== "short" && vk !== "video") dests.add("home");
+    if (type === "video") {
+      if (vk === "short") dests.add("reels");
+      else dests.add("home");
+    }
     if (type === "photo" || type === "text" || type === "link") dests.add("home");
     if (type === "audio") {
       dests.add("home");
       dests.add("music");
     }
+    if (hit(TAG_DEST.reels) && type === "video" && vk !== "video") dests.add("reels");
     if (hit(TAG_DEST.music) || type === "audio") dests.add("music");
     if (hit(TAG_DEST.store) || type === "product") dests.add("store");
     if (type === "product") dests.delete("home");
-    if (vk === "short") dests.delete("home");
+    if (vk === "short") {
+      dests.add("reels");
+      dests.delete("home");
+    }
     return Array.from(dests);
   }
 
@@ -311,13 +314,21 @@
 
   function postsFor(dest) {
     return getPosts().filter((p) => {
-      const d = p.dests;
-      if (!d || !d.length) {
-        if (dest === "reels") return p.type === "video" || !!p.image;
-        if (dest === "music") return p.type === "audio";
-        return dest === "home" || dest === "explore";
-      }
+      if (!p || p.status === "removed") return false;
       if (dest === "explore") return true;
+      if (dest === "reels") {
+        return p.videoKind === "short" || (p.type === "video" && (p.dests || []).includes("reels")) || (!p.dests && p.type === "video" && p.videoKind !== "video");
+      }
+      if (dest === "home") {
+        if (p.videoKind === "short") return false;
+        if (p.type === "video") return p.videoKind !== "short";
+        const d = p.dests;
+        if (!d || !d.length) return true;
+        return d.includes("home");
+      }
+      if (dest === "music") return p.type === "audio" || (p.dests || []).includes("music");
+      const d = p.dests;
+      if (!d || !d.length) return true;
       return d.includes(dest);
     });
   }
@@ -408,6 +419,14 @@
       });
       return { blocked: true, level: "ban", reasons: review.scan.reasons, note: review.scan.note };
     }
+    const forced = Object.assign({}, partial || {}, { tags: review.tags });
+    if (forced.type === "video") {
+      if (forced.videoKind === "short") forced.dests = ["explore", "reels"];
+      else {
+        forced.videoKind = forced.videoKind || "video";
+        forced.dests = ["explore", "home"];
+      }
+    }
     const post = Object.assign(
       {
         id: "p" + Date.now(),
@@ -426,10 +445,10 @@
         type: "text",
         status: "ok",
       },
-      partial || {},
+      forced,
       {
         tags: review.tags,
-        dests: review.dests,
+        dests: forced.dests && forced.dests.length ? forced.dests : review.dests,
         status: review.scan.level === "warn" ? "warned" : "ok",
         warnNote: review.scan.level === "warn" ? review.scan.note : "",
       }
