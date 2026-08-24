@@ -947,6 +947,17 @@
     downloadPost,
     isLoggedIn,
     requireAuth,
+    followUser,
+    unfollowUser,
+    isFollowing,
+    followersOf,
+    followingOf,
+    followerCount,
+    followingCount,
+    receivedLikes,
+    kingOwner,
+    isKingUser,
+    claimKing,
   };
 
   function saveFile(href, filename) {

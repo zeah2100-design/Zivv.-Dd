@@ -98,16 +98,11 @@
     <script src="js/creator.js"></script>
     <script src="js/shell.js"></script>
     <script>
-      const BIOS = { layla: "بكتب عن المدن وهي بتنام.", karim: "صوت وظل واستوديو بعد منتصف الليل.", omar: "عدسة على النيل.", maya: "حرير وذهب وصمت أنيق.", nora: "أصمّم ليالي القاهرة.", youssef: "مشاهد قصيرة بتفضل في الرأس." };
-      const COVERS = { layla: "posts/giza.webp", karim: "posts/studio.jpg", omar: "posts/nile.jpg", maya: "posts/fashion.jpg", nora: "posts/coffee.jpg", youssef: "posts/cinema.jpg" };
-
       function extra() { try { return JSON.parse(localStorage.getItem("zivv.profiles") || "{}"); } catch { return {}; } }
       function saveExtra(map) {
         try { localStorage.setItem("zivv.profiles", JSON.stringify(map)); return true; }
         catch { toast("الصورة كبيرة — جرّب صورة أصغر"); return false; }
       }
-      function follows() { try { return JSON.parse(localStorage.getItem("zivv.followUsers") || "[]"); } catch { return []; } }
-      function saveFollows(list) { localStorage.setItem("zivv.followUsers", JSON.stringify(list)); }
       function toast(t) {
         const el = document.getElementById("toast");
         el.textContent = t; el.style.display = "block";
@@ -126,9 +121,9 @@
         name: patch.name || (mine ? ses.name : "") || (person && person.name) || "مستخدم ZIVV",
         user: patch.user || (person && person.user) || myUser,
         city: patch.city || (person && person.city) || "",
-        bio: patch.bio || BIOS[target] || (mine ? "مرحباً، أنا على ZIVV." : ""),
+        bio: patch.bio || (mine ? "مرحباً، أنا على ZIVV." : ""),
         avatar: patch.avatar || (person && person.avatar) || "brand/logo-sm.png",
-        cover: patch.cover || COVERS[target] || ""
+        cover: patch.cover || ""
       };
 
       const posts = ZIVV_CORE.getPosts().filter((p) =>
@@ -156,9 +151,10 @@
         document.getElementById("cover").innerHTML = profile.cover
           ? `<img id="cover-img" class="${mine ? "mine" : ""}" src="${profile.cover}" alt="الخلفية">`
           : `<div id="cover-img" class="${mine ? "mine" : ""}" style="width:100%;height:100%;background:#141414"></div>`;
-        const f = follows();
-        const on = f.includes(profile.user);
-        const gold = ZIVV_CORE.isGold(profile.user);
+        const on = ZIVV_CORE.isFollowing(profile.user);
+        const gold = !!(window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser && ZIVV_CREATOR.isGoldUser(profile.user)) || ZIVV_CORE.isGold(profile.user);
+        const fans = ZIVV_CORE.followerCount(profile.user);
+        const hearts = ZIVV_CORE.receivedLikes(profile.user);
         const gstat = ZIVV_CORE.goldStatus(myUser);
         const fr = mine ? "none" : ZIVV_CORE.friendStatus(profile.user);
         const friendBtn =
@@ -179,8 +175,8 @@
           <p class="bio">${profile.bio}</p>
           <div class="stats">
             <span><b>${posts.length}</b> منشور</span>
-            <span><b>${180 + profile.user.length * 7 + (on ? 1 : 0)}</b> متابع</span>
-            <span><b>${goods.length}</b> منتج</span>
+            <span><b>${fans}</b> متابع</span>
+            <span><b>${hearts}</b> إعجاب</span>
           </div>
           <div class="acts">
             ${mine
@@ -218,10 +214,8 @@
         };
         const fol = document.getElementById("btn-follow");
         if (fol) fol.onclick = () => {
-          let list = follows();
-          if (list.includes(profile.user)) list = list.filter((x) => x !== profile.user);
-          else list.push(profile.user);
-          saveFollows(list);
+          if (ZIVV_CORE.isFollowing(profile.user)) ZIVV_CORE.unfollowUser(profile.user);
+          else ZIVV_CORE.followUser(profile.user);
           paintHead();
         };
         const frb = document.getElementById("btn-friend");

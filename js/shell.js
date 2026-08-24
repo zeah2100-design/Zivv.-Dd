@@ -64,6 +64,7 @@
     try {
       const me = window.ZIVV_CORE && ZIVV_CORE.author ? String(ZIVV_CORE.author().user || "").toLowerCase() : "";
       if (p.user && String(p.user).toLowerCase() === me) return true;
+      if (window.ZIVV_CORE && ZIVV_CORE.isFollowing && p.user && ZIVV_CORE.isFollowing(p.user)) return true;
       const fl = JSON.parse(localStorage.getItem("zivv.followUsers") || "[]").map((u) => String(u).toLowerCase());
       if (p.user && fl.includes(String(p.user).toLowerCase())) return true;
       if (window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser && ZIVV_CREATOR.isGoldUser(p.user)) return true;

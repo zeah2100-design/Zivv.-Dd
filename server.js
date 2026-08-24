@@ -283,6 +283,20 @@ async function handleApi(req, res, url) {
     return json(res, 200, row);
   }
 
+  if (p === "/api/follows" && req.method === "GET") {
+    return json(res, 200, db.follows || []);
+  }
+  if (p === "/api/follows" && req.method === "POST") {
+    const body = await readBody(req);
+    const from = String(body.from_user || "").toLowerCase();
+    const to = String(body.to_user || "").toLowerCase();
+    if (!from || !to) return json(res, 400, { error: "from/to required" });
+    db.follows = (db.follows || []).filter((x) => !(x.from_user === from && x.to_user === to));
+    if (body.on !== false) db.follows.push({ from_user: from, to_user: to, created_at: Date.now() });
+    save(db);
+    return json(res, 200, { ok: true });
+  }
+
   if (p === "/api/profiles" && req.method === "GET") {
     return json(res, 200, db.profiles);
   }

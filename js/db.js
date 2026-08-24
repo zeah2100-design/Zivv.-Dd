@@ -190,6 +190,10 @@
     }
   }
 
+  async function pushFollow(from, to, on) {
+    if (mode === "api") await api("POST", "/api/follows", { from_user: from, to_user: to, on: !!on });
+  }
+
   function wrap() {
     if (window.ZIVV_CORE && !ZIVV_CORE._dbWrapped) {
       ZIVV_CORE._dbWrapped = true;
@@ -218,6 +222,21 @@
           const m = sendMessage(to, payload);
           if (m) pushMessage(to, m).catch(() => {});
           return m;
+        };
+      }
+      if (ZIVV_CORE.followUser && !ZIVV_CORE._followWrapped) {
+        ZIVV_CORE._followWrapped = true;
+        const fol = ZIVV_CORE.followUser;
+        const unf = ZIVV_CORE.unfollowUser;
+        ZIVV_CORE.followUser = function (u) {
+          const r = fol(u);
+          if (r) pushFollow(ZIVV_CORE.author().user, u, true).catch(() => {});
+          return r;
+        };
+        ZIVV_CORE.unfollowUser = function (u) {
+          const r = unf(u);
+          pushFollow(ZIVV_CORE.author().user, u, false).catch(() => {});
+          return r;
         };
       }
     }

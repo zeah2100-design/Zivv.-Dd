@@ -140,6 +140,11 @@
       </section>
 
       <section class="card">
+        <h2 id="t-db">قاعدة البيانات</h2>
+        <p class="sub" id="db-line" style="margin:0">جاري الفحص…</p>
+      </section>
+
+      <section class="card">
         <h2 id="t-lang">اللغة</h2>
         <div class="langs">
           <button class="lang" type="button" id="btn-ar">عربي</button>
@@ -150,6 +155,7 @@
       <button class="danger" type="button" id="out">خروج من الحساب ده</button>
     </main>
     <script src="js/core.js"></script>
+    <script src="js/db.js"></script>
     <script src="js/creator.js"></script>
     <script src="js/shell.js"></script>
     <script>
@@ -300,6 +306,17 @@
         gb.textContent = gold ? p.goldBtnOn : p.goldBtnRenew && ended ? p.goldBtnRenew : p.goldBtn;
         gb.disabled = !!gold;
         gb.style.opacity = gold ? ".55" : "1";
+
+        const usersN = emails.length;
+        const postsN = (window.ZIVV_CORE && ZIVV_CORE.getPosts ? ZIVV_CORE.getPosts().length : 0);
+        const fansN = window.ZIVV_CORE && ZIVV_CORE.followerCount ? ZIVV_CORE.followerCount() : 0;
+        const mode = (window.ZIVV_DB && ZIVV_DB.mode) || "local";
+        const dbEl = document.getElementById("db-line");
+        if (dbEl) {
+          dbEl.textContent = lang === "en"
+            ? "Database on. Mode: " + mode + " · " + usersN + " accounts · " + postsN + " posts · " + fansN + " followers."
+            : "قاعدة البيانات شغالة. الوضع: " + (mode === "api" ? "سيرفر" : mode === "supabase" ? "Supabase" : "محلي على الجهاز") + " · " + usersN + " حساب · " + postsN + " منشور · " + fansN + " متابع حقيقي.";
+        }
       }
 
       function pad(n) { return String(Math.max(0, n || 0)).padStart(2, "0"); }

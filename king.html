@@ -314,9 +314,22 @@
         };
       }
 
+      function claimIfFirst() {
+        const existed = ZIVV_CORE.kingOwner();
+        const owner = ZIVV_CORE.claimKing();
+        if (!existed && owner && owner.user && window.ZIVV_CREATOR && ZIVV_CREATOR.grantGold) {
+          ZIVV_CREATOR.grantGold(owner.user, "king");
+        }
+        const line = document.querySelector(".mute");
+        if (line && owner) {
+          line.textContent = "الملك الحقيقي: @" + owner.user + " — " + (owner.name || "") + " · حظر · ذهبي · رسائل";
+        }
+        return owner;
+      }
       function openApp() {
         document.getElementById("gate").classList.add("hidden");
         document.getElementById("app").classList.remove("hidden");
+        claimIfFirst();
         paint();
       }
       function askGate() {

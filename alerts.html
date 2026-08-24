@@ -76,20 +76,6 @@
           { name: user, user, avatar: "brand/logo-sm.png" };
       }
 
-      function seedNotes() {
-        return [
-          { type: "like", user: "layla", text: "أعجبت بمنشورك", thumb: "posts/giza.webp", at: Date.now() - 18 * 60000, href: "home.html" },
-          { type: "like", user: "karim", text: "أعجب بمنشورك", thumb: "posts/studio.jpg", at: Date.now() - 2 * 3600000, href: "home.html" },
-          { type: "like", user: "maya", text: "أعجبت بصورتك", thumb: "posts/fashion.jpg", at: Date.now() - 26 * 3600000, href: "home.html" },
-          { type: "comment", user: "omar", text: "علّق: الصمت هنا أغلى من الإضاءة.", thumb: "posts/nile.jpg", at: Date.now() - 40 * 60000, href: "home.html" },
-          { type: "comment", user: "nora", text: "علّقت على منشورك", thumb: "posts/coffee.jpg", at: Date.now() - 5 * 3600000, href: "home.html" },
-          { type: "comment", user: "youssef", text: "رد على تعليقك", thumb: "posts/cinema.jpg", at: Date.now() - 2 * 86400000, href: "home.html" },
-          { type: "follow", user: "layla", text: "بدأت تتابعك", thumb: "", at: Date.now() - 50 * 60000, href: "profile.html?u=layla" },
-          { type: "follow", user: "karim", text: "بعت لك طلب صداقة", thumb: "", at: Date.now() - 3 * 3600000, href: "friends.html" },
-          { type: "follow", user: "maya", text: "قبلت طلب صداقتك", thumb: "", at: Date.now() - 86400000, href: "friends.html" }
-        ];
-      }
-
       function liveNotes() {
         const notes = [];
         const myPosts = ZIVV_CORE.getPosts().filter((p) => (p.user || "").toLowerCase() === me.user.toLowerCase());
@@ -147,9 +133,7 @@
       }
 
       function allNotes() {
-        const live = liveNotes();
-        const base = (live.length ? live : seedNotes()).concat(officialNotes());
-        return base.sort((a, b) => b.at - a.at);
+        return liveNotes().concat(officialNotes()).sort((a, b) => b.at - a.at);
       }
 
       let tab = new URLSearchParams(location.search).get("t") || "like";
