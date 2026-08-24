@@ -50,6 +50,12 @@
           if (url) el.src = url;
         })
         .catch(() => {});
+      const poster = el.getAttribute("data-poster");
+      if (poster && !el.getAttribute("poster")) {
+        getUrl(poster).then((url) => {
+          if (url) el.setAttribute("poster", url);
+        }).catch(() => {});
+      }
     });
   }
 
@@ -80,5 +86,5 @@
     vid.addEventListener("seeking", () => { try { aud.currentTime = vid.currentTime || 0; } catch {} });
   }
 
-  window.ZIVV_MEDIA = { put, getUrl, hydrate, bindSound };
+  window.ZIVV_MEDIA = { put, get, getUrl, hydrate, bindSound };
 })();

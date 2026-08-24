@@ -647,11 +647,25 @@
         try {
           if (kind === "photo") partial.image = imageData;
           else if (kind === "video") {
-            if (imageData) partial.image = imageData;
-            if (videoFile && window.ZIVV_MEDIA) {
+            if (imageData && imageData.length < 120000) partial.image = imageData;
+            else if (imageData) {
+              try {
+                const pid = "post_" + Date.now();
+                const raw = imageData.split(",")[1] || "";
+                const bin = atob(raw);
+                const arr = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+                if (window.ZIVV_MEDIA) await ZIVV_MEDIA.put(pid, new Blob([arr], { type: "image/jpeg" }));
+                partial.posterId = pid;
+              } catch {}
+            }
+            if (videoFile) {
+              if (!window.ZIVV_MEDIA) throw new Error("no media");
               const id = "vid_" + Date.now();
-              await ZIVV_MEDIA.put(id, videoFile);
+              const blob = videoFile.slice(0, videoFile.size, videoFile.type || "video/mp4");
+              await ZIVV_MEDIA.put(id, blob);
               partial.videoId = id;
+              partial.type = "video";
             }
           } else if (kind === "audio") {
             if (audioFile && window.ZIVV_MEDIA) {

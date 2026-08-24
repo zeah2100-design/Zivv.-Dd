@@ -136,11 +136,14 @@
     <script>
       let current = null;
       function reelList() {
-        const tagged = ZIVV_CORE.postsFor("reels").filter((p) => p.status !== "removed");
-        if (tagged.some((p) => p.videoKind === "short" || (p.dests || []).includes("reels"))) {
-          return tagged.filter((p) => p.videoKind === "short" || (p.dests || []).includes("reels") || (!p.dests && p.type === "video"));
-        }
-        return tagged.filter((p) => p.image);
+        const all = (ZIVV_CORE.getPosts ? ZIVV_CORE.getPosts() : []).filter((p) => p.status !== "removed");
+        const shorts = all.filter((p) =>
+          p.videoKind === "short" ||
+          ((p.dests || []).includes("reels") && p.type === "video") ||
+          (p.type === "video" && p.videoId && p.videoKind !== "video")
+        );
+        if (shorts.length) return shorts;
+        return ZIVV_CORE.postsFor("reels").filter((p) => p.status !== "removed" && (p.videoId || p.image));
       }
 
       function toast(t) {
@@ -158,7 +161,7 @@
         list.forEach((p, i) => {
           const liked = ZIVV_CORE.likedByMe(p.id);
           const media = p.videoId
-            ? `<video class="bg" poster="${p.image || ""}" data-media="${p.videoId}" playsinline loop ${p.muteOriginal ? "muted" : "muted"}></video>`
+            ? `<video class="bg" poster="${p.image || ""}" data-media="${p.videoId}" ${p.posterId ? "data-poster=\"" + p.posterId + "\"" : ""} playsinline loop muted></video>`
             : `<img class="bg" src="${p.image || "posts/cinema.jpg"}" alt="">`;
           html += `<section class="clip" data-id="${p.id}">
             ${media}

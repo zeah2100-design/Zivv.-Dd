@@ -130,9 +130,17 @@
     const c = prefs();
     const source = Array.isArray(list) ? list.slice() : [];
     let items = source;
-    if (c.hideAI || isHome) items = items.filter((x) => x.ai !== true);
-    if (c.hideVideos) items = items.filter((x) => !isVideo(x));
-    if (c.photosOnly) items = items.filter(isPhoto);
+    const me = (() => {
+      try {
+        return String((window.ZIVV_CORE && ZIVV_CORE.author && ZIVV_CORE.author().user) || "").toLowerCase();
+      } catch {
+        return "";
+      }
+    })();
+    const mine = (x) => !!(me && x && String(x.user || "").toLowerCase() === me);
+    if (c.hideAI || isHome) items = items.filter((x) => x.ai !== true || mine(x));
+    if (c.hideVideos) items = items.filter((x) => !isVideo(x) || mine(x));
+    if (c.photosOnly) items = items.filter((x) => isPhoto(x) || mine(x));
     if (c.mix70 !== false) items = mixAlgo(items, !!c.hideAI);
     const tagSet = window.ZIVV_CORE && ZIVV_CORE.userTags ? ZIVV_CORE.userTags() : new Set();
     return {

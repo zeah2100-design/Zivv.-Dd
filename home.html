@@ -361,20 +361,21 @@
         CANON[s.id] = { ai: s.ai, type: s.type, following: s.following, image: s.image };
       });
 
-      let posts = JSON.parse(localStorage.getItem("zivv.feed") || "null") || [];
-      seed.forEach((s) => {
-        if (!posts.some((p) => p.id === s.id)) posts.push(s);
-      });
-      posts.forEach((p) => {
-        if (CANON[p.id]) Object.assign(p, CANON[p.id]);
-        if (p.following === undefined) p.following = true;
-        if (p.ai === undefined) p.ai = false;
-        if (!p.type) p.type = p.image ? "photo" : "text";
-        if (!p.tags || !p.tags.length) {
-          const s = seed.find((x) => x.id === p.id);
-          if (s && s.tags) p.tags = s.tags.slice();
-        }
-      });
+      function livePosts() {
+        const fromCore = (window.ZIVV_CORE && ZIVV_CORE.getPosts) ? ZIVV_CORE.getPosts() : [];
+        let list = fromCore.length ? fromCore.slice() : (JSON.parse(localStorage.getItem("zivv.feed") || "null") || []);
+        seed.forEach((s) => {
+          if (!list.some((p) => p.id === s.id)) list.push(s);
+        });
+        list.forEach((p) => {
+          if (CANON[p.id]) Object.assign(p, CANON[p.id]);
+          if (p.following === undefined) p.following = true;
+          if (p.ai === undefined) p.ai = false;
+          if (!p.type) p.type = p.videoId || p.videoKind ? "video" : p.image ? "photo" : "text";
+        });
+        return list;
+      }
+      let posts = livePosts();
 
       function applyChrome() {
         document.documentElement.lang = "ar";
@@ -382,10 +383,12 @@
       }
 
       function homeList() {
+        posts = livePosts();
         return posts.filter((p) => {
           if (p.status === "removed") return false;
           if (p.videoKind === "short") return false;
-          if (p.dests && p.dests.length && !p.dests.includes("home")) return false;
+          if ((p.dests || []).includes("reels") && !(p.dests || []).includes("home") && p.type === "video") return false;
+          if (p.dests && p.dests.length && !p.dests.includes("home") && p.type !== "video") return false;
           return true;
         });
       }

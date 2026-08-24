@@ -124,7 +124,9 @@
     const type = p.type || "text";
     const vk = p.videoKind || "";
 
-    if (vk === "short" || (type === "video" && hit(TAG_DEST.reels))) dests.add("reels");
+    if (type === "video" && vk === "short") dests.add("reels");
+    else if (type === "video") dests.add("home");
+    else if (vk === "short" || (type === "video" && hit(TAG_DEST.reels))) dests.add("reels");
     if (vk === "video") dests.add("home");
     if (type === "video" && vk !== "short" && vk !== "video") dests.add("home");
     if (type === "photo" || type === "text" || type === "link") dests.add("home");
@@ -432,9 +434,22 @@
         warnNote: review.scan.level === "warn" ? review.scan.note : "",
       }
     );
+    if (post.type === "video") {
+      if (post.videoKind === "short") post.dests = ["reels", "explore"];
+      else post.dests = ["home", "explore"];
+    }
     const posts = getPosts();
     posts.unshift(post);
-    write("zivv.feed", posts);
+    try {
+      write("zivv.feed", posts);
+    } catch (err) {
+      const slim = posts.map((p) => {
+        const copy = Object.assign({}, p);
+        if (copy.image && String(copy.image).length > 80000) copy.image = "";
+        return copy;
+      });
+      write("zivv.feed", slim);
+    }
     rememberTags(post.tags);
     return post;
   }
