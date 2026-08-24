@@ -387,6 +387,10 @@
             dbEl.textContent = lang === "en"
               ? "Live Postgres (Supabase). " + usersN + " accounts · " + postsN + " posts · " + fansN + " followers."
               : "قاعدة Postgres حقيقية شغالة. " + usersN + " حساب · " + postsN + " منشور · " + fansN + " متابع.";
+          } else if (mode === "need-sql") {
+            dbEl.textContent = lang === "en"
+              ? "Project linked. Open setup and run sql/zivv.sql once in Supabase."
+              : "المشروع متربط. افتح صفحة الربط وشغّل sql/zivv.sql مرة في Supabase.";
           } else if (mode === "api") {
             dbEl.textContent = lang === "en"
               ? "Server database on. " + usersN + " accounts · " + postsN + " posts."

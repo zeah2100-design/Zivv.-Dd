@@ -47,12 +47,12 @@
     const headers = Object.assign(
       {
         apikey: anon,
-        Authorization: "Bearer " + anon,
         "Content-Type": "application/json",
         Prefer: opt.prefer || "return=representation"
       },
       opt.headers || {}
     );
+    if (anon.indexOf("sb_") !== 0) headers.Authorization = "Bearer " + anon;
     const r = await fetch(url + "/rest/v1/" + path, {
       method: opt.method || "GET",
       headers,
@@ -593,16 +593,7 @@
   }
 
   async function seedLocal() {
-    if (!live()) return;
-    const posts = readLS("zivv.feed", []);
-    for (let i = 0; i < Math.min(posts.length, 40); i++) {
-      try { await pushPost(posts[i]); } catch {}
-    }
-    const users = readLS("zivv.users", {});
-    const emails = Object.keys(users);
-    for (let i = 0; i < emails.length; i++) {
-      try { await upsertAccount(users[emails[i]]); } catch {}
-    }
+    return;
   }
 
   function wrap() {
@@ -735,9 +726,14 @@
         mode = "supabase";
         done();
         await pullAll();
-        seedLocal().catch(() => {});
         return;
-      } catch {
+      } catch (e) {
+        const msg = String((e && e.message) || e || "");
+        if (/PGRST205|Could not find the table/i.test(msg)) {
+          mode = "need-sql";
+          done();
+          return;
+        }
         mode = "local";
         done();
         return;
@@ -767,7 +763,8 @@
     loginRemote,
     pullPosts: pullAll,
     pullProducts: pullAll,
-    lastPull() { return lastPull; }
+    lastPull() { return lastPull; },
+    needsSql() { return mode === "need-sql"; }
   };
 
   setInterval(wrap, 250);

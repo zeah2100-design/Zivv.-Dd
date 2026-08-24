@@ -33,7 +33,9 @@
   <body>
     <main class="page-pad">
       <h1>قاعدة البيانات الحقيقية</h1>
-      <p class="mute">GitHub و Vercel مش قاعدة. القاعدة الحقيقية PostgreSQL على Supabase — حسابات، منشورات، لايك، شات، متابعة.</p>
+      <p class="mute">المشروع متربط: <code>ldionpdfplvbnpoelkqe</code>. الجداول لسه فاضية — شغّل SQL مرة.</p>
+      <a class="btn" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://supabase.com/dashboard/project/ldionpdfplvbnpoelkqe/sql/new" target="_blank" rel="noopener">افتح SQL Editor</a>
+      <button class="ghost" type="button" id="copy-sql" style="margin-bottom:16px">انسخ sql/zivv.sql</button>
       <ol>
         <li>افتح <b>supabase.com</b> وسجّل</li>
         <li>New project — أقرب منطقة وباسورد للقاعدة</li>
@@ -58,6 +60,19 @@
           document.getElementById("anon").value = s.anon || "";
         }
       } catch {}
+      document.getElementById("copy-sql").onclick = async () => {
+        const st = document.getElementById("status");
+        try {
+          const r = await fetch("sql/zivv.sql");
+          const sql = await r.text();
+          await navigator.clipboard.writeText(sql);
+          st.className = "ok";
+          st.textContent = "اتنسخ SQL. الصقه في SQL Editor واضغط Run.";
+        } catch {
+          st.className = "err";
+          st.textContent = "انسخ الملف من sql/zivv.sql يدوي.";
+        }
+      };
       document.getElementById("save").onclick = async () => {
         const url = document.getElementById("url").value.trim().replace(/\/$/, "");
         const anon = document.getElementById("anon").value.trim();
