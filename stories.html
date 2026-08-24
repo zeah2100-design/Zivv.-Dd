@@ -9,66 +9,72 @@
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: #000; color: #f5f5f5; min-height: 100dvh; }
+      .hint { color: #888; font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
       .add, .pick {
-        border: 1px solid #262626;
-        border-radius: 14px;
-        padding: 14px;
-        background: #0a0a0a;
-        margin: 14px 0;
+        border: 1px solid #262626; border-radius: 14px; padding: 14px;
+        background: #0a0a0a; margin: 12px 0;
       }
       label { display: block; font-size: 13px; color: #a8a8a8; margin-bottom: 8px; }
       input[type="text"] {
-        width: 100%;
-        background: #121212;
-        border: 1px solid #262626;
-        color: #fff;
-        border-radius: 10px;
-        padding: 10px 12px;
-        margin: 8px 0 12px;
+        width: 100%; background: #121212; border: 1px solid #262626; color: #fff;
+        border-radius: 10px; padding: 10px 12px; margin: 8px 0 12px;
       }
       .btn {
-        border: 0;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-        color: #fff;
-        font-weight: 800;
-        border-radius: 10px;
-        padding: 10px 16px;
+        border: 0; background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        color: #fff; font-weight: 800; border-radius: 10px; padding: 10px 16px;
+      }
+      .ghost {
+        border: 1px solid #333; background: #161616; color: #fff;
+        border-radius: 10px; padding: 8px 12px; font-weight: 800; font-size: 13px;
       }
       .row { display: flex; gap: 12px; overflow-x: auto; padding: 6px 0 16px; }
       .row::-webkit-scrollbar { display: none; }
       .card { flex: 0 0 118px; background: none; border: 0; color: #fff; text-align: start; }
       .thumb {
         width: 118px; height: 200px; object-fit: cover; border-radius: 14px;
-        border: 2px solid #e1306c; background: #111; display: grid; place-items: center;
+        border: 2px solid #e1306c; background: #111; display: block;
       }
-      .mini {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
-        margin-top: 10px;
-      }
-      .mini button { padding: 0; border: 0; background: #111; border-radius: 8px; overflow: hidden; }
+      .thumb.ph { display: grid; place-items: center; font-size: 28px; }
+      .card b { display: block; font-size: 12px; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+      .mini button { padding: 0; border: 0; background: #111; border-radius: 8px; overflow: hidden; position: relative; }
       .mini img, .mini video { width: 100%; height: 90px; object-fit: cover; display: block; }
+      .mini .v { position: absolute; top: 4px; left: 4px; font-size: 11px; }
+      .toast {
+        position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+        background: #161616; border: 1px solid #333; color: #fff;
+        padding: 10px 14px; border-radius: 999px; font-size: 13px; z-index: 90; display: none;
+      }
       .view {
         display: none; position: fixed; inset: 0; z-index: 80; background: #000;
       }
-      .view.open { display: grid; place-items: center; }
-      .view img, .view video, .view .plain {
-        width: min(420px, 100%); height: min(720px, 100%); object-fit: cover;
+      .view.open { display: block; }
+      .stage { position: absolute; inset: 0; display: grid; place-items: center; }
+      .stage img, .stage video, .stage .plain {
+        width: 100%; height: 100%; object-fit: contain; background: #000;
       }
-      .view .plain {
-        display: grid; place-items: center; padding: 28px; font-size: 22px;
-        background: linear-gradient(160deg, #833ab4, #e1306c, #f77737);
+      .stage .plain {
+        display: grid; place-items: center; padding: 28px; font-size: 24px; font-weight: 800;
+        background: linear-gradient(160deg, #833ab4, #e1306c, #f77737); object-fit: cover;
       }
-      .who { position: absolute; top: 18px; right: 18px; font-weight: 800; }
-      .x { position: absolute; top: 12px; left: 12px; background: none; border: 0; color: #fff; font-size: 28px; }
-      .hint { color: #888; font-size: 13px; line-height: 1.6; }
+      .bars { position: absolute; top: 8px; left: 10px; right: 10px; display: flex; gap: 4px; z-index: 5; }
+      .bars i { flex: 1; height: 3px; background: rgba(255,255,255,.28); border-radius: 99px; overflow: hidden; }
+      .bars i em { display: block; height: 100%; width: 0; background: #fff; }
+      .who {
+        position: absolute; top: 18px; right: 16px; z-index: 5;
+        display: flex; align-items: center; gap: 8px; font-weight: 800;
+      }
+      .who img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; }
+      .x { position: absolute; top: 12px; left: 12px; background: none; border: 0; color: #fff; font-size: 28px; z-index: 6; }
+      .hit { position: absolute; inset: 0; z-index: 4; display: flex; }
+      .hit .prev, .hit .next { flex: 1; }
+      .empty { color: #666; font-size: 13px; padding: 8px 0; }
     </style>
   </head>
   <body>
     <main class="page-pad">
-      <h1>الحالات</h1>
-      <p class="hint">ارفع صورة أو فيديو من جهازك، أو اختار منشور/فيديو من الموقع.</p>
+      <h1 data-i18n="stories">الحالات</h1>
+      <p class="hint">ارفع صورة أو فيديو من جهازك، أو اختار منشور من الموقع. الفيديو بيتشغّل هنا.</p>
 
       <form class="add" id="add-story">
         <label>رفع من الجهاز (صورة أو فيديو)</label>
@@ -89,135 +95,260 @@
     </main>
 
     <div class="view" id="view">
+      <div class="bars" id="bars"></div>
       <button class="x" id="close-view" type="button">×</button>
       <div class="who" id="view-who"></div>
-      <img id="view-img" alt="" hidden />
-      <video id="view-vid" controls playsinline hidden></video>
-      <div class="plain" id="view-text" hidden></div>
+      <div class="hit"><div class="prev" id="hit-prev"></div><div class="next" id="hit-next"></div></div>
+      <div class="stage" id="stage"></div>
     </div>
+    <div class="toast" id="toast"></div>
 
-    <script src="js/core.js"></script>
-    <script src="js/shell.js"></script>
+    <script src="js/i18n.js?v=23"></script>
+    <script src="js/core.js?v=23"></script>
+    <script src="js/media.js?v=23"></script>
+    <script src="js/shell.js?v=23"></script>
     <script>
-      const session = JSON.parse(localStorage.getItem("zivv.session") || "null") || { name: "أنت" };
-      const seed = [];
-
-      function loadMine() {
+      function me() { return ZIVV_CORE.author(); }
+      function toast(t) {
+        const el = document.getElementById("toast");
+        el.textContent = t; el.style.display = "block";
+        setTimeout(() => (el.style.display = "none"), 2400);
+      }
+      function loadAll() {
         try { return JSON.parse(localStorage.getItem("zivv.stories") || "[]"); }
         catch { return []; }
       }
-      function saveMine(list) {
-        localStorage.setItem("zivv.stories", JSON.stringify(list));
+      function saveAll(list) {
+        localStorage.setItem("zivv.stories", JSON.stringify(list.slice(0, 80)));
+      }
+      function alive(list) {
+        const cut = Date.now() - 24 * 3600 * 1000;
+        return (list || []).filter((s) => (s.at || 0) > cut);
+      }
+      function visible(list) {
+        return alive(list).filter((s) => !s.user || !ZIVV_CORE.canViewUser || ZIVV_CORE.canViewUser(s.user));
+      }
+      function person(user) {
+        return (ZIVV_CORE.personOf && ZIVV_CORE.personOf(user)) || { name: user, user, avatar: "brand/logo-sm.png" };
+      }
+
+      function compress(dataUrl, max, cb) {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, max / Math.max(img.width, img.height));
+          const c = document.createElement("canvas");
+          c.width = Math.round(img.width * scale);
+          c.height = Math.round(img.height * scale);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          cb(c.toDataURL("image/jpeg", 0.82));
+        };
+        img.onerror = () => cb(dataUrl);
+        img.src = dataUrl;
+      }
+
+      function sitePosts() {
+        return (ZIVV_CORE.getPosts() || []).filter((p) => p.image || p.videoId);
+      }
+
+      function paintSite() {
+        const box = document.getElementById("from-site");
+        const list = sitePosts();
+        box.innerHTML = list.length
+          ? list.map((p) =>
+              `<button type="button" data-id="${p.id}">
+                ${p.image ? `<img src="${p.image}" alt="">` : `<video data-media="${p.videoId || ""}" muted></video>`}
+                ${p.type === "video" || p.videoId ? '<span class="v">▶</span>' : ""}
+              </button>`
+            ).join("")
+          : '<p class="empty">مفيش منشورات تختار منها.</p>';
+        if (window.ZIVV_MEDIA) ZIVV_MEDIA.hydrate(box);
+        box.querySelectorAll("button[data-id]").forEach((b) => {
+          b.onclick = () => {
+            const p = sitePosts().find((x) => x.id === b.getAttribute("data-id"));
+            if (!p) return;
+            const a = me();
+            pushStory({
+              kind: p.videoId || p.type === "video" ? "video" : "image",
+              image: p.image || "",
+              videoId: p.videoId || "",
+              text: p.title || p.text || "",
+              name: a.name,
+              user: a.user,
+              avatar: a.avatar
+            });
+          };
+        });
+      }
+
+      function pushStory(partial) {
+        const a = me();
+        const list = loadAll();
+        list.unshift(Object.assign({
+          id: "st_" + Date.now(),
+          name: a.name,
+          user: a.user,
+          avatar: a.avatar,
+          kind: "image",
+          image: "",
+          videoId: "",
+          text: "",
+          at: Date.now()
+        }, partial || {}));
+        try { saveAll(list); }
+        catch { toast("الملف كبير. جرّب أصغر."); return; }
+        toast("اتنشرت الحالة");
+        render();
       }
 
       function card(s) {
-        const media = s.kind === "video"
-          ? `<video class="thumb" src="${s.video || s.image || ""}" muted></video>`
-          : s.image
+        const who = person(s.user);
+        const name = who.name || s.name || s.user;
+        let media = `<div class="thumb ph">Aa</div>`;
+        if (s.kind === "video") {
+          media = s.image
             ? `<img class="thumb" src="${s.image}" alt="">`
-            : `<div class="thumb">Aa</div>`;
-        return `<button class="card" data-id="${s.id}" type="button">${media}<b>${s.name}</b></button>`;
+            : `<video class="thumb" ${s.videoId ? `data-media="${s.videoId}"` : (s.video ? `src="${s.video}"` : "")} muted playsinline></video>`;
+        } else if (s.image) {
+          media = `<img class="thumb" src="${s.image}" alt="">`;
+        }
+        return `<button class="card" data-id="${s.id}" type="button">${media}<b>${name}</b></button>`;
       }
 
       function render() {
-        const mine = loadMine();
-        document.getElementById("mine").innerHTML = mine.length ? mine.map(card).join("") : '<p class="hint">لسه ما نشرتش حالة.</p>';
-        document.getElementById("others").innerHTML = seed.map(card).join("");
+        const all = visible(loadAll());
+        const u = me().user.toLowerCase();
+        const mine = all.filter((s) => String(s.user || "").toLowerCase() === u);
+        const others = all.filter((s) => String(s.user || "").toLowerCase() !== u);
+        document.getElementById("mine").innerHTML = mine.length ? mine.map(card).join("") : '<p class="empty">لسه ما نشرتش حالة.</p>';
+        document.getElementById("others").innerHTML = others.length ? others.map(card).join("") : '<p class="empty">مفيش حالات تانية دلوقتي.</p>';
+        if (window.ZIVV_MEDIA) {
+          ZIVV_MEDIA.hydrate(document.getElementById("mine"));
+          ZIVV_MEDIA.hydrate(document.getElementById("others"));
+        }
         document.querySelectorAll(".card").forEach((el) => {
           el.onclick = () => openView(el.getAttribute("data-id"));
         });
       }
 
-      function sitePosts() {
-        return (ZIVV_CORE.getPosts() || []).filter((p) => p.image);
+      let pack = [];
+      let idx = 0;
+      let timer = null;
+      let paused = false;
+
+      function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+
+      function paintBars() {
+        document.getElementById("bars").innerHTML = pack.map((_, i) =>
+          `<i><em id="bar-${i}" style="width:${i < idx ? "100%" : "0"}"></em></i>`
+        ).join("");
       }
 
-      document.getElementById("from-site").innerHTML = sitePosts().map((p) =>
-        `<button type="button" data-id="${p.id}"><img src="${p.image}" alt=""></button>`
-      ).join("");
-
-      document.querySelectorAll("#from-site button").forEach((b) => {
-        b.onclick = () => {
-          const p = sitePosts().find((x) => x.id === b.getAttribute("data-id"));
-          if (!p) return;
-          const list = loadMine();
-          list.unshift({
-            id: "me_" + Date.now(),
-            name: session.name || "أنت",
-            text: p.text || "",
-            image: p.image,
-            video: p.type === "video" ? p.image : "",
-            kind: p.type === "video" ? "video" : "image"
-          });
-          saveMine(list);
-          render();
-        };
-      });
-
-      function openView(id) {
-        const s = loadMine().concat(seed).find((x) => x.id === id);
-        if (!s) return;
-        document.getElementById("view-who").textContent = s.name;
-        const img = document.getElementById("view-img");
-        const vid = document.getElementById("view-vid");
-        const txt = document.getElementById("view-text");
-        img.hidden = true; vid.hidden = true; txt.hidden = true;
-        vid.pause();
-        if (s.kind === "video" && (s.video || s.image)) {
-          vid.src = s.video || s.image;
-          vid.hidden = false;
+      async function showAt(i) {
+        if (!pack.length) return;
+        idx = (i + pack.length) % pack.length;
+        const s = pack[idx];
+        const who = person(s.user);
+        document.getElementById("view-who").innerHTML =
+          `<img src="${who.avatar || s.avatar || "brand/logo-sm.png"}" alt=""><span>${who.name || s.name}</span>`;
+        paintBars();
+        const stage = document.getElementById("stage");
+        stage.innerHTML = "";
+        stopTimer();
+        paused = false;
+        if (s.kind === "video") {
+          const vid = document.createElement("video");
+          vid.playsInline = true;
+          vid.autoplay = true;
+          if (s.videoId && window.ZIVV_MEDIA) {
+            vid.setAttribute("data-media", s.videoId);
+            const url = await ZIVV_MEDIA.getUrl(s.videoId);
+            if (url) vid.src = url;
+          } else if (s.video) vid.src = s.video;
+          if (s.image) vid.poster = s.image;
+          stage.appendChild(vid);
+          vid.onclick = (e) => {
+            e.stopPropagation();
+            if (vid.paused) { vid.play().catch(() => {}); paused = false; }
+            else { vid.pause(); paused = true; }
+          };
+          vid.onended = () => showAt(idx + 1);
           vid.play().catch(() => {});
         } else if (s.image) {
+          const img = document.createElement("img");
           img.src = s.image;
-          img.hidden = false;
+          stage.appendChild(img);
+          runBar(5000);
         } else {
-          txt.textContent = s.text || "";
-          txt.hidden = false;
+          const d = document.createElement("div");
+          d.className = "plain";
+          d.textContent = s.text || "";
+          stage.appendChild(d);
+          runBar(4000);
         }
         document.getElementById("view").classList.add("open");
       }
 
-      document.getElementById("close-view").onclick = () => {
-        document.getElementById("view-vid").pause();
-        document.getElementById("view").classList.remove("open");
-      };
+      function runBar(ms) {
+        const bar = document.getElementById("bar-" + idx);
+        if (!bar) return;
+        const start = Date.now();
+        stopTimer();
+        timer = setInterval(() => {
+          if (paused) return;
+          const pct = Math.min(100, ((Date.now() - start) / ms) * 100);
+          bar.style.width = pct + "%";
+          if (pct >= 100) showAt(idx + 1);
+        }, 40);
+      }
 
-      document.getElementById("add-story").onsubmit = (e) => {
+      function openView(id) {
+        pack = visible(loadAll());
+        const i = pack.findIndex((s) => s.id === id);
+        showAt(i < 0 ? 0 : i);
+      }
+
+      document.getElementById("close-view").onclick = () => {
+        stopTimer();
+        document.getElementById("view").classList.remove("open");
+        document.getElementById("stage").innerHTML = "";
+      };
+      document.getElementById("hit-prev").onclick = () => showAt(idx - 1);
+      document.getElementById("hit-next").onclick = () => showAt(idx + 1);
+
+      document.getElementById("add-story").onsubmit = async (e) => {
         e.preventDefault();
         const file = document.getElementById("story-file").files[0];
         const text = document.getElementById("story-text").value.trim();
-        if (!file && !text) return;
-        const push = (payload) => {
-          const list = loadMine();
-          list.unshift(payload);
-          try { saveMine(list); }
-          catch {
-            payload.video = payload.video && payload.video.startsWith("data:") ? "" : payload.video;
-            saveMine(list);
-          }
-          document.getElementById("story-text").value = "";
-          document.getElementById("story-file").value = "";
-          render();
-        };
+        if (!file && !text) { toast("اختار صورة أو فيديو أو اكتب جملة"); return; }
+        const a = me();
         if (!file) {
-          push({ id: "me_" + Date.now(), name: session.name || "أنت", text, kind: "text" });
+          pushStory({ kind: "text", text, name: a.name, user: a.user, avatar: a.avatar });
+          document.getElementById("story-text").value = "";
           return;
         }
         const isVid = file.type.startsWith("video/");
-        const reader = new FileReader();
-        reader.onload = () => {
-          push({
-            id: "me_" + Date.now(),
-            name: session.name || "أنت",
-            text,
-            kind: isVid ? "video" : "image",
-            image: isVid ? "" : reader.result,
-            video: isVid ? reader.result : ""
-          });
-        };
-        reader.readAsDataURL(file);
+        try {
+          if (isVid) {
+            if (!window.ZIVV_MEDIA) throw new Error("no media");
+            const id = "story_" + Date.now();
+            await ZIVV_MEDIA.put(id, file.slice(0, file.size, file.type || "video/mp4"));
+            pushStory({ kind: "video", videoId: id, text, name: a.name, user: a.user, avatar: a.avatar });
+          } else {
+            const r = new FileReader();
+            r.onload = () => compress(r.result, 1100, (data) => {
+              pushStory({ kind: "image", image: data, text, name: a.name, user: a.user, avatar: a.avatar });
+            });
+            r.readAsDataURL(file);
+          }
+        } catch {
+          toast("ما قدرناش نحفظ الفيديو. جرّب ملف أصغر.");
+          return;
+        }
+        document.getElementById("story-text").value = "";
+        document.getElementById("story-file").value = "";
       };
 
+      paintSite();
       render();
     </script>
   </body>
