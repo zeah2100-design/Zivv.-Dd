@@ -151,7 +151,7 @@
         document.getElementById("cover").innerHTML = profile.cover
           ? `<img id="cover-img" class="${mine ? "mine" : ""}" src="${profile.cover}" alt="الخلفية">`
           : `<div id="cover-img" class="${mine ? "mine" : ""}" style="width:100%;height:100%;background:#141414"></div>`;
-        const on = ZIVV_CORE.isFollowing(profile.user);
+        const on = ZIVV_CORE.isFollowing ? ZIVV_CORE.isFollowing(profile.user) : false;
         const gold = !!(window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser && ZIVV_CREATOR.isGoldUser(profile.user)) || ZIVV_CORE.isGold(profile.user);
         const fans = ZIVV_CORE.followerCount(profile.user);
         const hearts = ZIVV_CORE.receivedLikes(profile.user);
@@ -177,6 +177,8 @@
             <span><b>${posts.length}</b> منشور</span>
             <span><b>${fans}</b> متابع</span>
             <span><b>${hearts}</b> إعجاب</span>
+            <span><b>${comms}</b> تعليق</span>
+            <span><b>${goods.length}</b> منتج</span>
           </div>
           <div class="acts">
             ${mine
@@ -405,10 +407,15 @@
         location.href = "profile.html";
       };
 
-      paintHead();
-      paintShop();
-      paintTabs();
-      paintGrid();
+      try {
+        paintHead();
+        paintShop();
+        paintTabs();
+        paintGrid();
+      } catch (err) {
+        document.getElementById("head").innerHTML = "<p class=\"empty\">حصل خطأ في الصفحة. حدّث كمان مرة.</p>";
+        console.error(err);
+      }
     </script>
   </body>
 </html>

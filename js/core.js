@@ -591,6 +591,102 @@
     return String(author().user || "").replace(/^@/, "").toLowerCase();
   }
 
+  function followGraph() {
+    let g = read("zivv.followGraph", null);
+    if (!g || typeof g !== "object") {
+      g = {};
+      const old = read("zivv.followUsers", []);
+      if (Array.isArray(old) && old.length) {
+        g[meUser()] = old.map((u) => String(u).replace(/^@/, "").toLowerCase());
+      }
+      write("zivv.followGraph", g);
+    }
+    return g;
+  }
+  function saveFollowGraph(g) {
+    write("zivv.followGraph", g);
+    const me = meUser();
+    if (me && g[me]) write("zivv.followUsers", g[me]);
+  }
+  function followingOf(user) {
+    const u = String(user || meUser() || "").replace(/^@/, "").toLowerCase();
+    return (followGraph()[u] || []).map((x) => String(x).replace(/^@/, "").toLowerCase());
+  }
+  function followersOf(user) {
+    const u = String(user || meUser() || "").replace(/^@/, "").toLowerCase();
+    const g = followGraph();
+    return Object.keys(g).filter((k) =>
+      (g[k] || []).some((x) => String(x).replace(/^@/, "").toLowerCase() === u)
+    );
+  }
+  function isFollowing(user) {
+    return followingOf(meUser()).indexOf(String(user || "").replace(/^@/, "").toLowerCase()) >= 0;
+  }
+  function followUser(user) {
+    const me = meUser();
+    const t = String(user || "").replace(/^@/, "").toLowerCase();
+    if (!me || !t || me === t) return false;
+    const g = followGraph();
+    const list = followingOf(me);
+    if (list.indexOf(t) < 0) list.push(t);
+    g[me] = list;
+    saveFollowGraph(g);
+    return true;
+  }
+  function unfollowUser(user) {
+    const me = meUser();
+    const t = String(user || "").replace(/^@/, "").toLowerCase();
+    const g = followGraph();
+    g[me] = followingOf(me).filter((x) => x !== t);
+    saveFollowGraph(g);
+    return true;
+  }
+  function followerCount(user) {
+    return followersOf(user).length;
+  }
+  function followingCount(user) {
+    return followingOf(user).length;
+  }
+  function receivedLikes(user) {
+    const u = String(user || meUser() || "").replace(/^@/, "").toLowerCase();
+    return getPosts()
+      .filter((p) => String(p.user || "").toLowerCase() === u)
+      .reduce((s, p) => s + likeCount(p), 0);
+  }
+  function receivedComments(user) {
+    const u = String(user || meUser() || "").replace(/^@/, "").toLowerCase();
+    return getPosts()
+      .filter((p) => String(p.user || "").toLowerCase() === u)
+      .reduce((s, p) => s + commentsOf(p).length, 0);
+  }
+  function kingOwner() {
+    try {
+      return JSON.parse(localStorage.getItem("zivv.kingOwner") || "null");
+    } catch {
+      return null;
+    }
+  }
+  function isKingUser(user) {
+    const k = kingOwner();
+    if (!k) return false;
+    const u = String(user || meUser() || "").replace(/^@/, "").toLowerCase();
+    return !!(u && u === String(k.user || "").toLowerCase());
+  }
+  function claimKing() {
+    const cur = kingOwner();
+    if (cur && cur.user) return cur;
+    const a = author();
+    const s = session();
+    const owner = {
+      user: a.user,
+      email: s.email || "",
+      name: a.name || s.name || a.user,
+      at: Date.now(),
+    };
+    localStorage.setItem("zivv.kingOwner", JSON.stringify(owner));
+    return owner;
+  }
+
   function friendReqs() {
     return read("zivv.friendReqs", []);
   }
@@ -955,6 +1051,7 @@
     followerCount,
     followingCount,
     receivedLikes,
+    receivedComments,
     kingOwner,
     isKingUser,
     claimKing,
