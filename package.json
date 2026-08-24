@@ -2,8 +2,7 @@
   "name": "zivv",
   "version": "1.0.0",
   "private": true,
-  "description": "ZIVV social",
-  "main": "server.js",
+  "description": "ZIVV social — static HTML",
   "scripts": {
     "start": "node server.js"
   }

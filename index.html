@@ -505,30 +505,26 @@
 
       function paint(u) {
         $("done-name").textContent = u.name || u.email;
-        const creator = !!(u.onboarding && u.onboarding.creator);
         const hint = document.querySelector("#done .hint");
-        if (hint) hint.textContent = creator
-          ? "حسابك جاهز. روح انشر أول منشور."
-          : "الحساب جاهز. المرحلة الجاية الصفحة الرئيسية.";
+        if (hint) hint.textContent = "الحساب جاهز. هتفتح الصفحة الرئيسية.";
         const go = document.querySelector("#done .btn");
         if (go) {
-          go.setAttribute("href", creator ? "creators.html?welcome=1" : "home.html");
-          go.textContent = creator ? "انشر كصانع محتوى" : "الصفحة الرئيسية";
+          go.setAttribute("href", "home.html");
+          go.textContent = "الصفحة الرئيسية";
         }
         show("done");
         setTimeout(function () {
-          location.href = creator ? "creators.html?welcome=1" : "home.html";
-        }, 700);
+          location.href = "home.html";
+        }, 400);
       }
 
       apply();
       const s = JSON.parse(localStorage.getItem("zivv.session") || "null");
-      if (s && (s.email || s.mark)) {
+      if (s && (s.email || s.mark) && s.password) {
         pending = s;
         if (s.onboarding) paint(s);
         else show("form-quiz");
       }
-    </script>
     </script>
   </body>
 </html>

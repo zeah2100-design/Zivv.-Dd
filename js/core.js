@@ -30,6 +30,26 @@
     localStorage.setItem("zivv.wipedDemo", "2");
   })();
 
+  function pageFile() {
+    return String(location.pathname.split("/").pop() || "").toLowerCase();
+  }
+  function isLoggedIn() {
+    const s = read("zivv.session", null);
+    if (!s || typeof s !== "object") return false;
+    if (!s.password) return false;
+    if (!(s.email || s.mark)) return false;
+    if (s.email === "guest") return false;
+    return true;
+  }
+  function requireAuth() {
+    const file = pageFile();
+    if (file === "index.html" || file === "" || file === "setup.html") return true;
+    if (isLoggedIn() && read("zivv.session", {}).onboarding) return true;
+    location.replace("index.html");
+    return false;
+  }
+  requireAuth();
+
   function session() {
     return read("zivv.session", { name: "ضيف", email: "guest" });
   }
@@ -925,6 +945,8 @@
     search,
     saveFile,
     downloadPost,
+    isLoggedIn,
+    requireAuth,
   };
 
   function saveFile(href, filename) {
