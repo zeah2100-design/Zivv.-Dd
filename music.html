@@ -13,7 +13,7 @@
         background: #000;
         color: #f5f5f5;
         min-height: 100dvh;
-        padding-bottom: 92px;
+        padding-bottom: 118px;
       }
       .wrap { width: min(640px, 100%); margin: 0 auto; padding: 12px 14px 20px; }
       h1 {
@@ -23,9 +23,7 @@
         -webkit-background-clip: text; background-clip: text; color: transparent;
       }
       .sub { color: #888; font-size: 13px; margin: 4px 0 12px; }
-      .find {
-        display: flex; gap: 8px; margin-bottom: 12px;
-      }
+      .find { display: flex; gap: 8px; margin-bottom: 12px; }
       .find input {
         flex: 1; background: #121212; border: 1px solid #262626; color: #fff;
         border-radius: 999px; padding: 10px 14px; outline: none;
@@ -43,9 +41,7 @@
         min-height: 180px; margin-bottom: 18px;
       }
       .hero img { width: 100%; height: 200px; object-fit: cover; display: block; filter: brightness(.55); }
-      .hero .info {
-        position: absolute; inset: auto 12px 12px 12px;
-      }
+      .hero .info { position: absolute; inset: auto 12px 12px 12px; }
       .hero .k { font-size: 11px; color: #fcaf45; font-weight: 800; letter-spacing: .08em; }
       .hero h2 { font-size: 22px; margin: 4px 0; }
       .playbig {
@@ -55,9 +51,7 @@
       h3 { font-size: 16px; margin: 6px 0 10px; }
       .rail { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; }
       .rail::-webkit-scrollbar { display: none; }
-      .card {
-        flex: 0 0 132px; background: none; border: 0; color: #fff; text-align: start;
-      }
+      .card { flex: 0 0 132px; background: none; border: 0; color: #fff; text-align: start; }
       .card img, .card .ph {
         width: 132px; height: 132px; border-radius: 12px; object-fit: cover; display: block;
         background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
@@ -76,7 +70,7 @@
         display: grid; place-items: center; flex: 0 0 auto;
       }
       .song.on b { color: #e1306c; }
-      .song .meta { flex: 1; min-width: 0; }
+      .song .meta { flex: 1; min-width: 0; background: none; border: 0; color: #fff; text-align: start; }
       .song .meta b, .song .meta span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .song .meta span { color: #888; font-size: 12px; }
       .song .acts { display: flex; gap: 4px; }
@@ -86,59 +80,105 @@
       }
       .song .acts button.on { color: #e1306c; border-color: #e1306c; }
       .mute { color: #888; font-size: 13px; }
-      .bar {
-        position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+      .now {
+        position: fixed; left: 8px; right: 8px; bottom: 10px; z-index: 40;
+        border-radius: 14px; overflow: hidden;
+        background: linear-gradient(180deg, #2a1a14 0%, #161016 70%, #0c0c0c 100%);
+        border: 1px solid #3a2420;
+        box-shadow: 0 10px 28px rgba(0,0,0,.45);
+        touch-action: pan-y;
+      }
+      .seek {
+        height: 14px; margin: 0; position: relative; cursor: pointer;
+      }
+      .seek .track {
+        position: absolute; left: 10px; right: 10px; top: 6px; height: 3px;
+        background: rgba(255,255,255,.18); border-radius: 99px; overflow: hidden;
+      }
+      .seek .fill {
+        height: 100%; width: 0;
+        background: linear-gradient(90deg, #fcaf45, #e1306c);
+      }
+      .swipe { overflow: hidden; }
+      .now-row {
         display: flex; align-items: center; gap: 10px;
-        padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
-        background: #0a0a0a; border-top: 1px solid #262626;
+        padding: 2px 10px 10px;
+        transition: transform .22s ease;
       }
-      .bar img, .bar .ph {
-        width: 46px; height: 46px; border-radius: 8px; object-fit: cover;
+      .now img, .now .ph {
+        width: 48px; height: 48px; border-radius: 8px; object-fit: cover;
         background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-        display: grid; place-items: center;
+        display: grid; place-items: center; flex: 0 0 auto;
       }
-      .bar .t { flex: 1; min-width: 0; }
-      .bar .t b, .bar .t span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .bar .t span { color: #888; font-size: 11px; }
-      .ctrls { display: flex; gap: 4px; align-items: center; }
+      .now .t { flex: 1; min-width: 0; }
+      .now .t b, .now .t span {
+        display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .now .t span { color: #b9b9b9; font-size: 12px; }
+      .ctrls { display: flex; gap: 2px; align-items: center; flex: 0 0 auto; }
       .ctrls button {
-        width: 38px; height: 38px; border: 0; background: none; color: #fff; font-size: 18px;
+        width: 36px; height: 36px; border: 0; background: none; color: #fff; font-size: 16px;
       }
+      .ctrls button.on { color: #fcaf45; }
+      .ctrls #like.on { color: #e1306c; }
       .ctrls .go {
-        width: 42px; height: 42px; border-radius: 50%;
+        width: 40px; height: 40px; border-radius: 50%;
         background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
       }
-      .prog { position: absolute; top: 0; left: 0; height: 2px; background: #e1306c; width: 0; }
+      .hint { color: #777; font-size: 11px; text-align: center; padding: 0 10px 8px; }
+      .toast {
+        position: fixed; bottom: 130px; left: 50%; transform: translateX(-50%);
+        background: #1a1a1a; border: 1px solid #333; color: #fff;
+        padding: 8px 14px; border-radius: 999px; font-size: 13px; z-index: 70; display: none;
+      }
     </style>
   </head>
   <body>
     <main class="wrap">
-      <h1>الموسيقى</h1>
-      <p class="sub">صالة ZIVV — استماع بستايل إنستجرام.</p>
+      <h1 data-i18n="music">الموسيقى</h1>
+      <p class="sub" id="sub">اسحب الشريط من تحت يمين وشمال — زي يوتيوب ميوزك.</p>
       <div class="find"><input id="q" type="search" placeholder="دور على أغنية أو فنان…" /></div>
       <div class="chips" id="chips"></div>
       <div id="home"></div>
     </main>
-    <div class="bar" id="player">
-      <div class="prog" id="prog"></div>
-      <img id="p-art" alt="" hidden />
-      <div class="ph" id="p-ph">♪</div>
-      <div class="t">
-        <b id="p-title">اختار مقطع</b>
-        <span id="p-artist">ZIVV Lounge</span>
+    <div class="now" id="player">
+      <div class="seek" id="seek"><div class="track"><div class="fill" id="prog"></div></div></div>
+      <div class="swipe" id="swipe">
+        <div class="now-row" id="now-row">
+          <img id="p-art" alt="" hidden />
+          <div class="ph" id="p-ph">♪</div>
+          <div class="t">
+            <b id="p-title">اختار أغنية</b>
+            <span id="p-artist">ZIVV Music</span>
+          </div>
+          <div class="ctrls">
+            <button type="button" id="like" title="لايك">♡</button>
+            <button type="button" id="shuffle" title="عشوائي">⤮</button>
+            <button type="button" id="prev" title="السابق">⏮</button>
+            <button type="button" class="go" id="toggle" title="تشغيل">▶</button>
+            <button type="button" id="next" title="التالي">⏭</button>
+          </div>
+        </div>
       </div>
-      <div class="ctrls">
-        <button type="button" id="prev">⏮</button>
-        <button type="button" class="go" id="toggle">▶</button>
-        <button type="button" id="next">⏭</button>
-      </div>
+      <div class="hint" id="hint">اسحب يمين أو شمال لتغيير الأغنية</div>
     </div>
     <audio id="audio"></audio>
-    <script src="js/core.js"></script>
-    <script src="js/media.js"></script>
-    <script src="js/social.js"></script>
-    <script src="js/shell.js"></script>
+    <div class="toast" id="toast"></div>
+    <script src="js/i18n.js?v=24"></script>
+    <script src="js/core.js?v=24"></script>
+    <script src="js/media.js?v=24"></script>
+    <script src="js/social.js?v=24"></script>
+    <script src="js/shell.js?v=24"></script>
     <script>
+      const EN = localStorage.getItem("zivv.lang") === "en";
+      const L = (ar, en) => (EN ? en : ar);
+      document.getElementById("sub").textContent = L(
+        "اسحب الشريط من تحت يمين وشمال — زي يوتيوب ميوزك.",
+        "Swipe the bar left or right — like YouTube Music."
+      );
+      document.getElementById("hint").textContent = L("اسحب يمين أو شمال لتغيير الأغنية", "Swipe to change the song");
+      document.getElementById("q").placeholder = L("دور على أغنية أو فنان…", "Search a song or artist…");
+
       const COVERS = {
         m1: "posts/nile.jpg",
         m2: "posts/giza.webp",
@@ -148,6 +188,7 @@
         m6: "posts/fashion.jpg"
       };
       const FREQ = { m1: 196, m2: 147, m3: 220, m4: 165, m5: 110, m6: 247 };
+      const TONE_LEN = 32;
 
       const lounge = ZIVV_CORE.MUSIC.map((m) => ({
         id: m.id,
@@ -165,7 +206,7 @@
           const who = ZIVV_CORE.personOf ? ZIVV_CORE.personOf(p.user) : { name: p.name, avatar: p.avatar };
           return {
             id: p.id,
-            title: p.title || p.text || "مقطع",
+            title: p.title || p.text || L("مقطع", "Track"),
             artist: who.name || p.name || p.user,
             tags: (p.tags || []).join(" "),
             cover: p.image || who.avatar || "posts/studio.jpg",
@@ -178,35 +219,45 @@
 
       const all = lounge.concat(userTracks);
       const mixes = [
-        { id: "mix1", title: "مزيج منتصف الليل", cover: "posts/studio.jpg", ids: ["m3", "m5", "m2"] },
-        { id: "mix2", title: "على النيل", cover: "posts/nile.jpg", ids: ["m1", "m4"] },
-        { id: "mix3", title: "ذهب وحرير", cover: "posts/fashion.jpg", ids: ["m6", "m2"] },
-        { id: "mix4", title: "بعد ١٨", cover: "posts/cinema.jpg", ids: ["m5", "m3", "m1"] }
+        { id: "mix1", title: L("مزيج منتصف الليل", "Midnight mix"), cover: "posts/studio.jpg", ids: ["m3", "m5", "m2"] },
+        { id: "mix2", title: L("على النيل", "On the Nile"), cover: "posts/nile.jpg", ids: ["m1", "m4"] },
+        { id: "mix3", title: L("ذهب وحرير", "Gold & silk"), cover: "posts/fashion.jpg", ids: ["m6", "m2"] },
+        { id: "mix4", title: L("بعد ١٨", "After 18"), cover: "posts/cinema.jpg", ids: ["m5", "m3", "m1"] }
       ];
 
       let tab = "all";
       let queue = all.slice();
       let idx = -1;
       let playing = false;
+      let shuffleOn = localStorage.getItem("zivv.musicShuffle") === "1";
       let ctx = null;
       let osc = null;
       let gain = null;
+      let toneStart = 0;
+      let toneTimer = null;
+      let raf = 0;
 
       const audio = document.getElementById("audio");
       const chips = [
-        ["all", "الكل"],
-        ["lounge", "صالة ZIVV"],
-        ["user", "منشوراتك"],
-        ["mix", "مزيج"]
+        ["all", L("الكل", "All")],
+        ["lounge", L("صالة ZIVV", "ZIVV lounge")],
+        ["user", L("منشوراتك", "Your tracks")],
+        ["mix", L("مزيج", "Mixes")]
       ];
 
+      function toast(msg) {
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.style.display = "block";
+        setTimeout(() => { el.style.display = "none"; }, 1800);
+      }
       function stopTone() {
         try { if (osc) osc.stop(); } catch {}
         osc = null;
         if (gain) try { gain.disconnect(); } catch {}
         gain = null;
+        if (toneTimer) { clearTimeout(toneTimer); toneTimer = null; }
       }
-
       function playTone(freq) {
         stopTone();
         audio.pause();
@@ -220,6 +271,48 @@
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start();
+        toneStart = Date.now();
+        toneTimer = setTimeout(() => { if (playing) skip(1); }, TONE_LEN * 1000);
+      }
+      function likeId() {
+        return queue[idx] ? queue[idx].id : "";
+      }
+      function paintLike() {
+        const id = likeId();
+        const on = id && ZIVV_CORE.likedByMe(id);
+        const b = document.getElementById("like");
+        b.textContent = on ? "♥" : "♡";
+        b.classList.toggle("on", !!on);
+      }
+      function paintShuffle() {
+        document.getElementById("shuffle").classList.toggle("on", shuffleOn);
+      }
+      function setProg(pct) {
+        document.getElementById("prog").style.width = Math.max(0, Math.min(100, pct || 0)) + "%";
+      }
+      function tick() {
+        cancelAnimationFrame(raf);
+        if (!playing) return;
+        const t = queue[idx];
+        if (t && t.kind === "user" && audio.duration) {
+          setProg(100 * audio.currentTime / audio.duration);
+        } else if (t && t.kind === "lounge") {
+          setProg(100 * ((Date.now() - toneStart) / (TONE_LEN * 1000)));
+        }
+        raf = requestAnimationFrame(tick);
+      }
+      function paintNow() {
+        const t = queue[idx];
+        document.getElementById("p-title").textContent = t ? t.title : L("اختار أغنية", "Pick a song");
+        document.getElementById("p-artist").textContent = t ? t.artist : "ZIVV Music";
+        const art = document.getElementById("p-art");
+        const ph = document.getElementById("p-ph");
+        if (t && t.cover) { art.src = t.cover; art.hidden = false; ph.hidden = true; }
+        else { art.hidden = true; ph.hidden = false; }
+        document.getElementById("toggle").textContent = playing ? "⏸" : "▶";
+        paintLike();
+        paintShuffle();
+        paintList();
       }
 
       async function playAt(i) {
@@ -227,16 +320,8 @@
         idx = i;
         const t = queue[idx];
         playing = true;
-        document.getElementById("p-title").textContent = t.title;
-        document.getElementById("p-artist").textContent = t.artist;
-        const art = document.getElementById("p-art");
-        const ph = document.getElementById("p-ph");
-        if (t.cover) {
-          art.src = t.cover; art.hidden = false; ph.hidden = true;
-        } else { art.hidden = true; ph.hidden = false; }
-        document.getElementById("toggle").textContent = "⏸";
-        paintList();
         stopTone();
+        paintNow();
         if (t.kind === "user" && (t.audioId || t.audio)) {
           if (t.audioId && window.ZIVV_MEDIA) {
             const url = await ZIVV_MEDIA.getUrl(t.audioId);
@@ -247,15 +332,14 @@
           audio.pause();
           playTone(t.freq || 180);
         }
+        tick();
       }
-
       function pause() {
         playing = false;
         audio.pause();
         stopTone();
         document.getElementById("toggle").textContent = "▶";
       }
-
       function resume() {
         if (idx < 0) return playAt(0);
         const t = queue[idx];
@@ -263,22 +347,94 @@
         document.getElementById("toggle").textContent = "⏸";
         if (t.kind === "user" && audio.src) audio.play().catch(() => {});
         else playTone(t.freq || 180);
+        tick();
+      }
+      function nextIndex(dir) {
+        if (!queue.length) return 0;
+        if (shuffleOn && queue.length > 1) {
+          let n = idx;
+          while (n === idx) n = Math.floor(Math.random() * queue.length);
+          return n;
+        }
+        return (idx + dir + queue.length) % queue.length;
+      }
+      function skip(dir) {
+        if (!queue.length) return;
+        playAt(nextIndex(dir));
       }
 
       document.getElementById("toggle").onclick = () => (playing ? pause() : resume());
-      document.getElementById("next").onclick = () => {
-        if (!queue.length) return;
-        playAt((idx + 1) % queue.length);
+      document.getElementById("next").onclick = () => skip(1);
+      document.getElementById("prev").onclick = () => skip(-1);
+      document.getElementById("shuffle").onclick = () => {
+        shuffleOn = !shuffleOn;
+        localStorage.setItem("zivv.musicShuffle", shuffleOn ? "1" : "0");
+        paintShuffle();
+        toast(shuffleOn ? L("التشغيل العشوائي شغّال", "Shuffle on") : L("التشغيل العشوائي اتقفل", "Shuffle off"));
       };
-      document.getElementById("prev").onclick = () => {
-        if (!queue.length) return;
-        playAt((idx - 1 + queue.length) % queue.length);
+      document.getElementById("like").onclick = (e) => {
+        e.stopPropagation();
+        const id = likeId();
+        if (!id) return;
+        ZIVV_CORE.toggleLike(id);
+        paintLike();
+        paint();
       };
-      audio.onended = () => document.getElementById("next").click();
+      audio.onended = () => skip(1);
       audio.ontimeupdate = () => {
         if (!audio.duration) return;
-        document.getElementById("prog").style.width = (100 * audio.currentTime / audio.duration) + "%";
+        setProg(100 * audio.currentTime / audio.duration);
       };
+
+      const seek = document.getElementById("seek");
+      function seekTo(ev) {
+        const r = seek.getBoundingClientRect();
+        const x = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+        const pct = Math.max(0, Math.min(1, x / r.width));
+        const t = queue[idx];
+        if (!t) return;
+        if (t.kind === "user" && audio.duration) {
+          audio.currentTime = pct * audio.duration;
+          setProg(pct * 100);
+        } else if (t.kind === "lounge") {
+          toneStart = Date.now() - pct * TONE_LEN * 1000;
+          if (toneTimer) clearTimeout(toneTimer);
+          const left = Math.max(200, (1 - pct) * TONE_LEN * 1000);
+          toneTimer = setTimeout(() => { if (playing) skip(1); }, left);
+          setProg(pct * 100);
+        }
+      }
+      seek.addEventListener("pointerdown", seekTo);
+
+      (function swipeBar() {
+        const row = document.getElementById("now-row");
+        let x0 = 0, y0 = 0, dx = 0, live = false;
+        const area = document.getElementById("swipe");
+        area.addEventListener("pointerdown", (e) => {
+          if (e.target.closest("button")) return;
+          live = true;
+          x0 = e.clientX; y0 = e.clientY; dx = 0;
+          row.style.transition = "none";
+        });
+        area.addEventListener("pointermove", (e) => {
+          if (!live) return;
+          dx = e.clientX - x0;
+          if (Math.abs(e.clientY - y0) > Math.abs(dx) + 8) return;
+          row.style.transform = "translateX(" + dx + "px)";
+        });
+        function end() {
+          if (!live) return;
+          live = false;
+          row.style.transition = "transform .22s ease";
+          if (dx < -56) { row.style.transform = "translateX(-110%)"; setTimeout(() => { row.style.transform = ""; skip(1); }, 160); }
+          else if (dx > 56) { row.style.transform = "translateX(110%)"; setTimeout(() => { row.style.transform = ""; skip(-1); }, 160); }
+          else row.style.transform = "";
+          dx = 0;
+        }
+        area.addEventListener("pointerup", end);
+        area.addEventListener("pointercancel", end);
+        area.addEventListener("pointerleave", end);
+      })();
 
       function filtered() {
         const q = document.getElementById("q").value.trim().toLowerCase();
@@ -292,13 +448,11 @@
         }
         return list;
       }
-
       function paintList() {
         document.querySelectorAll(".song").forEach((el) => {
           el.classList.toggle("on", el.getAttribute("data-id") === (queue[idx] && queue[idx].id));
         });
       }
-
       function paint() {
         document.getElementById("chips").innerHTML = chips.map(([k, l]) =>
           `<button type="button" class="${k === tab ? "on" : ""}" data-t="${k}">${l}</button>`
@@ -314,18 +468,18 @@
           ${feat ? `<div class="hero">
             <img src="${feat.cover}" alt="">
             <div class="info">
-              <div class="k">استمع الآن</div>
+              <div class="k">${L("استمع الآن", "Play now")}</div>
               <h2>${feat.title}</h2>
               <p class="mute">${feat.artist}</p>
-              <button class="playbig" type="button" id="hero-play">تشغيل</button>
+              <button class="playbig" type="button" id="hero-play">${L("تشغيل", "Play")}</button>
             </div>
           </div>` : ""}
-          <h3>مزيج سريع</h3>
+          <h3>${L("مزيج سريع", "Quick mixes")}</h3>
           <div class="rail">${mixes.map((m) =>
             `<button class="card" type="button" data-mix="${m.id}">
-              <img src="${m.cover}" alt=""><b>${m.title}</b><span>مزيج ZIVV</span>
+              <img src="${m.cover}" alt=""><b>${m.title}</b><span>${L("مزيج ZIVV", "ZIVV mix")}</span>
             </button>`).join("")}</div>
-          <h3>${tab === "user" ? "منشورات بعلامة موسيقى" : "الأغاني"}</h3>
+          <h3>${tab === "user" ? L("منشورات بعلامة موسيقى", "Music posts") : L("الأغاني", "Songs")}</h3>
           <div id="songs">${list.length ? list.map((t) => {
             const post = t.post || { id: t.id, likes: 0, comments: [], user: t.artist };
             const liked = ZIVV_CORE.likedByMe(post.id);
@@ -333,7 +487,7 @@
             const comms = ZIVV_CORE.commentsOf(post).length;
             return `<div class="song ${queue[idx] && queue[idx].id === t.id ? "on" : ""}" data-id="${t.id}">
               ${t.cover ? `<img src="${t.cover}" alt="">` : `<div class="ph">♪</div>`}
-              <button class="meta" type="button" data-play="${t.id}" style="background:none;border:0;color:#fff;text-align:start;flex:1">
+              <button class="meta" type="button" data-play="${t.id}">
                 <b>${t.title}</b><span>${t.artist}</span>
               </button>
               <div class="acts">
@@ -341,18 +495,35 @@
                 <button type="button" data-c="${post.id}">💬 ${comms}</button>
               </div>
             </div>`;
-          }).join("") : '<p class="mute">مفيش مقاطع في القسم ده. انشر صوت بعلامة #موسيقى وحط غلاف.</p>'}</div>`;
+          }).join("") : `<p class="mute">${L("مفيش مقاطع في القسم ده. انشر صوت بعلامة #موسيقى وحط غلاف.", "No tracks here. Publish audio with #music and a cover.")}</p>`}</div>`;
 
         const hp = document.getElementById("hero-play");
         if (hp && feat) hp.onclick = () => {
           queue = list.length ? list : all.slice();
           playAt(Math.max(0, queue.findIndex((x) => x.id === feat.id)));
         };
-        document.querySelectorAll(".song").forEach((b) => {
+        document.querySelectorAll("[data-play]").forEach((b) => {
           b.onclick = () => {
             queue = list.length ? list : all.slice();
-            const i = queue.findIndex((x) => x.id === b.getAttribute("data-id"));
+            const i = queue.findIndex((x) => x.id === b.getAttribute("data-play"));
             playAt(i < 0 ? 0 : i);
+          };
+        });
+        document.querySelectorAll("[data-like]").forEach((b) => {
+          b.onclick = (e) => {
+            e.stopPropagation();
+            ZIVV_CORE.toggleLike(b.getAttribute("data-like"));
+            paint();
+            paintLike();
+          };
+        });
+        document.querySelectorAll("[data-c]").forEach((b) => {
+          b.onclick = (e) => {
+            e.stopPropagation();
+            const id = b.getAttribute("data-c");
+            const t = all.find((x) => x.id === id);
+            const post = (t && t.post) || { id, comments: [], likes: 0, text: (t && t.title) || "" };
+            if (window.ZIVV_SOCIAL) ZIVV_SOCIAL.openComments(post, paint);
           };
         });
         document.querySelectorAll("[data-mix]").forEach((b) => {
@@ -362,6 +533,8 @@
             playAt(0);
           };
         });
+        paintLike();
+        paintShuffle();
       }
 
       document.getElementById("q").oninput = paint;

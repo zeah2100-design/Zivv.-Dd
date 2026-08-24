@@ -40,6 +40,10 @@
     posts: "منشور",
     followers: "متابع",
     products: "منتج",
+    videoCc: "ترجمة الفيديوهات",
+    videoCcHint: "الترجمة تظهر على الفيديو بلغة التطبيق.",
+    videoCcOn: "الترجمة شغالة",
+    videoCcOff: "الترجمة مقفولة",
   };
   const EN = {
     home: "Home",
@@ -82,6 +86,10 @@
     posts: "posts",
     followers: "followers",
     products: "products",
+    videoCc: "Video translation",
+    videoCcHint: "Captions on videos follow the app language.",
+    videoCcOn: "Translation on",
+    videoCcOff: "Translation off",
   };
 
   const TITLES = {

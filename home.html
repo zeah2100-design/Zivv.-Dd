@@ -133,13 +133,14 @@
         <button class="btn" id="share-close" type="button" style="width:100%;margin-top:8px;background:#161616">إغلاق</button>
       </div>
     </div>
-    <script src="js/i18n.js?v=22"></script>
-    <script src="js/core.js?v=22"></script>
-    <script src="js/media.js?v=22"></script>
-    <script src="js/social.js?v=22"></script>
-    <script src="js/creator.js?v=22"></script>
-    <script src="js/ads.js?v=22"></script>
-    <script src="js/shell.js?v=22"></script>
+    <script src="js/i18n.js?v=24"></script>
+    <script src="js/core.js?v=24"></script>
+    <script src="js/media.js?v=24"></script>
+    <script src="js/social.js?v=24"></script>
+    <script src="js/creator.js?v=24"></script>
+    <script src="js/ads.js?v=24"></script>
+    <script src="js/cc.js?v=24"></script>
+    <script src="js/shell.js?v=24"></script>
     <script>
       const session = JSON.parse(localStorage.getItem("zivv.session") || "null") || { name: "ضيف", email: "guest" };
       function livePosts() {
@@ -250,6 +251,7 @@
         }).join("") || '<p class="empty">مفيش منشورات حسب خيارات الفيد.</p>';
 
         if (window.ZIVV_MEDIA) ZIVV_MEDIA.hydrate(document.getElementById("posts"));
+        if (window.ZIVV_CC) ZIVV_CC.bind(document.getElementById("posts"));
         if (window.ZIVV_CREATOR) list.forEach((p) => ZIVV_CREATOR.recordView(p));
 
         document.querySelectorAll(".post").forEach((el) => {

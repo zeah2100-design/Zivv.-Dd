@@ -158,6 +158,12 @@
         </div>
       </section>
 
+      <section class="card">
+        <h2 id="t-cc">ترجمة الفيديوهات</h2>
+        <p class="sub" id="t-ccsub">الترجمة تظهر على الفيديو بلغة التطبيق — عربي أو إنجليزي.</p>
+        <button class="ghost" type="button" id="cc-btn">تشغيل الترجمة</button>
+      </section>
+
       <button class="danger" type="button" id="out">خروج من الحساب ده</button>
     </main>
     <script src="js/i18n.js"></script>
@@ -192,7 +198,11 @@
           locksub: "لو قفلت الحساب، محدش هيشوف بروفايلك ولا منشوراتك غير الأصدقاء.",
           lockOn: "الحساب مقفول — الأصدقاء بس",
           lockOff: "الحساب مفتوح — قفل الحساب",
-          db: "قاعدة البيانات"
+          db: "قاعدة البيانات",
+          cc: "ترجمة الفيديوهات",
+          ccsub: "الترجمة تظهر على الفيديو بلغة التطبيق — عربي أو إنجليزي.",
+          ccOn: "الترجمة شغالة — اضغط عشان تقفلها",
+          ccOff: "الترجمة مقفولة — اضغط عشان تشغّلها"
         },
         en: {
           title: "Settings", sub: "Accounts, language, and Gold.",
@@ -219,7 +229,11 @@
           locksub: "If you lock it, only accepted friends can see your profile and posts.",
           lockOn: "Locked — friends only",
           lockOff: "Public — lock account",
-          db: "Database"
+          db: "Database",
+          cc: "Video translation",
+          ccsub: "Captions on videos follow the app language — Arabic or English.",
+          ccOn: "Translation on — tap to turn off",
+          ccOff: "Translation off — tap to turn on"
         }
       };
 
@@ -259,6 +273,9 @@
         document.getElementById("t-id").textContent = p.id;
         document.getElementById("t-idsub").textContent = p.idsub;
         document.getElementById("t-lang").textContent = p.lang;
+        if (document.getElementById("t-cc")) document.getElementById("t-cc").textContent = p.cc || (lang === "en" ? "Video translation" : "ترجمة الفيديوهات");
+        if (document.getElementById("t-ccsub")) document.getElementById("t-ccsub").textContent = p.ccsub || "";
+        paintCc(p);
         document.getElementById("t-db").textContent = p.db || (lang === "en" ? "Database" : "قاعدة البيانات");
         document.getElementById("t-lock").textContent = p.lock;
         document.getElementById("t-locksub").textContent = p.locksub;
@@ -345,6 +362,22 @@
         if (window.ZIVV_I18N) ZIVV_I18N.apply();
       }
 
+      function ccOn() {
+        try {
+          const p = JSON.parse(localStorage.getItem("zivv.prefs") || "{}");
+          return p.videoTranslate !== false;
+        } catch { return true; }
+      }
+      function paintCc(p) {
+        p = p || T[langNow()];
+        const btn = document.getElementById("cc-btn");
+        if (!btn) return;
+        const on = ccOn();
+        btn.textContent = on ? p.ccOn : p.ccOff;
+        btn.classList.toggle("go", on);
+        btn.classList.toggle("ghost", !on);
+      }
+
       function paintLock(p) {
         p = p || T[langNow()];
         const on = !!(window.ZIVV_CORE && ZIVV_CORE.isPrivate && ZIVV_CORE.isPrivate());
@@ -373,6 +406,16 @@
       document.getElementById("btn-en").onclick = () => apply("en");
       document.getElementById("gold-btn").onclick = () => {
         if (window.ZIVV_CREATOR && ZIVV_CREATOR.openPay) ZIVV_CREATOR.openPay();
+      };
+      document.getElementById("cc-btn").onclick = () => {
+        if (window.ZIVV_CC && ZIVV_CC.setEnabled) ZIVV_CC.setEnabled(!ccOn());
+        else {
+          let p = {};
+          try { p = JSON.parse(localStorage.getItem("zivv.prefs") || "{}"); } catch {}
+          p.videoTranslate = !ccOn();
+          localStorage.setItem("zivv.prefs", JSON.stringify(p));
+        }
+        paintCc();
       };
       document.getElementById("lock-btn").onclick = () => {
         if (!window.ZIVV_CORE || !ZIVV_CORE.setPrivate) return;
