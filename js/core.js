@@ -863,6 +863,17 @@
     if (!isPrivate(u)) return true;
     return areFriends(meUser(), u);
   }
+  function openProfile(user) {
+    const u = String(user || "").replace(/^@/, "").toLowerCase();
+    if (!u) return false;
+    if (u === meUser()) {
+      location.href = "profile.html";
+      return true;
+    }
+    if (!canViewUser(u)) return false;
+    location.href = "profile.html?u=" + encodeURIComponent(u);
+    return true;
+  }
 
   function areFriends(a, b) {
     const ua = String(a || "").replace(/^@/, "").toLowerCase();
@@ -1330,6 +1341,7 @@
     isPrivate,
     setPrivate,
     canViewUser,
+    openProfile,
     isFriendsOnly,
     canSeePost,
     personOf,

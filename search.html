@@ -152,7 +152,11 @@
       });
 
       function hrefFor(r) {
-        if (r.kind === "person") return "profile.html?u=" + r.item.user;
+        if (r.kind === "person") {
+          const u = r.item.user;
+          if (ZIVV_CORE.canViewUser && !ZIVV_CORE.canViewUser(u) && String((ZIVV_CORE.author().user||"")).toLowerCase() !== String(u).toLowerCase()) return "";
+          return "profile.html?u=" + u;
+        }
         if (r.kind === "music") return "music.html";
         if (r.kind === "product") return "store.html?id=" + r.item.id;
         if (r.kind === "hashtag") return "search.html?k=hashtag&q=" + encodeURIComponent("#" + r.item.tag);
@@ -188,7 +192,8 @@
         out.innerHTML = rows.map((r) => {
           if (r.kind === "person") {
             const p = r.item;
-            return `<a class="hit" href="profile.html?u=${p.user}"><img src="${p.avatar}" alt=""><div><div class="k">شخص</div><div class="t">${p.name}</div><div class="s">@${p.user} · ${p.city || ""}</div></div></a>`;
+            const locked = ZIVV_CORE.canViewUser && !ZIVV_CORE.canViewUser(p.user);
+            return `<a class="hit" href="${locked ? "#" : "profile.html?u=" + encodeURIComponent(p.user)}" data-u="${p.user}" data-lock="${locked ? "1" : "0"}"><img src="${p.avatar}" alt=""><div><div class="k">شخص</div><div class="t">${p.name}</div><div class="s">@${p.user}${locked ? " · مقفول" : (p.city ? " · " + p.city : "")}</div></div></a>`;
           }
           if (r.kind === "music") {
             const m = r.item;

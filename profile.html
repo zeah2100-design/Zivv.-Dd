@@ -138,7 +138,7 @@
         cover: patch.cover || ""
       };
 
-      const allowed = mine || !ZIVV_CORE.canViewUser || ZIVV_CORE.canViewUser(target);
+      const allowed = mine || (ZIVV_CORE.canViewUser ? ZIVV_CORE.canViewUser(target) : true);
       const isFriend = mine || !!(ZIVV_CORE.areFriends && ZIVV_CORE.areFriends(myUser, profile.user));
       function allMine() {
         if (!allowed) return [];

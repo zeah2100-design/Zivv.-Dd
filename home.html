@@ -118,15 +118,26 @@
         gap: 10px;
         padding: 12px 16px 10px;
       }
+      .ava-box { position: relative; width: 40px; height: 40px; flex: 0 0 auto; }
       .ava {
         width: 36px;
         height: 36px;
         border-radius: 50%;
         padding: 1.5px;
         background: var(--ig);
+        display: block;
+        border: 0;
       }
       .ava img { width: 100%; height: 100%; border-radius: 50%; border: 2px solid #000; object-fit: cover; }
-      .who { font-weight: 700; font-size: 14px; }
+      .follow-plus {
+        position: absolute; bottom: -2px; inset-inline-end: -2px;
+        width: 18px; height: 18px; border-radius: 50%; border: 2px solid #000;
+        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        color: #fff; font-size: 12px; font-weight: 800; line-height: 14px;
+        padding: 0; display: grid; place-items: center;
+      }
+      .follow-plus.on { background: #2ecc71; }
+      .who { font-weight: 700; font-size: 14px; cursor: pointer; }
       .meta { color: var(--mute); font-size: 12px; }
       .cap { padding: 0 16px 10px; font-size: 14px; line-height: 1.65; }
       .pic { width: 100%; max-height: 420px; object-fit: cover; background: #111; }
@@ -471,6 +482,40 @@
         if (window.ZIVV_CREATOR) {
           list.forEach((p) => ZIVV_CREATOR.recordView(p));
         }
+
+        document.querySelectorAll("[data-profile]").forEach((el) => {
+          el.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const u = el.getAttribute("data-profile");
+            if (ZIVV_CORE.openProfile && ZIVV_CORE.openProfile(u)) return;
+            toast("الحساب مقفول. الأصدقاء بس اللي يدخلوا.");
+          };
+        });
+        document.querySelectorAll("[data-follow]").forEach((el) => {
+          el.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const u = el.getAttribute("data-follow");
+            if (!u) return;
+            if (ZIVV_CORE.isFollowing(u)) {
+              ZIVV_CORE.unfollowUser(u);
+              el.classList.remove("on");
+              el.textContent = "+";
+              toast("اتلغت المتابعة");
+            } else {
+              ZIVV_CORE.followUser(u);
+              el.classList.add("on");
+              el.textContent = "✓";
+              toast("بقيت تتابعه");
+            }
+            document.querySelectorAll('[data-follow="' + u + '"]').forEach((b) => {
+              const on = ZIVV_CORE.isFollowing(u);
+              b.classList.toggle("on", on);
+              b.textContent = on ? "✓" : "+";
+            });
+          };
+        });
 
         document.querySelectorAll(".post").forEach((el) => {
           const id = el.getAttribute("data-id");

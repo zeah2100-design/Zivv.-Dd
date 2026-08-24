@@ -38,10 +38,20 @@
         align-items: center;
         gap: 18px;
       }
+      .ava-box { position: relative; width: 52px; height: 56px; }
       .ava {
         width: 48px; height: 48px; border-radius: 50%;
         object-fit: cover; border: 2px solid #fff; display: block;
       }
+      .follow-plus {
+        position: absolute; bottom: 0; left: 50%; transform: translate(-50%, 20%);
+        width: 18px; height: 18px; border-radius: 50%; border: 2px solid #000;
+        background: linear-gradient(135deg, #fcaf45, #e1306c);
+        color: #fff; font-size: 12px; font-weight: 800; line-height: 14px;
+        padding: 0;
+      }
+      .follow-plus.on { background: #2ecc71; }
+      .meta .u { cursor: pointer; }
       .side button {
         background: none; border: 0; color: #fff;
         font-size: 11px; width: 64px;
@@ -160,11 +170,19 @@
           const media = p.videoId
             ? `<video class="bg" poster="${p.image || ""}" data-media="${p.videoId}" ${p.posterId ? "data-poster=\"" + p.posterId + "\"" : ""} playsinline loop muted></video>`
             : `<img class="bg" src="${p.image || "posts/cinema.jpg"}" alt="">`;
-          html += `<section class="clip" data-id="${p.id}">
+          const meU = String((ZIVV_CORE.author && ZIVV_CORE.author().user) || "").toLowerCase();
+          const pu = String(p.user || "").toLowerCase();
+          const minePost = !!meU && pu === meU;
+          const following = !!(ZIVV_CORE.isFollowing && pu && ZIVV_CORE.isFollowing(pu));
+          const ava = (ZIVV_CORE.personOf && ZIVV_CORE.personOf(p.user).avatar) || p.avatar || "brand/logo-sm.png";
+          html += `<section class="clip" data-id="${p.id}" data-user="${pu}">
             ${media}
             <div class="pause-mark"><div class="orb"></div></div>
             <div class="side">
-              <img class="ava" src="${p.avatar || "brand/logo-sm.png"}" alt="">
+              <div class="ava-box">
+                <img class="ava" src="${ava}" alt="" data-profile="${pu}">
+                ${minePost ? "" : `<button class="follow-plus ${following ? "on" : ""}" type="button" data-follow="${pu}">${following ? "✓" : "+"}</button>`}
+              </div>
               <button type="button" class="like-btn ${liked ? "on" : ""}" data-act="like"><span class="ic">${liked ? "♥" : "♡"}</span><span class="nlike">${ZIVV_CORE.likeCount(p)}</span></button>
               <button type="button" data-act="comment"><span class="ic">💬</span><span class="ncom">${ZIVV_CORE.commentsOf(p).length}</span></button>
               <button type="button" data-act="share"><span class="ic">↗</span><span class="nsh">${ZIVV_CORE.shareCount(p.id)}</span></button>
@@ -172,7 +190,7 @@
               <button type="button" data-act="block"><span class="ic">⚑</span>حظر</button>
             </div>
             <div class="meta">
-              <div class="u">@${p.user || ""}</div>
+              <div class="u" data-profile="${pu}">@${p.user || ""}</div>
               ${p.title ? `<div class="ttl">${p.title}</div>` : ""}
               <div class="t">${p.text || ""}</div>
               ${(p.tags || []).length ? `<div class="tags">${p.tags.map((t) => "#" + t).join(" ")}</div>` : ""}
@@ -216,6 +234,20 @@
             el.querySelector(".ncom").textContent = ZIVV_CORE.commentsOf(post).length;
             el.querySelector(".nsh").textContent = ZIVV_CORE.shareCount(post.id);
           }
+          const goProf = (u) => {
+            if (ZIVV_CORE.openProfile && ZIVV_CORE.openProfile(u)) return;
+            toast("الحساب مقفول. الأصدقاء بس اللي يدخلوا.");
+          };
+          el.querySelectorAll("[data-profile]").forEach((b) => {
+            b.onclick = (e) => { e.stopPropagation(); goProf(b.getAttribute("data-profile")); };
+          });
+          const fol = el.querySelector("[data-follow]");
+          if (fol) fol.onclick = (e) => {
+            e.stopPropagation();
+            const u = fol.getAttribute("data-follow");
+            if (ZIVV_CORE.isFollowing(u)) { ZIVV_CORE.unfollowUser(u); fol.classList.remove("on"); fol.textContent = "+"; toast("اتلغت المتابعة"); }
+            else { ZIVV_CORE.followUser(u); fol.classList.add("on"); fol.textContent = "✓"; toast("بقيت تتابعه"); }
+          };
           el.querySelector('[data-act="like"]').onclick = (e) => {
             e.stopPropagation();
             ZIVV_CORE.toggleLike(post.id);
