@@ -151,11 +151,10 @@
         document.getElementById("cover").innerHTML = profile.cover
           ? `<img id="cover-img" class="${mine ? "mine" : ""}" src="${profile.cover}" alt="الخلفية">`
           : `<div id="cover-img" class="${mine ? "mine" : ""}" style="width:100%;height:100%;background:#141414"></div>`;
-        const on = ZIVV_CORE.isFollowing ? ZIVV_CORE.isFollowing(profile.user) : false;
-        const gold = !!(window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser && ZIVV_CREATOR.isGoldUser(profile.user)) || ZIVV_CORE.isGold(profile.user);
-        const fans = ZIVV_CORE.followerCount(profile.user);
-        const hearts = ZIVV_CORE.receivedLikes(profile.user);
-        const gstat = ZIVV_CORE.goldStatus(myUser);
+        const on = !!(ZIVV_CORE.isFollowing && ZIVV_CORE.isFollowing(profile.user));
+        const gold = !!(window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser && ZIVV_CREATOR.isGoldUser(profile.user)) || !!(ZIVV_CORE.isGold && ZIVV_CORE.isGold(profile.user));
+        const fans = ZIVV_CORE.followerCount ? ZIVV_CORE.followerCount(profile.user) : 0;
+        const gstat = ZIVV_CORE.goldStatus ? ZIVV_CORE.goldStatus(myUser) : "none";
         const fr = mine ? "none" : ZIVV_CORE.friendStatus(profile.user);
         const friendBtn =
           fr === "friends" ? `<button class="ghost" type="button" disabled>أصدقاء</button>`
@@ -176,8 +175,6 @@
           <div class="stats">
             <span><b>${posts.length}</b> منشور</span>
             <span><b>${fans}</b> متابع</span>
-            <span><b>${hearts}</b> إعجاب</span>
-            <span><b>${comms}</b> تعليق</span>
             <span><b>${goods.length}</b> منتج</span>
           </div>
           <div class="acts">
