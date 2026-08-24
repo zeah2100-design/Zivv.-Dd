@@ -160,17 +160,26 @@
 
       <section class="card">
         <h2 id="t-cc">ترجمة الفيديوهات</h2>
-        <p class="sub" id="t-ccsub">الترجمة تظهر على الفيديو بلغة التطبيق — عربي أو إنجليزي.</p>
+        <p class="sub" id="t-ccsub">لو غيّرت لغة التطبيق لإنجليزي، النص العربي على الفيديو بيترجم. والعكس.</p>
+        <p class="sub" id="cc-demo" style="margin:0 0 8px;color:#fcaf45">جاري تجربة الترجمة…</p>
         <button class="ghost" type="button" id="cc-btn">تشغيل الترجمة</button>
+      </section>
+
+      <section class="card">
+        <h2 id="t-pwa">تثبيت التطبيق</h2>
+        <p class="sub" id="t-pwasub">ZIVV بقى تطبيق (PWA). ثبّته على الشاشة الرئيسية.</p>
+        <button class="go" type="button" id="pwa-btn">تثبيت ZIVV</button>
       </section>
 
       <button class="danger" type="button" id="out">خروج من الحساب ده</button>
     </main>
-    <script src="js/i18n.js"></script>
-    <script src="js/core.js"></script>
+    <script src="js/i18n.js?v=25"></script>
+    <script src="js/core.js?v=25"></script>
+    <script src="js/cc.js?v=25"></script>
+    <script src="js/pwa.js?v=25"></script>
     <script src="js/db.js"></script>
     <script src="js/creator.js"></script>
-    <script src="js/shell.js"></script>
+    <script src="js/shell.js?v=25"></script>
     <script>
       const T = {
         ar: {
@@ -202,7 +211,12 @@
           cc: "ترجمة الفيديوهات",
           ccsub: "الترجمة تظهر على الفيديو بلغة التطبيق — عربي أو إنجليزي.",
           ccOn: "الترجمة شغالة — اضغط عشان تقفلها",
-          ccOff: "الترجمة مقفولة — اضغط عشان تشغّلها"
+          ccOff: "الترجمة مقفولة — اضغط عشان تشغّلها",
+          pwa: "تثبيت التطبيق",
+          pwasub: "ZIVV بقى تطبيق تقدر تثبّته على الشاشة.",
+          pwaBtn: "تثبيت ZIVV",
+          pwaOn: "التطبيق متثبت",
+          pwaIos: "من Safari: مشاركة ← إضافة إلى الشاشة الرئيسية"
         },
         en: {
           title: "Settings", sub: "Accounts, language, and Gold.",
@@ -233,7 +247,12 @@
           cc: "Video translation",
           ccsub: "Captions on videos follow the app language — Arabic or English.",
           ccOn: "Translation on — tap to turn off",
-          ccOff: "Translation off — tap to turn on"
+          ccOff: "Translation off — tap to turn on",
+          pwa: "Install app",
+          pwasub: "ZIVV is a PWA. Add it to your home screen.",
+          pwaBtn: "Install ZIVV",
+          pwaOn: "Already installed",
+          pwaIos: "In Safari: Share → Add to Home Screen"
         }
       };
 
@@ -275,7 +294,11 @@
         document.getElementById("t-lang").textContent = p.lang;
         if (document.getElementById("t-cc")) document.getElementById("t-cc").textContent = p.cc || (lang === "en" ? "Video translation" : "ترجمة الفيديوهات");
         if (document.getElementById("t-ccsub")) document.getElementById("t-ccsub").textContent = p.ccsub || "";
+        if (document.getElementById("t-pwa")) document.getElementById("t-pwa").textContent = p.pwa || "";
+        if (document.getElementById("t-pwasub")) document.getElementById("t-pwasub").textContent = p.pwasub || "";
         paintCc(p);
+        paintPwa(p);
+        runDemo(lang);
         document.getElementById("t-db").textContent = p.db || (lang === "en" ? "Database" : "قاعدة البيانات");
         document.getElementById("t-lock").textContent = p.lock;
         document.getElementById("t-locksub").textContent = p.locksub;
@@ -368,6 +391,38 @@
           return p.videoTranslate !== false;
         } catch { return true; }
       }
+      function paintPwa(p) {
+        p = p || T[langNow()];
+        const btn = document.getElementById("pwa-btn");
+        if (!btn) return;
+        const P = window.ZIVV_PWA;
+        if (P && P.standalone()) {
+          btn.textContent = p.pwaOn;
+          btn.disabled = true;
+          btn.style.opacity = ".55";
+          return;
+        }
+        if (P && P.iosHint && !P.canInstall()) {
+          btn.textContent = p.pwaIos;
+          btn.disabled = true;
+          return;
+        }
+        btn.disabled = !(P && P.canInstall());
+        btn.textContent = p.pwaBtn;
+        btn.style.opacity = btn.disabled ? ".55" : "1";
+      }
+      async function runDemo(lang) {
+        const el = document.getElementById("cc-demo");
+        if (!el) return;
+        const sample = lang === "en" ? "الأهرامات بالليل في الجيزة" : "The pyramids at night in Giza";
+        el.textContent = lang === "en" ? "Translating…" : "جاري تجربة الترجمة…";
+        if (!window.ZIVV_CC || !ZIVV_CC.translate) {
+          el.textContent = (lang === "en" ? "Sample: " : "مثال: ") + sample;
+          return;
+        }
+        const t = await ZIVV_CC.translate(sample, lang);
+        el.textContent = (lang === "en" ? "Sample: " : "مثال: ") + sample + " → " + t;
+      }
       function paintCc(p) {
         p = p || T[langNow()];
         const btn = document.getElementById("cc-btn");
@@ -407,6 +462,11 @@
       document.getElementById("gold-btn").onclick = () => {
         if (window.ZIVV_CREATOR && ZIVV_CREATOR.openPay) ZIVV_CREATOR.openPay();
       };
+      document.getElementById("pwa-btn").onclick = async () => {
+        if (window.ZIVV_PWA && ZIVV_PWA.install) await ZIVV_PWA.install();
+        paintPwa();
+      };
+      window.addEventListener("zivv-pwa", () => paintPwa());
       document.getElementById("cc-btn").onclick = () => {
         if (window.ZIVV_CC && ZIVV_CC.setEnabled) ZIVV_CC.setEnabled(!ccOn());
         else {

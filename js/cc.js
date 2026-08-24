@@ -1,21 +1,22 @@
 (function () {
   const CSS = `
-    .zivv-cc { position: relative; display: block; }
-    .zivv-cc > video { width: 100%; height: 100%; }
+    .zivv-cc { position: relative; display: block; width: 100%; }
+    .zivv-cc > video { width: 100%; display: block; }
+    .clip.zivv-cc-host { position: relative; }
     .zivv-cc-cap {
-      position: absolute; left: 10%; right: 10%; bottom: 14%;
+      position: absolute; left: 8%; right: 8%; bottom: 16%;
       z-index: 7; text-align: center; pointer-events: none;
       font-size: 15px; font-weight: 700; line-height: 1.45; color: #fff;
       text-shadow: 0 1px 2px #000, 0 0 8px #000;
     }
     .zivv-cc-cap span {
-      display: inline-block; background: rgba(0,0,0,.45);
-      border-radius: 8px; padding: 4px 10px;
+      display: inline-block; background: rgba(0,0,0,.55);
+      border-radius: 8px; padding: 5px 10px; max-width: 100%;
     }
     .zivv-cc-gear {
       position: absolute; top: 10px; inset-inline-end: 10px; z-index: 8;
-      width: 34px; height: 34px; border: 0; border-radius: 50%;
-      background: rgba(0,0,0,.5); color: #fff; font-size: 16px;
+      width: 36px; height: 36px; border: 0; border-radius: 50%;
+      background: rgba(0,0,0,.55); color: #fff; font-size: 17px;
     }
     .zivv-cc-sheet {
       display: none; position: fixed; inset: 0; z-index: 85;
@@ -51,25 +52,9 @@
       width: 100%; margin-top: 10px; border: 0; border-radius: 12px;
       padding: 11px; background: #1c1c1c; color: #fff; font-weight: 800;
     }
+    .zivv-tr-on { opacity: .95; }
   `;
-
-  const DICT_AR_EN = {
-    "اغنيه": "song", "أغنية": "song", "موسيقى": "music", "فيديو": "video",
-    "صوره": "photo", "صورة": "photo", "منشور": "post", "تعليق": "comment",
-    "لايك": "like", "متابعة": "follow", "حساب": "account", "ملف": "profile",
-    "الليل": "night", "ليل": "night", "صباح": "morning", "حب": "love",
-    "قلبي": "my heart", "مصر": "Egypt", "القاهره": "Cairo", "القاهرة": "Cairo",
-    "الجيزه": "Giza", "الجيزة": "Giza", "اهرامات": "pyramids", "الأهرامات": "the pyramids",
-    "نيل": "Nile", "النيل": "the Nile", "مدينه": "city", "مدينة": "city",
-    "جديد": "new", "حلوه": "nice", "حلوة": "nice", "جامد": "awesome",
-    "شوف": "look", "شوفوا": "watch", "اسمع": "listen", "دلوقتي": "now",
-    "النهاردة": "today", "امبارح": "yesterday", "بكره": "tomorrow",
-    "اهلا": "hello", "أهلا": "hello", "سلام": "hi", "شكرا": "thanks",
-    "شكراً": "thanks", "من فضلك": "please", "اهلا وسهلا": "welcome",
-    "فيديو جديد": "new video", "استنى": "wait", "يلا": "let's go"
-  };
-  const DICT_EN_AR = {};
-  Object.keys(DICT_AR_EN).forEach((k) => { DICT_EN_AR[DICT_AR_EN[k]] = k; });
+  const COMET_KEY = "sk-vSJCr2yYYijxwTpLdBHf3sOprMRZoj7OOn4DUh9Blvz50hGG";
 
   function prefs() {
     try {
@@ -106,52 +91,97 @@
     const c = cache();
     c[k] = v;
     const keys = Object.keys(c);
-    if (keys.length > 120) delete c[keys[0]];
-    localStorage.setItem("zivv.ccCache", JSON.stringify(c));
+    if (keys.length > 160) delete c[keys[0]];
+    try { localStorage.setItem("zivv.ccCache", JSON.stringify(c)); } catch {}
   }
   function detect(text) {
     const s = String(text || "");
     const ar = (s.match(/[\u0600-\u06FF]/g) || []).length;
     const en = (s.match(/[A-Za-z]/g) || []).length;
-    if (ar > en) return "ar";
-    if (en > ar) return "en";
-    return appLang();
+    if (ar === 0 && en === 0) return "und";
+    return ar >= en ? "ar" : "en";
   }
-  function localMap(text, to) {
-    const dict = to === "en" ? DICT_AR_EN : DICT_EN_AR;
-    let out = String(text || "");
-    Object.keys(dict)
-      .sort((a, b) => b.length - a.length)
-      .forEach((k) => {
-        const re = new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
-        out = out.replace(re, dict[k]);
-      });
-    return out;
+  function clean(t) {
+    return String(t || "").replace(/\s+/g, " ").trim();
   }
+
+  async function viaGoogle(src, dest) {
+    const url =
+      "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=" +
+      encodeURIComponent(dest) +
+      "&dt=t&q=" +
+      encodeURIComponent(src.slice(0, 900));
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("g");
+    const j = await r.json();
+    const t = (j && j[0] ? j[0] : []).map((x) => (x && x[0]) || "").join("");
+    if (!clean(t)) throw new Error("g");
+    return clean(t);
+  }
+  async function viaMemory(src, dest) {
+    const from = detect(src) === "ar" ? "ar" : "en";
+    const url =
+      "https://api.mymemory.translated.net/get?q=" +
+      encodeURIComponent(src.slice(0, 480)) +
+      "&langpair=" + from + "|" + dest;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("m");
+    const j = await r.json();
+    const t = j && j.responseData && j.responseData.translatedText;
+    if (!t || /QUERY LENGTH|INVALID/i.test(String(t))) throw new Error("m");
+    return clean(t);
+  }
+  async function viaComet(src, dest) {
+    const langName = dest === "en" ? "English" : "Egyptian Arabic";
+    const res = await fetch("https://api.cometapi.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + COMET_KEY },
+      body: JSON.stringify({
+        model: "gemini-3.6-flash",
+        messages: [
+          {
+            role: "user",
+            content:
+              "Translate the following text to " +
+              langName +
+              ". Return only the translation, no quotes, no notes.\n\n" +
+              src.slice(0, 700)
+          }
+        ],
+        max_tokens: 400,
+        stream: false
+      })
+    });
+    const data = await res.json();
+    const t =
+      data &&
+      data.choices &&
+      data.choices[0] &&
+      data.choices[0].message &&
+      data.choices[0].message.content;
+    if (!clean(t)) throw new Error("c");
+    return clean(t);
+  }
+
   async function translate(text, to) {
-    const src = String(text || "").trim();
+    const src = clean(text);
     if (!src) return "";
     const dest = to || appLang();
     if (detect(src) === dest) return src;
     const key = dest + "::" + src;
     const hit = cache()[key];
     if (hit) return hit;
-    try {
-      const pair = detect(src) === "ar" ? "ar|en" : "en|ar";
-      const url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(src.slice(0, 480)) + "&langpair=" + pair;
-      const r = await fetch(url);
-      if (r.ok) {
-        const j = await r.json();
-        const t = j && j.responseData && j.responseData.translatedText;
-        if (t && String(t).toLowerCase().indexOf("query length") < 0) {
+    const tries = [viaGoogle, viaMemory, viaComet];
+    for (let i = 0; i < tries.length; i++) {
+      try {
+        const t = await tries[i](src, dest);
+        if (t && t !== src) {
           putCache(key, t);
           return t;
         }
-      }
-    } catch {}
-    const local = localMap(src, dest);
-    putCache(key, local);
-    return local;
+      } catch {}
+    }
+    return src;
   }
 
   function injectCss() {
@@ -170,7 +200,7 @@
     el.innerHTML = `
       <div class="zivv-cc-box">
         <h3 id="cc-h">ترجمة الفيديوهات</h3>
-        <p id="cc-p">الترجمة تظهر على الفيديو بلغة التطبيق — عربي أو إنجليزي.</p>
+        <p id="cc-p">لو التطبيق إنجليزي، النص العربي بيترجم لإنجليزي على الفيديو. والعكس.</p>
         <div class="zivv-cc-row">
           <b id="cc-lab">تشغيل الترجمة</b>
           <button type="button" class="zivv-cc-sw" id="cc-sw"><i></i></button>
@@ -196,8 +226,8 @@
     const en = appLang() === "en";
     document.getElementById("cc-h").textContent = en ? "Video translation" : "ترجمة الفيديوهات";
     document.getElementById("cc-p").textContent = en
-      ? "Captions follow the app language — English or Arabic."
-      : "الترجمة تظهر على الفيديو بلغة التطبيق — عربي أو إنجليزي.";
+      ? "If the app is English, Arabic captions become English on the video — and the other way around."
+      : "لو التطبيق إنجليزي، النص العربي بيترجم لإنجليزي على الفيديو. والعكس.";
     document.getElementById("cc-lab").textContent = en ? "Turn on translation" : "تشغيل الترجمة";
     document.getElementById("cc-ll").textContent = en ? "Caption language" : "لغة الترجمة";
     document.getElementById("cc-lang").textContent = en ? "English" : "عربي";
@@ -235,9 +265,10 @@
     cap.innerHTML = "<span>…</span>";
     const t = await translate(raw, appLang());
     if (!box.isConnected) return;
-    cap.innerHTML = t ? "<span></span>" : "";
-    if (t) cap.querySelector("span").textContent = t;
-    cap.hidden = !t;
+    if (!t) { cap.hidden = true; cap.innerHTML = ""; return; }
+    cap.innerHTML = "<span></span>";
+    cap.querySelector("span").textContent = t;
+    cap.hidden = false;
   }
 
   function decorate(box) {
@@ -245,7 +276,7 @@
     const gear = document.createElement("button");
     gear.type = "button";
     gear.className = "zivv-cc-gear";
-    gear.setAttribute("aria-label", "cc");
+    gear.setAttribute("aria-label", "translate");
     gear.textContent = "⚙";
     const cap = document.createElement("div");
     cap.className = "zivv-cc-cap";
@@ -264,7 +295,7 @@
     const existing = vid.closest(".zivv-cc") || vid.closest(".zivv-cc-host");
     if (existing) return decorate(existing);
     const parent = vid.parentElement;
-    if (parent && (parent.classList.contains("clip") || parent.classList.contains("cell") || parent.classList.contains("hero"))) {
+    if (parent && (parent.classList.contains("clip") || parent.classList.contains("cell") || parent.classList.contains("hero") || parent.classList.contains("stage"))) {
       parent.classList.add("zivv-cc-host");
       return decorate(parent);
     }
@@ -284,15 +315,36 @@
       if (!box) return;
       fillCap(box, postFrom(vid));
     });
+    paintText(scope);
   }
+
+  async function paintText(root) {
+    if (!enabled()) return;
+    const dest = appLang();
+    const scope = root || document;
+    const nodes = scope.querySelectorAll("[data-tr]");
+    for (let i = 0; i < nodes.length; i++) {
+      const el = nodes[i];
+      const raw = el.getAttribute("data-tr") || el.textContent || "";
+      if (!raw.trim()) continue;
+      if (detect(raw) === dest) continue;
+      const t = await translate(raw, dest);
+      if (t) {
+        el.textContent = t;
+        el.classList.add("zivv-tr-on");
+      }
+    }
+  }
+
   function refreshAll() {
     document.querySelectorAll(".zivv-cc, .zivv-cc-host").forEach((box) => {
       const vid = box.querySelector("video");
       if (vid) fillCap(box, postFrom(vid));
     });
+    paintText(document);
   }
 
-  window.ZIVV_CC = { bind, translate, enabled, setEnabled, openSheet, appLang };
+  window.ZIVV_CC = { bind, translate, enabled, setEnabled, openSheet, appLang, paintText, detect };
   window.addEventListener("zivv-lang", refreshAll);
   window.addEventListener("zivv-prefs", refreshAll);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => bind(document));

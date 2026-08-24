@@ -434,6 +434,7 @@
   } else {
     ZIVV_I18N.apply();
   }
+  loadScript("js/pwa.js?v=25");
   loadScript("js/supabase-config.js");
   loadScript("js/ads.js?v=19");
   loadScript("js/creator.js");

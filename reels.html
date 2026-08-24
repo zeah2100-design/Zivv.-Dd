@@ -192,8 +192,8 @@
             </div>
             <div class="meta">
               <div class="u" data-profile="${pu}">@${p.user || ""}</div>
-              ${p.title ? `<div class="ttl">${p.title}</div>` : ""}
-              <div class="t">${p.text || ""}</div>
+              ${p.title ? `<div class="ttl" data-tr="${String(p.title).replace(/"/g, "&quot;")}">${p.title}</div>` : ""}
+              <div class="t" data-tr="${String(p.text || "").replace(/"/g, "&quot;")}">${p.text || ""}</div>
               ${(p.tags || []).length ? `<div class="tags">${p.tags.map((t) => "#" + t).join(" ")}</div>` : ""}
             </div>
           </section>`;
