@@ -437,10 +437,8 @@
   loadScript("js/pwa.js?v=26");
   loadScript("js/supabase-config.js");
   loadScript("js/db.js?v=26");
-  loadScript("js/supabase-config.js");
   loadScript("js/ads.js?v=19");
   loadScript("js/creator.js");
-  setTimeout(() => loadScript("js/db.js"), 30);
   setTimeout(() => loadScript("js/zivvy.js?v=19"), 50);
   setTimeout(() => {
     if (window.ZIVV_ADS && ZIVV_ADS.mount) ZIVV_ADS.mount();

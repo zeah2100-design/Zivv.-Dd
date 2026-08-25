@@ -393,8 +393,8 @@
               : "المشروع متربط. افتح صفحة الربط وشغّل sql/zivv.sql مرة في Supabase.";
           } else if (mode === "api") {
             dbEl.textContent = lang === "en"
-              ? "Server database on. " + usersN + " accounts · " + postsN + " posts."
-              : "قاعدة السيرفر شغالة. " + usersN + " حساب · " + postsN + " منشور.";
+              ? "Live cloud database on. " + usersN + " accounts · " + postsN + " posts · " + fansN + " followers."
+              : "قاعدة سحابية حقيقية شغالة. " + usersN + " حساب · " + postsN + " منشور · " + fansN + " متابع.";
           } else {
             dbEl.textContent = lang === "en"
               ? "Local only on this device. Connect Supabase to make it real."

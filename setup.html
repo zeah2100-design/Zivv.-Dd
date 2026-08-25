@@ -53,12 +53,12 @@
     </main>
     <script src="js/shell.js?v=26"></script>
     <script>
+      document.getElementById("url").value = "https://ldionpdfplvbnpoelkqe.supabase.co";
+      document.getElementById("anon").value = "sb_publishable_ZoiDkuZpyQ0AYSWb0TAj_Q_wfc7w0sx";
       try {
         const s = JSON.parse(localStorage.getItem("zivv.supabase") || "null");
-        if (s) {
-          document.getElementById("url").value = s.url || "";
-          document.getElementById("anon").value = s.anon || "";
-        }
+        if (s && s.url) document.getElementById("url").value = s.url;
+        if (s && s.anon) document.getElementById("anon").value = s.anon;
       } catch {}
       document.getElementById("copy-sql").onclick = async () => {
         const st = document.getElementById("status");

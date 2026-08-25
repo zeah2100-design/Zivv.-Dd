@@ -39,6 +39,19 @@
   function live() {
     return mode === "supabase" && cfg().url && cfg().anon;
   }
+  function remote() {
+    return mode === "api" || live();
+  }
+  async function api(method, path, body) {
+    const opt = { method, headers: { "Content-Type": "application/json" } };
+    if (body) opt.body = JSON.stringify(body);
+    const r = await fetch(path, opt);
+    const text = await r.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    if (!r.ok) throw new Error((data && data.error) || text || ("HTTP " + r.status));
+    return data;
+  }
 
   async function sb(path, opt) {
     const { url, anon } = cfg();
@@ -130,6 +143,91 @@
   }
 
   async function pullAll() {
+    if (mode === "api") {
+      const out = { posts: 0, likes: 0, users: 0, follows: 0, comments: 0 };
+      try {
+        const posts = await api("GET", "/api/posts");
+        if (Array.isArray(posts)) {
+          writeLS("zivv.feed", posts.map(fromRemotePost));
+          out.posts = posts.length;
+        }
+      } catch {}
+      try {
+        const likes = await api("GET", "/api/likes");
+        if (Array.isArray(likes)) {
+          const map = {};
+          likes.forEach((x) => {
+            if (!x.post_id || !x.user_key) return;
+            map[x.post_id] = map[x.post_id] || [];
+            if (map[x.post_id].indexOf(x.user_key) < 0) map[x.post_id].push(x.user_key);
+          });
+          writeLS("zivv.likes", map);
+          out.likes = likes.length;
+        }
+      } catch {}
+      try {
+        const comments = await api("GET", "/api/comments");
+        if (Array.isArray(comments)) {
+          const map = {};
+          comments.forEach((c) => {
+            const id = c.post_id;
+            if (!id) return;
+            map[id] = map[id] || [];
+            map[id].push({
+              id: c.id,
+              name: c.name,
+              by: c.user_key,
+              text: c.body || c.text,
+              at: c.created_at || Date.now(),
+              parentId: c.parent_id || null
+            });
+          });
+          writeLS("zivv.comments", map);
+          out.comments = comments.length;
+        }
+      } catch {}
+      try {
+        const fol = await api("GET", "/api/follows");
+        if (Array.isArray(fol)) {
+          const g = {};
+          fol.forEach((f) => {
+            const a = String(f.follower || f.from_user || "").toLowerCase();
+            const b = String(f.following || f.to_user || "").toLowerCase();
+            if (!a || !b) return;
+            g[a] = g[a] || [];
+            if (g[a].indexOf(b) < 0) g[a].push(b);
+          });
+          writeLS("zivv.followGraph", g);
+          out.follows = fol.length;
+        }
+      } catch {}
+      try {
+        const acc = await api("GET", "/api/accounts");
+        if (Array.isArray(acc)) {
+          const users = readLS("zivv.users", {});
+          acc.forEach((a) => {
+            const email = a.email;
+            if (!email) return;
+            users[email] = Object.assign({}, users[email] || {}, {
+              email,
+              username: a.username,
+              first: a.first_name || a.first,
+              last: a.last_name || a.last,
+              name: a.name,
+              age: a.age,
+              mark: a.mark,
+              password: a.password,
+              onboarding: a.onboarding || (users[email] && users[email].onboarding) || null
+            });
+          });
+          writeLS("zivv.users", users);
+          out.users = Object.keys(users).length;
+        }
+      } catch {}
+      lastPull = Date.now();
+      window.dispatchEvent(new CustomEvent("zivv-db", { detail: out }));
+      return Object.assign({ ok: true, mode }, out);
+    }
     if (!live()) return { ok: false, mode };
     const out = { posts: 0, likes: 0, users: 0, follows: 0, comments: 0 };
     try {
@@ -337,11 +435,21 @@
   }
 
   async function pushPost(post) {
-    if (!live() || !post || post.blocked) return;
+    if (!post || post.blocked) return;
+    if (mode === "api") {
+      await api("POST", "/api/posts", toRemotePost(post));
+      return;
+    }
+    if (!live()) return;
     await sb("posts?on_conflict=id", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: toRemotePost(post) });
   }
   async function pushLike(postId, userKey, on) {
-    if (!live() || !postId || !userKey) return;
+    if (!postId || !userKey) return;
+    if (mode === "api") {
+      await api("POST", "/api/likes", { post_id: postId, user_key: userKey, on: !!on });
+      return;
+    }
+    if (!live()) return;
     if (on) {
       await sb("likes?on_conflict=post_id,user_key", {
         method: "POST",
@@ -356,7 +464,12 @@
     }
   }
   async function pushComment(c) {
-    if (!live() || !c) return;
+    if (!c) return;
+    if (mode === "api") {
+      await api("POST", "/api/comments", { id: c.id, post_id: c.postId, parent_id: c.parentId || null, name: c.name, user_key: c.by, body: c.text });
+      return;
+    }
+    if (!live()) return;
     await sb("comments?on_conflict=id", {
       method: "POST",
       prefer: "resolution=merge-duplicates,return=minimal",
@@ -371,7 +484,12 @@
     });
   }
   async function pushFollow(from, to, on) {
-    if (!live() || !from || !to) return;
+    if (!from || !to) return;
+    if (mode === "api") {
+      await api("POST", "/api/follows", { from_user: from, to_user: to, on: !!on });
+      return;
+    }
+    if (!live()) return;
     const a = String(from).toLowerCase();
     const b = String(to).toLowerCase();
     if (on) {
@@ -388,7 +506,19 @@
     }
   }
   async function pushMessage(toUser, m) {
-    if (!live() || !m) return;
+    if (!m) return;
+    if (mode === "api") {
+      const me = (window.ZIVV_CORE && ZIVV_CORE.author && ZIVV_CORE.author().user) || "";
+      const ua = String(me || "").toLowerCase();
+      const ub = String(toUser || "").toLowerCase();
+      const pair = ua < ub ? ua + "::" + ub : ub + "::" + ua;
+      await api("POST", "/api/messages", {
+        id: m.id, thread_user: pair, from_key: m.from, from_user: m.fromUser || me,
+        name: m.name, kind: m.kind || "text", body: m.text || "", post_id: m.postId || null, image_url: slimMedia(m.image)
+      });
+      return;
+    }
+    if (!live()) return;
     const me = (window.ZIVV_CORE && ZIVV_CORE.author && ZIVV_CORE.author().user) || "";
     const ua = String(me || "").toLowerCase();
     const ub = String(toUser || "").toLowerCase();
@@ -431,6 +561,21 @@
   }
   async function upsertAccount(u) {
     if (!u || !u.email) return;
+    if (mode === "api") {
+      await api("POST", "/api/accounts", {
+        email: String(u.email).toLowerCase(),
+        username: u.username,
+        first_name: u.first || "",
+        last_name: u.last || "",
+        name: u.name || "",
+        age: u.age || null,
+        mark: u.mark || "",
+        password: u.password || "",
+        onboarding: u.onboarding || null
+      });
+      await upsertProfile(u);
+      return;
+    }
     if (!live()) return;
     const email = String(u.email).toLowerCase();
     await sb("accounts?on_conflict=email", {
@@ -452,6 +597,12 @@
   }
   async function upsertProfile(u) {
     if (!u) return;
+    if (mode === "api") {
+      await api("POST", "/api/profiles", {
+        email: u.email, username: u.username, name: u.name, avatar: slimMedia(u.avatar), age: u.age, locked: !!u.locked, onboarding: u.onboarding || null
+      });
+      return;
+    }
     if (!live()) return;
     const username = String(u.username || (u.email || "").split("@")[0] || "").toLowerCase();
     if (!username) return;
@@ -479,7 +630,7 @@
     }
   }
   async function loginRemote(first, last, mark, pass, age) {
-    if (!live()) return null;
+    if (!remote()) return null;
     const fold = (s) =>
       String(s || "")
         .replace(/\s+/g, " ")
@@ -488,7 +639,7 @@
         .replace(/[أإآ]/g, "ا")
         .replace(/ى/g, "ي")
         .replace(/ة/g, "ه");
-    const rows = await sb("accounts?select=*&limit=400");
+    const rows = mode === "api" ? await api("GET", "/api/accounts") : await sb("accounts?select=*&limit=400");
     const hit = (rows || []).find(
       (u) =>
         fold(u.first_name) === fold(first) &&
@@ -515,7 +666,12 @@
     return user;
   }
   async function pushStory(s) {
-    if (!live() || !s) return;
+    if (!s) return;
+    if (mode === "api") {
+      await api("POST", "/api/stories", { id: s.id, username: s.user, name: s.name, avatar: slimMedia(s.avatar), kind: s.kind, body: s.text || "", image_url: slimMedia(s.image), video_url: s.videoId || "" });
+      return;
+    }
+    if (!live()) return;
     await sb("stories?on_conflict=id", {
       method: "POST",
       prefer: "resolution=merge-duplicates,return=minimal",
@@ -715,6 +871,7 @@
         if (j && j.ok) {
           mode = "api";
           done();
+          pullAll().catch(() => {});
           return;
         }
       }

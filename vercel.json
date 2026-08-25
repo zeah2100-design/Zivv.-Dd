@@ -1,8 +1,5 @@
 {
   "version": 2,
   "cleanUrls": false,
-  "trailingSlash": false,
-  "builds": [
-    { "src": "**/*", "use": "@vercel/static" }
-  ]
+  "trailingSlash": false
 }
