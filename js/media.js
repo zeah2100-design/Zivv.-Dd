@@ -45,14 +45,19 @@
     scope.querySelectorAll("[data-media]").forEach((el) => {
       const id = el.getAttribute("data-media");
       if (!id) return;
-      getUrl(id)
-        .then((url) => {
-          if (url) el.src = url;
-        })
-        .catch(() => {});
+      if (/^(https?:|blob:|data:)/i.test(id)) {
+        el.src = id;
+      } else {
+        getUrl(id)
+          .then((url) => {
+            if (url) el.src = url;
+          })
+          .catch(() => {});
+      }
       const poster = el.getAttribute("data-poster");
       if (poster && !el.getAttribute("poster")) {
-        getUrl(poster).then((url) => {
+        if (/^(https?:|blob:|data:)/i.test(poster)) el.setAttribute("poster", poster);
+        else getUrl(poster).then((url) => {
           if (url) el.setAttribute("poster", url);
         }).catch(() => {});
       }

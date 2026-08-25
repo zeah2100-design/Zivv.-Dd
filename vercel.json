@@ -4,6 +4,7 @@
   "trailingSlash": false,
   "builds": [
     { "src": "api/health.js", "use": "@vercel/node", "config": { "includeFiles": ["lib/**"] } },
+    { "src": "api/upload.js", "use": "@vercel/node", "config": { "includeFiles": ["lib/**"] } },
     { "src": "api/[...path].js", "use": "@vercel/node", "config": { "includeFiles": ["lib/**"] } },
     { "src": "**/*.html", "use": "@vercel/static" },
     { "src": "css/**", "use": "@vercel/static" },

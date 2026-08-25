@@ -83,10 +83,83 @@
     return Array.isArray(row);
   }
 
+  function isRemote(s) {
+    const v = String(s || "");
+    return /^(https?:|brand\/|posts\/|avatars\/)/i.test(v);
+  }
   function slimMedia(s) {
     const v = String(s || "");
     if (v.startsWith("data:") && v.length > 4000) return "";
     return v;
+  }
+  function blobToData(blob) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  }
+  async function uploadMedia(src, name, mime) {
+    if (!src) return "";
+    if (isRemote(src)) return src;
+    let data = src;
+    let type = mime || "";
+    try {
+      if (typeof Blob !== "undefined" && src instanceof Blob) {
+        type = src.type || type || "application/octet-stream";
+        data = await blobToData(src);
+      }
+    } catch {}
+    const s = String(data || "");
+    if (!s || (!s.startsWith("data:") && s.length < 40)) return slimMedia(s);
+    if (mode !== "api" && !live()) return slimMedia(s);
+    try {
+      const r = await api("POST", "/api/upload", { name: name || "file", mime: type, data: s });
+      return (r && r.url) || slimMedia(s);
+    } catch {
+      return slimMedia(s);
+    }
+  }
+  async function materializePost(p) {
+    if (!p) return p;
+    const out = Object.assign({}, p);
+    if (out.image && !isRemote(out.image)) {
+      const u = await uploadMedia(out.image, (out.id || "p") + "-img");
+      if (u) out.image = u;
+    }
+    if (out.avatar && !isRemote(out.avatar)) {
+      const u = await uploadMedia(out.avatar, String(out.user || "u") + "-ava");
+      if (u) out.avatar = u;
+    }
+    if (out.videoId && !isRemote(out.videoId) && window.ZIVV_MEDIA && ZIVV_MEDIA.get) {
+      try {
+        const blob = await ZIVV_MEDIA.get(out.videoId);
+        if (blob) {
+          const u = await uploadMedia(blob, (out.id || "p") + "-vid", blob.type);
+          if (u) out.videoId = u;
+        }
+      } catch {}
+    }
+    if (out.audioId && !isRemote(out.audioId) && window.ZIVV_MEDIA && ZIVV_MEDIA.get) {
+      try {
+        const blob = await ZIVV_MEDIA.get(out.audioId);
+        if (blob) {
+          const u = await uploadMedia(blob, (out.id || "p") + "-aud", blob.type);
+          if (u) out.audioId = u;
+        }
+      } catch {}
+    }
+    if (out.posterId && !out.image && window.ZIVV_MEDIA && ZIVV_MEDIA.get) {
+      try {
+        const blob = await ZIVV_MEDIA.get(out.posterId);
+        if (blob) {
+          const u = await uploadMedia(blob, (out.id || "p") + "-poster", blob.type);
+          if (u) out.image = u;
+        }
+      } catch {}
+    }
+    return out;
   }
   function toRemotePost(p) {
     return {
@@ -199,6 +272,28 @@
           });
           writeLS("zivv.followGraph", g);
           out.follows = fol.length;
+        }
+      } catch {}
+      try {
+        const profs = await api("GET", "/api/profiles");
+        if (Array.isArray(profs)) {
+          const map = readLS("zivv.profiles", {});
+          profs.forEach((p) => {
+            const u = String(p.username || "").toLowerCase();
+            if (!u) return;
+            const ava = p.avatar || "";
+            const prev = map[u] || {};
+            map[u] = Object.assign({}, prev, {
+              name: p.name || prev.name,
+              user: u,
+              avatar: isRemote(ava) ? ava : (prev.avatar || ava || "brand/logo-sm.png"),
+              cover: isRemote(p.cover) ? p.cover : (prev.cover || p.cover || ""),
+              city: p.city || prev.city || "",
+              bio: p.bio || prev.bio || "",
+              locked: p.locked != null ? !!p.locked : !!prev.locked
+            });
+          });
+          writeLS("zivv.profiles", map);
         }
       } catch {}
       try {
@@ -436,12 +531,26 @@
 
   async function pushPost(post) {
     if (!post || post.blocked) return;
+    const ready = await materializePost(post);
+    try {
+      const feed = readLS("zivv.feed", []);
+      const i = feed.findIndex((x) => x && x.id === ready.id);
+      if (i >= 0) {
+        feed[i] = Object.assign({}, feed[i], {
+          image: ready.image,
+          avatar: ready.avatar,
+          videoId: ready.videoId,
+          audioId: ready.audioId
+        });
+        writeLS("zivv.feed", feed);
+      }
+    } catch {}
     if (mode === "api") {
-      await api("POST", "/api/posts", toRemotePost(post));
+      await api("POST", "/api/posts", toRemotePost(ready));
       return;
     }
     if (!live()) return;
-    await sb("posts?on_conflict=id", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: toRemotePost(post) });
+    await sb("posts?on_conflict=id", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: toRemotePost(ready) });
   }
   async function pushLike(postId, userKey, on) {
     if (!postId || !userKey) return;
@@ -597,20 +706,40 @@
   }
   async function upsertProfile(u) {
     if (!u) return;
+    const username = String(u.username || (u.email || "").split("@")[0] || "").toLowerCase();
+    let avatar = u.avatar || "";
+    if (avatar && !isRemote(avatar)) {
+      const up = await uploadMedia(avatar, username + "-ava");
+      if (up) avatar = up;
+    }
+    let cover = u.cover || "";
+    if (cover && !isRemote(cover)) {
+      const up = await uploadMedia(cover, username + "-cover");
+      if (up) cover = up;
+    }
+    if (username && (avatar || cover)) {
+      try {
+        const map = readLS("zivv.profiles", {});
+        map[username] = Object.assign({}, map[username] || {}, { avatar: avatar || (map[username] && map[username].avatar), cover: cover || (map[username] && map[username].cover) });
+        writeLS("zivv.profiles", map);
+      } catch {}
+    }
     if (mode === "api") {
       await api("POST", "/api/profiles", {
-        email: u.email, username: u.username, name: u.name, avatar: slimMedia(u.avatar), age: u.age, locked: !!u.locked, onboarding: u.onboarding || null
+        email: u.email, username: u.username || username, name: u.name, avatar, cover, bio: u.bio || "", city: u.city || "", age: u.age, locked: !!u.locked, onboarding: u.onboarding || null
       });
       return;
     }
     if (!live()) return;
-    const username = String(u.username || (u.email || "").split("@")[0] || "").toLowerCase();
     if (!username) return;
     const body = {
       email: u.email ? String(u.email).toLowerCase() : username + "@zivv.local",
       username,
       name: u.name || username,
-      avatar: slimMedia(u.avatar),
+      avatar,
+      cover,
+      bio: u.bio || "",
+      city: u.city || "",
       age: u.age || null,
       locked: !!u.locked,
       onboarding: u.onboarding || null
@@ -764,6 +893,14 @@
         }
         return r;
       };
+      setTimeout(() => {
+        const feed = readLS("zivv.feed", []);
+        feed.slice(0, 12).forEach((p) => {
+          if (!p || p.blocked) return;
+          const need = (p.image && !isRemote(p.image)) || (p.videoId && !isRemote(p.videoId)) || (p.avatar && !isRemote(p.avatar));
+          if (need) pushPost(p).catch(() => {});
+        });
+      }, 1200);
       if (ZIVV_CORE.updatePost) {
         const up = ZIVV_CORE.updatePost;
         ZIVV_CORE.updatePost = function (id, patch) {
@@ -921,13 +1058,15 @@
     pullPosts: pullAll,
     pullProducts: pullAll,
     lastPull() { return lastPull; },
-    needsSql() { return mode === "need-sql"; }
+    needsSql() { return mode === "need-sql"; },
+    uploadMedia
+  };
   };
 
   setInterval(wrap, 250);
   wrap();
   detect();
   setInterval(() => {
-    if (live()) pullAll().catch(() => {});
+    if (remote()) pullAll().catch(() => {});
   }, 8000);
 })();
