@@ -1,5 +1,23 @@
 {
   "version": 2,
   "cleanUrls": false,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "builds": [
+    { "src": "api/health.js", "use": "@vercel/node", "config": { "includeFiles": ["lib/**"] } },
+    { "src": "api/[...path].js", "use": "@vercel/node", "config": { "includeFiles": ["lib/**"] } },
+    { "src": "**/*.html", "use": "@vercel/static" },
+    { "src": "css/**", "use": "@vercel/static" },
+    { "src": "js/**", "use": "@vercel/static" },
+    { "src": "brand/**", "use": "@vercel/static" },
+    { "src": "avatars/**", "use": "@vercel/static" },
+    { "src": "posts/**", "use": "@vercel/static" },
+    { "src": "sql/**", "use": "@vercel/static" },
+    { "src": "manifest.webmanifest", "use": "@vercel/static" },
+    { "src": "sw.js", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/health", "dest": "/api/health.js" },
+    { "src": "/api/(.*)", "dest": "/api/[...path].js" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
 }

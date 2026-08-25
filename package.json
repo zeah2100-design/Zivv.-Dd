@@ -4,6 +4,6 @@
   "private": true,
   "description": "ZIVV social — static HTML",
   "scripts": {
-    "start": "node server.js"
+    "dev": "node server.js"
   }
 }

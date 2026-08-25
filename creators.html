@@ -111,16 +111,18 @@
       <h2>صناع ظاهرين دلوقتي</h2>
       <div id="board"></div>
     </main>
-    <script src="js/core.js"></script>
-    <script src="js/creator.js"></script>
-    <script src="js/shell.js"></script>
+    <script src="js/supabase-config.js?v=27"></script>
+    <script src="js/core.js?v=27"></script>
+    <script src="js/db.js?v=27"></script>
+    <script src="js/creator.js?v=27"></script>
+    <script src="js/shell.js?v=27"></script>
     <script>
       const welcome = new URLSearchParams(location.search).get("welcome") === "1";
       if (welcome) document.getElementById("welcome").classList.add("on");
-      ZIVV_CREATOR.join();
-      const me = ZIVV_CORE.author();
-      const st = ZIVV_CREATOR.of(me.user);
-      const pg = ZIVV_CREATOR.progress(me.user);
+      if (window.ZIVV_CREATOR && ZIVV_CREATOR.join) ZIVV_CREATOR.join();
+      const me = (window.ZIVV_CORE && ZIVV_CORE.author) ? ZIVV_CORE.author() : { name: "أنت", user: "you" };
+      const st = (window.ZIVV_CREATOR && ZIVV_CREATOR.of) ? ZIVV_CREATOR.of(me.user) : { posts: 0, points: 0 };
+      const pg = (window.ZIVV_CREATOR && ZIVV_CREATOR.progress) ? ZIVV_CREATOR.progress(me.user) : { likes: 0, pct: 0, gold: false, left: 10000 };
       document.getElementById("me").innerHTML = `
         <h2>تقدمك يا ${me.name}</h2>
         <div class="nums">
@@ -132,17 +134,20 @@
         <p class="mute">${pg.gold ? "حسابك ذهبي ومميز عن العادي." : "باقي " + pg.left + " نقطة، أو ادفع نقدي. لايكاتك: " + pg.likes}</p>
       `;
       const avatars = { layla: "avatars/layla.jpg", karim: "avatars/karim.jpg", omar: "avatars/omar.jpg", maya: "avatars/maya.jpg", nora: "avatars/nora.jpg", youssef: "avatars/youssef.jpg" };
-      document.getElementById("board").innerHTML = ZIVV_CREATOR.top(8).map((c, i) => `
+      const board = (window.ZIVV_CREATOR && ZIVV_CREATOR.top) ? ZIVV_CREATOR.top(8) : [];
+      document.getElementById("board").innerHTML = board.length ? board.map((c, i) => `
         <a class="row" href="profile.html?u=${encodeURIComponent(c.user)}">
           <img src="${avatars[c.user] || "brand/logo-sm.png"}" alt="">
           <div class="who">
             <b>${i + 1}. ${c.name || c.user}</b>
             <span>@${c.user} · ${c.posts || 0} منشور · ${c.views || 0} مشاهدة</span>
           </div>
-          ${c.gold || pg.gold && c.user === me.user ? '<span class="badge">ذهبي</span>' : `<span class="mute">${c.points || 0} نقطة</span>`}
+          ${c.gold || (pg.gold && c.user === me.user) ? '<span class="badge">ذهبي</span>' : `<span class="mute">${c.points || 0} نقطة</span>`}
         </a>
-      `).join("");
-      document.getElementById("go-gold").onclick = () => ZIVV_CREATOR.openPay();
+      `).join("") : '<p class="mute">لسه مفيش صناع ظاهرين. انشر أول منشور.</p>';
+      document.getElementById("go-gold").onclick = () => {
+        if (window.ZIVV_CREATOR && ZIVV_CREATOR.openPay) ZIVV_CREATOR.openPay();
+      };
     </script>
   </body>
 </html>
