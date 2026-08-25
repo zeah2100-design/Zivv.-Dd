@@ -39,10 +39,45 @@ module.exports = async (req, res) => {
   const segs = parts(req);
   const p = "/" + segs.join("/");
   try {
+    if (p === "/upload" && req.method === "POST") {
+      const body = await readBody(req);
+      let raw = String(body.data || "");
+      let mime = String(body.mime || "application/octet-stream");
+      const m = raw.match(/^data:([^;]+);base64,(.+)$/);
+      if (m) {
+        mime = m[1] || mime;
+        raw = m[2];
+      }
+      raw = raw.replace(/\s+/g, "");
+      if (!raw) return res.status(400).json({ error: "no data" });
+      const buf = Buffer.from(raw, "base64");
+      if (!buf.length) return res.status(400).json({ error: "bad data" });
+      if (buf.length > 4200000) return res.status(413).json({ error: "file too big" });
+      const ext =
+        /png/i.test(mime) ? "png" :
+        /webp/i.test(mime) ? "webp" :
+        /gif/i.test(mime) ? "gif" :
+        /webm/i.test(mime) ? "webm" :
+        /mp4|quicktime/i.test(mime) ? "mp4" :
+        /mpeg|mp3/i.test(mime) ? "mp3" :
+        /jpeg|jpg/i.test(mime) ? "jpg" : "bin";
+      const base = String(body.name || "f" + Date.now()).replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 80);
+      const path = "files/" + base + "-" + Date.now().toString(36) + "." + ext;
+      const url = await store.uploadFile(path, buf, mime);
+      return res.status(200).json({ ok: true, url });
+    }
+
+    if (p === "/reset" && req.method === "POST") {
+      const body = await readBody(req);
+      if (String(body.confirm || "") !== "ZIVV-WIPE") return res.status(403).json({ error: "no" });
+      await store.save(store.empty());
+      return res.status(200).json({ ok: true, wiped: true });
+    }
+
     const db = await store.load();
 
     if (p === "/health" || p === "/") {
-      return res.status(200).json({ ok: true, engine: "supabase-storage", posts: db.posts.length });
+      return res.status(200).json({ ok: true, engine: "supabase-storage", posts: db.posts.length, accounts: db.accounts.length });
     }
 
     if (p === "/posts" && req.method === "GET") {

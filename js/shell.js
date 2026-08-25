@@ -436,7 +436,7 @@
   }
   loadScript("js/pwa.js?v=26");
   loadScript("js/supabase-config.js");
-  loadScript("js/db.js?v=28");
+  loadScript("js/db.js?v=29");
   loadScript("js/ads.js?v=19");
   loadScript("js/creator.js");
   setTimeout(() => loadScript("js/zivvy.js?v=19"), 50);

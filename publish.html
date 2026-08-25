@@ -238,11 +238,12 @@
     <input id="sound-file" type="file" accept="audio/*" />
     <div class="toast" id="toast"></div>
 
-    <script src="js/core.js"></script>
-    <script src="js/media.js"></script>
-    <script src="js/store.js"></script>
-    <script src="js/creator.js"></script>
-    <script src="js/shell.js"></script>
+    <script src="js/core.js?v=29"></script>
+    <script src="js/media.js?v=29"></script>
+    <script src="js/db.js?v=29"></script>
+    <script src="js/store.js?v=29"></script>
+    <script src="js/creator.js?v=29"></script>
+    <script src="js/shell.js?v=29"></script>
     <script>
       const SUGGEST = ["شورتس", "موسيقى", "صورة", "موضة", "سفر", "فن", "ليل", "القاهرة", "الجيزة", "منتج"];
       const me = ZIVV_CORE.author();
@@ -337,8 +338,7 @@
           image: imageData,
           price: Number(document.getElementById("p-price").value) || 0,
           phone: document.getElementById("p-phone").value.trim(),
-          specs: document.getElementById("p-specs").value.split(/[,،]/).map((s) => s.trim()).filter(Boolean),
-        };
+          specs: document.getElementById("p-s       };
       }
 
       function paintDest() {
@@ -686,42 +686,77 @@
           priv: visibility === "friends",
         };
 
+        async function cloud(src, name, mime) {
+          if (!src) return "";
+          if (/^https?:/i.test(src) || String(src).indexOf("posts/") === 0 || String(src).indexOf("brand/") === 0) return src;
+          if (window.ZIVV_DB && ZIVV_DB.uploadMedia) {
+            const url = await ZIVV_DB.uploadMedia(src, name, mime);
+            if (url && /^https?:/i.test(url)) return url;
+          }
+          try {
+            const r = await fetch("/api/upload", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: name || "file", mime: mime || "", data: src })
+            });
+            const j = await r.json();
+            if (j && j.url) return j.url;
+          } catch {}
+          return "";
+        }
+
         try {
-          if (kind === "photo") partial.image = imageData;
+          if (kind === "photo") {
+            btn.textContent = "بيرفع الصورة…";
+            const url = await cloud(imageData, "photo");
+            if (!url) throw new Error("no image url");
+            partial.image = url;
+          }
           else if (kind === "video") {
-            if (imageData && imageData.length < 120000) partial.image = imageData;
-            else if (imageData) {
-              try {
-                const pid = "post_" + Date.now();
-                const raw = imageData.split(",")[1] || "";
-                const bin = atob(raw);
-                const arr = new Uint8Array(bin.length);
-                for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-                if (window.ZIVV_MEDIA) await ZIVV_MEDIA.put(pid, new Blob([arr], { type: "image/jpeg" }));
-                partial.posterId = pid;
-              } catch {}
+            btn.textContent = "بيرفع الفيديو…";
+            if (imageData) {
+              const poster = await cloud(imageData, "poster");
+              if (poster) partial.image = poster;
             }
             if (videoFile) {
-              if (!window.ZIVV_MEDIA) throw new Error("no media");
-              const id = "vid_" + Date.now();
-              const blob = videoFile.slice(0, videoFile.size, videoFile.type || "video/mp4");
-              await ZIVV_MEDIA.put(id, blob);
-              partial.videoId = id;
+              if (window.ZIVV_MEDIA) {
+                const id = "vid_" + Date.now();
+                await ZIVV_MEDIA.put(id, videoFile.slice(0, videoFile.size, videoFile.type || "video/mp4"));
+                partial.videoId = id;
+              }
+              if (videoFile.size < 3500000) {
+                const url = await cloud(videoFile, "video", videoFile.type || "video/mp4");
+                if (url) partial.videoId = url;
+              }
               partial.type = "video";
             }
-            if (!partial.videoId) throw new Error("no video id");
+            if (!partial.videoId && !partial.image) throw new Error("no video");
           } else if (kind === "audio") {
-            if (audioFile && window.ZIVV_MEDIA) {
-              const id = "aud_" + Date.now();
-              await ZIVV_MEDIA.put(id, audioFile);
-              partial.audioId = id;
+            btn.textContent = "بيرفع الصوت…";
+            if (audioFile) {
+              if (window.ZIVV_MEDIA) {
+                const id = "aud_" + Date.now();
+                await ZIVV_MEDIA.put(id, audioFile);
+                partial.audioId = id;
+              }
+              if (audioFile.size < 3500000) {
+                const url = await cloud(audioFile, "audio", audioFile.type || "audio/mpeg");
+                if (url) partial.audioId = url;
+              }
             }
-            if (imageData) partial.image = imageData;
+            if (imageData) {
+              const cover = await cloud(imageData, "cover");
+              if (!cover) throw new Error("no cover");
+              partial.image = cover;
+            }
           } else if (kind === "link") {
             partial.link = href;
             try { partial.linkTitle = new URL(href).hostname.replace(/^www\./, ""); } catch {}
           } else if (kind === "product") {
-            partial.image = imageData;
+            btn.textContent = "بيرفع صورة المنتج…";
+            const url = await cloud(imageData, "product");
+            if (!url) throw new Error("no product image");
+            partial.image = url;
             partial.price = Number(document.getElementById("p-price").value) || 0;
             partial.phone = document.getElementById("p-phone").value.trim();
             partial.specs = document.getElementById("p-specs").value.split(/[,،]/).map((s) => s.trim()).filter(Boolean);
@@ -755,7 +790,7 @@
               seller: a.name,
               sellerUser: a.user,
               phone: document.getElementById("p-phone").value.trim(),
-              image: imageData || "posts/fashion.jpg",
+              image: partial.image || "posts/fashion.jpg",
               desc: text,
               specs: document.getElementById("p-specs").value.split(/[,،]/).map((s) => s.trim()).filter(Boolean),
             });
