@@ -70,171 +70,172 @@ module.exports = async (req, res) => {
     if (p === "/reset" && req.method === "POST") {
       const body = await readBody(req);
       if (String(body.confirm || "") !== "ZIVV-WIPE") return res.status(403).json({ error: "no" });
-      await store.save(store.empty());
+      await store.update((db) => {
+        const blank = store.empty();
+        Object.keys(blank).forEach((k) => { db[k] = blank[k]; });
+      });
       return res.status(200).json({ ok: true, wiped: true });
     }
 
-    const db = await store.load();
-
-    if (p === "/health" || p === "/") {
-      return res.status(200).json({ ok: true, engine: "supabase-storage", posts: db.posts.length, accounts: db.accounts.length });
+    if (req.method === "GET") {
+      const db = await store.load();
+      if (p === "/health" || p === "/") {
+        return res.status(200).json({ ok: true, engine: "supabase-storage", posts: db.posts.length, accounts: db.accounts.length });
+      }
+      if (p === "/posts") {
+        return res.status(200).json(db.posts.slice().sort((a, b) => (b.created_at || 0) - (a.created_at || 0)));
+      }
+      if (p === "/likes") {
+        const postId = (req.query && req.query.post_id) || "";
+        const list = postId ? db.likes.filter((x) => x.post_id === postId) : db.likes;
+        return res.status(200).json(list);
+      }
+      if (p === "/comments") {
+        const postId = (req.query && req.query.post_id) || "";
+        const list = postId ? db.comments.filter((x) => x.post_id === postId) : db.comments;
+        return res.status(200).json(list);
+      }
+      if (p === "/products") return res.status(200).json(db.products);
+      if (p === "/messages") {
+        const user = (req.query && req.query.user) || "";
+        const list = user ? db.messages.filter((x) => x.thread_user === user) : db.messages;
+        return res.status(200).json(list);
+      }
+      if (p === "/follows") return res.status(200).json(db.follows);
+      if (p === "/profiles") return res.status(200).json(db.profiles);
+      if (p === "/accounts") {
+        const slim = db.accounts.map((a) => Object.assign({}, a));
+        return res.status(200).json(slim);
+      }
+      if (p === "/stories") return res.status(200).json(db.stories);
+      if (p === "/friends") return res.status(200).json(db.friendReqs);
+      if (p === "/notes") return res.status(200).json(db.notes);
+      if (p === "/gold") return res.status(200).json(db.goldReqs);
+      return res.status(404).json({ error: "not found", path: p });
     }
 
-    if (p === "/posts" && req.method === "GET") {
-      return res.status(200).json(db.posts.slice().sort((a, b) => (b.created_at || 0) - (a.created_at || 0)));
-    }
-    if (p === "/posts" && req.method === "POST") {
-      const body = await readBody(req);
+    if (req.method !== "POST") return res.status(405).json({ error: "method" });
+    const body = await readBody(req);
+
+    if (p === "/posts") {
       const row = Object.assign({ id: "p" + Date.now(), created_at: Date.now(), status: "ok" }, body);
-      db.posts = db.posts.filter((x) => x.id !== row.id);
-      db.posts.unshift(row);
-      await store.save(db);
+      await store.update((db) => {
+        db.posts = db.posts.filter((x) => x.id !== row.id);
+        db.posts.unshift(row);
+      });
       return res.status(200).json(row);
     }
 
-    if (p === "/likes" && req.method === "GET") {
-      const postId = (req.query && req.query.post_id) || "";
-      const list = postId ? db.likes.filter((x) => x.post_id === postId) : db.likes;
-      return res.status(200).json(list);
-    }
-    if (p === "/likes" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/likes") {
       const on = body.on !== false;
-      db.likes = db.likes.filter((x) => !(x.post_id === body.post_id && x.user_key === body.user_key));
-      if (on) db.likes.push({ post_id: body.post_id, user_key: body.user_key, created_at: Date.now() });
-      await store.save(db);
+      await store.update((db) => {
+        db.likes = db.likes.filter((x) => !(x.post_id === body.post_id && x.user_key === body.user_key));
+        if (on) db.likes.push({ post_id: body.post_id, user_key: body.user_key, created_at: Date.now() });
+      });
       return res.status(200).json({ ok: true, on });
     }
 
-    if (p === "/comments" && req.method === "GET") {
-      const postId = (req.query && req.query.post_id) || "";
-      const list = postId ? db.comments.filter((x) => x.post_id === postId) : db.comments;
-      return res.status(200).json(list);
-    }
-    if (p === "/comments" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/comments") {
       const row = Object.assign({ id: "c_" + Date.now(), created_at: Date.now() }, body);
-      db.comments.push(row);
-      await store.save(db);
+      await store.update((db) => { db.comments.push(row); });
       return res.status(200).json(row);
     }
 
-    if (p === "/products" && req.method === "GET") return res.status(200).json(db.products);
-    if (p === "/products" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/products") {
       const row = Object.assign({ id: "pru_" + Date.now(), created_at: Date.now() }, body);
-      db.products = db.products.filter((x) => x.id !== row.id);
-      db.products.unshift(row);
-      await store.save(db);
+      await store.update((db) => {
+        db.products = db.products.filter((x) => x.id !== row.id);
+        db.products.unshift(row);
+      });
       return res.status(200).json(row);
     }
 
-    if (p === "/messages" && req.method === "GET") {
-      const user = (req.query && req.query.user) || "";
-      const list = user ? db.messages.filter((x) => x.thread_user === user) : db.messages;
-      return res.status(200).json(list);
-    }
-    if (p === "/messages" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/messages") {
       const row = Object.assign({ id: "m_" + Date.now(), created_at: Date.now() }, body);
-      db.messages.push(row);
-      await store.save(db);
+      await store.update((db) => { db.messages.push(row); });
       return res.status(200).json(row);
     }
 
-    if (p === "/shares" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/shares") {
       const row = Object.assign({ id: "sh_" + Date.now(), created_at: Date.now() }, body);
-      db.shares.unshift(row);
-      await store.save(db);
+      await store.update((db) => { db.shares.unshift(row); });
       return res.status(200).json(row);
     }
 
-    if (p === "/follows" && req.method === "GET") return res.status(200).json(db.follows);
-    if (p === "/follows" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/follows") {
       const from = String(body.from_user || body.follower || "").toLowerCase();
       const to = String(body.to_user || body.following || "").toLowerCase();
       if (!from || !to) return res.status(400).json({ error: "from/to required" });
-      db.follows = db.follows.filter((x) => !(x.from_user === from && x.to_user === to) && !(x.follower === from && x.following === to));
-      if (body.on !== false) db.follows.push({ from_user: from, to_user: to, follower: from, following: to, created_at: Date.now() });
-      await store.save(db);
+      await store.update((db) => {
+        db.follows = db.follows.filter((x) => !(x.from_user === from && x.to_user === to) && !(x.follower === from && x.following === to));
+        if (body.on !== false) db.follows.push({ from_user: from, to_user: to, follower: from, following: to, created_at: Date.now() });
+      });
       return res.status(200).json({ ok: true });
     }
 
-    if (p === "/profiles" && req.method === "GET") return res.status(200).json(db.profiles);
-    if (p === "/profiles" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/profiles") {
       if (!body.email && !body.username) return res.status(400).json({ error: "email required" });
       const email = String(body.email || "").toLowerCase();
-      const i = db.profiles.findIndex((x) => (email && x.email === email) || (body.username && x.username === body.username));
-      const row = Object.assign(i >= 0 ? db.profiles[i] : { id: crypto.randomUUID(), created_at: Date.now() }, body, { email: email || body.email });
-      if (i >= 0) db.profiles[i] = row;
-      else db.profiles.push(row);
-      await store.save(db);
+      const row = await store.update((db) => {
+        const i = db.profiles.findIndex((x) => (email && x.email === email) || (body.username && x.username === body.username));
+        const next = Object.assign(i >= 0 ? db.profiles[i] : { id: crypto.randomUUID(), created_at: Date.now() }, body, { email: email || body.email });
+        if (i >= 0) db.profiles[i] = next;
+        else db.profiles.push(next);
+        return next;
+      });
       return res.status(200).json(row);
     }
 
-    if (p === "/accounts" && req.method === "GET") {
-      const slim = db.accounts.map((a) => Object.assign({}, a));
-      return res.status(200).json(slim);
-    }
-    if (p === "/accounts" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/accounts") {
       if (!body.email) return res.status(400).json({ error: "email required" });
       const email = String(body.email).toLowerCase();
       const row = Object.assign({ created_at: Date.now() }, body, { email });
-      db.accounts = db.accounts.filter((x) => x.email !== email);
-      db.accounts.push(row);
-      await store.save(db);
+      await store.update((db) => {
+        db.accounts = db.accounts.filter((x) => x.email !== email);
+        db.accounts.push(row);
+      });
       return res.status(200).json(row);
     }
 
-    if (p === "/reports" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/reports") {
       const row = Object.assign({ id: "r_" + Date.now(), created_at: Date.now() }, body);
-      db.reports.unshift(row);
-      await store.save(db);
+      await store.update((db) => { db.reports.unshift(row); });
       return res.status(200).json(row);
     }
 
-    if (p === "/stories" && req.method === "GET") return res.status(200).json(db.stories);
-    if (p === "/stories" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/stories") {
       const row = Object.assign({ id: "st_" + Date.now(), created_at: Date.now() }, body);
-      db.stories = db.stories.filter((x) => x.id !== row.id);
-      db.stories.unshift(row);
-      await store.save(db);
+      await store.update((db) => {
+        db.stories = db.stories.filter((x) => x.id !== row.id);
+        db.stories.unshift(row);
+      });
       return res.status(200).json(row);
     }
 
-    if (p === "/friends" && req.method === "GET") return res.status(200).json(db.friendReqs);
-    if (p === "/friends" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/friends") {
       const row = Object.assign({ id: "fr_" + Date.now(), created_at: Date.now() }, body);
-      db.friendReqs = db.friendReqs.filter((x) => x.id !== row.id);
-      db.friendReqs.unshift(row);
-      await store.save(db);
+      await store.update((db) => {
+        db.friendReqs = db.friendReqs.filter((x) => x.id !== row.id);
+        db.friendReqs.unshift(row);
+      });
       return res.status(200).json(row);
     }
 
-    if (p === "/notes" && req.method === "GET") return res.status(200).json(db.notes);
-    if (p === "/notes" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/notes") {
       const row = Object.assign({ id: "n_" + Date.now(), created_at: Date.now() }, body);
-      db.notes.unshift(row);
-      db.notes = db.notes.slice(0, 200);
-      await store.save(db);
+      await store.update((db) => {
+        db.notes.unshift(row);
+        db.notes = db.notes.slice(0, 200);
+      });
       return res.status(200).json(row);
     }
 
-    if (p === "/gold" && req.method === "GET") return res.status(200).json(db.goldReqs);
-    if (p === "/gold" && req.method === "POST") {
-      const body = await readBody(req);
+    if (p === "/gold") {
       const row = Object.assign({ id: "g_" + Date.now(), created_at: Date.now() }, body);
-      db.goldReqs = db.goldReqs.filter((x) => x.id !== row.id);
-      db.goldReqs.unshift(row);
-      await store.save(db);
+      await store.update((db) => {
+        db.goldReqs = db.goldReqs.filter((x) => x.id !== row.id);
+        db.goldReqs.unshift(row);
+      });
       return res.status(200).json(row);
     }
 

@@ -58,15 +58,25 @@
   function remote() {
     return mode === "api" || live();
   }
+  let writeChain = Promise.resolve();
+  function enqueueWrite(fn) {
+    const run = writeChain.then(fn, fn);
+    writeChain = run.then(() => undefined, () => undefined);
+    return run;
+  }
   async function api(method, path, body) {
-    const opt = { method, headers: { "Content-Type": "application/json" } };
-    if (body) opt.body = JSON.stringify(body);
-    const r = await fetch(path, opt);
-    const text = await r.text();
-    let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
-    if (!r.ok) throw new Error((data && data.error) || text || ("HTTP " + r.status));
-    return data;
+    const go = async () => {
+      const opt = { method, headers: { "Content-Type": "application/json" } };
+      if (body) opt.body = JSON.stringify(body);
+      const r = await fetch(path, opt);
+      const text = await r.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+      if (!r.ok) throw new Error((data && data.error) || text || ("HTTP " + r.status));
+      return data;
+    };
+    if (String(method || "GET").toUpperCase() === "GET") return go();
+    return enqueueWrite(go);
   }
 
   async function sb(path, opt) {
@@ -198,7 +208,8 @@
       place: p.place || "",
       status: p.status || "ok",
       visibility: p.visibility || "",
-      priv: !!p.priv
+      priv: !!p.priv,
+      created_at: p.created_at || Number(String(p.id || "").replace(/^p/, "")) || Date.now()
     };
   }
   function fromRemotePost(r) {
@@ -231,39 +242,67 @@
     };
   }
 
+  function mergeFeed(mapped) {
+    const local = readLS("zivv.feed", []);
+    const by = {};
+    local.forEach((x) => { if (x && x.id) by[x.id] = x; });
+    mapped.forEach((p) => {
+      const L = by[p.id];
+      if (!L) return;
+      if (!p.image && L.image) p.image = L.image;
+      if ((!p.avatar || p.avatar === "brand/logo-sm.png") && L.avatar) p.avatar = L.avatar;
+      if (!p.videoId && L.videoId) p.videoId = L.videoId;
+      if (!p.audioId && L.audioId) p.audioId = L.audioId;
+      if (L.promoted) p.promoted = true;
+      delete by[p.id];
+    });
+    Object.keys(by).forEach((id) => {
+      const L = by[id];
+      if (!L || L.status === "removed" || L.blocked) return;
+      mapped.unshift(L);
+    });
+    writeLS("zivv.feed", mapped);
+    return mapped.length;
+  }
+
+  function mergeLikes(remoteList) {
+    const map = {};
+    (remoteList || []).forEach((x) => {
+      if (!x.post_id || !x.user_key) return;
+      map[x.post_id] = map[x.post_id] || [];
+      if (map[x.post_id].indexOf(x.user_key) < 0) map[x.post_id].push(x.user_key);
+    });
+    let me = "";
+    try { me = (window.ZIVV_CORE && ZIVV_CORE.meKey && ZIVV_CORE.meKey()) || ""; } catch {}
+    const local = readLS("zivv.likes", {});
+    if (me) {
+      Object.keys(local).forEach((pid) => {
+        const had = (local[pid] || []).indexOf(me) >= 0;
+        const rem = (map[pid] || []).indexOf(me) >= 0;
+        if (had && !rem) {
+          map[pid] = map[pid] || [];
+          map[pid].push(me);
+        }
+        if (!had && rem) map[pid] = (map[pid] || []).filter((u) => u !== me);
+      });
+    }
+    writeLS("zivv.likes", map);
+    return (remoteList || []).length;
+  }
+
   async function pullAll() {
     if (mode === "api") {
       const out = { posts: 0, likes: 0, users: 0, follows: 0, comments: 0 };
       try {
         const posts = await api("GET", "/api/posts");
         if (Array.isArray(posts)) {
-          const mapped = posts.map(fromRemotePost);
-          const local = readLS("zivv.feed", []);
-          const by = {};
-          local.forEach((x) => { if (x && x.id) by[x.id] = x; });
-          mapped.forEach((p) => {
-            const L = by[p.id];
-            if (!L) return;
-            if (!p.image && L.image) p.image = L.image;
-            if ((!p.avatar || p.avatar === "brand/logo-sm.png") && L.avatar) p.avatar = L.avatar;
-            if (!p.videoId && L.videoId) p.videoId = L.videoId;
-            if (!p.audioId && L.audioId) p.audioId = L.audioId;
-          });
-          writeLS("zivv.feed", mapped);
-          out.posts = mapped.length;
+          out.posts = mergeFeed(posts.map(fromRemotePost));
         }
       } catch {}
       try {
         const likes = await api("GET", "/api/likes");
         if (Array.isArray(likes)) {
-          const map = {};
-          likes.forEach((x) => {
-            if (!x.post_id || !x.user_key) return;
-            map[x.post_id] = map[x.post_id] || [];
-            if (map[x.post_id].indexOf(x.user_key) < 0) map[x.post_id].push(x.user_key);
-          });
-          writeLS("zivv.likes", map);
-          out.likes = likes.length;
+          out.likes = mergeLikes(likes);
         }
       } catch {}
       try {
@@ -356,27 +395,13 @@
     try {
       const posts = await sb("posts?select=*&order=created_at.desc&limit=250");
       if (Array.isArray(posts)) {
-        const mapped = posts.map(fromRemotePost);
-        const local = readLS("zivv.feed", []);
-        const remoteIds = new Set(mapped.map((p) => p.id));
-        local.forEach((p) => {
-          if (p && p.id && !remoteIds.has(p.id) && p._pending) mapped.unshift(p);
-        });
-        writeLS("zivv.feed", mapped);
-        out.posts = mapped.length;
+        out.posts = mergeFeed(posts.map(fromRemotePost));
       }
     } catch {}
     try {
       const likes = await sb("likes?select=*&limit=2000");
       if (Array.isArray(likes)) {
-        const map = {};
-        likes.forEach((x) => {
-          if (!x.post_id || !x.user_key) return;
-          map[x.post_id] = map[x.post_id] || [];
-          if (map[x.post_id].indexOf(x.user_key) < 0) map[x.post_id].push(x.user_key);
-        });
-        writeLS("zivv.likes", map);
-        out.likes = likes.length;
+        out.likes = mergeLikes(likes);
       }
     } catch {}
     try {
