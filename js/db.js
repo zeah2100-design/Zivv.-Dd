@@ -1061,7 +1061,6 @@
     needsSql() { return mode === "need-sql"; },
     uploadMedia
   };
-  };
 
   setInterval(wrap, 250);
   wrap();
