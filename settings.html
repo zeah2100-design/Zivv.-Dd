@@ -142,7 +142,6 @@
       <section class="card">
         <h2 id="t-db">قاعدة البيانات</h2>
         <p class="sub" id="db-line" style="margin:0">جاري الفحص…</p>
-        <a class="ghost" href="setup.html" id="t-dbgo">ربط قاعدة حقيقية (Supabase)</a>
       </section>
 
       <section class="card">
@@ -210,7 +209,6 @@
           lockOn: "الحساب مقفول — الأصدقاء بس",
           lockOff: "الحساب مفتوح — قفل الحساب",
           db: "قاعدة البيانات",
-          dbgo: "ربط قاعدة حقيقية (Supabase)",
           cc: "ترجمة الفيديوهات",
           ccsub: "الترجمة تظهر على الفيديو بلغة التطبيق — عربي أو إنجليزي.",
           ccOn: "الترجمة شغالة — اضغط عشان تقفلها",
@@ -247,7 +245,6 @@
           lockOn: "Locked — friends only",
           lockOff: "Public — lock account",
           db: "Database",
-          dbgo: "Connect a real database (Supabase)",
           cc: "Video translation",
           ccsub: "Captions on videos follow the app language — Arabic or English.",
           ccOn: "Translation on — tap to turn off",
@@ -304,8 +301,6 @@
         paintPwa(p);
         runDemo(lang);
         document.getElementById("t-db").textContent = p.db || (lang === "en" ? "Database" : "قاعدة البيانات");
-        const dbgo = document.getElementById("t-dbgo");
-        if (dbgo) dbgo.textContent = p.dbgo || dbgo.textContent;
         document.getElementById("t-lock").textContent = p.lock;
         document.getElementById("t-locksub").textContent = p.locksub;
         document.getElementById("out").textContent = p.out;
@@ -377,30 +372,7 @@
         gb.disabled = !!gold;
         gb.style.opacity = gold ? ".55" : "1";
 
-        const usersN = emails.length;
-        const postsN = (window.ZIVV_CORE && ZIVV_CORE.getPosts ? ZIVV_CORE.getPosts().length : 0);
-        const fansN = window.ZIVV_CORE && ZIVV_CORE.followerCount ? ZIVV_CORE.followerCount() : 0;
-        const mode = (window.ZIVV_DB && ZIVV_DB.mode) || "local";
-        const dbEl = document.getElementById("db-line");
-        if (dbEl) {
-          if (mode === "supabase") {
-            dbEl.textContent = lang === "en"
-              ? "Live Postgres (Supabase). " + usersN + " accounts · " + postsN + " posts · " + fansN + " followers."
-              : "قاعدة Postgres حقيقية شغالة. " + usersN + " حساب · " + postsN + " منشور · " + fansN + " متابع.";
-          } else if (mode === "need-sql") {
-            dbEl.textContent = lang === "en"
-              ? "Project linked. Open setup and run sql/zivv.sql once in Supabase."
-              : "المشروع متربط. افتح صفحة الربط وشغّل sql/zivv.sql مرة في Supabase.";
-          } else if (mode === "api") {
-            dbEl.textContent = lang === "en"
-              ? "Live cloud database on. " + usersN + " accounts · " + postsN + " posts · " + fansN + " followers."
-              : "قاعدة سحابية حقيقية شغالة. " + usersN + " حساب · " + postsN + " منشور · " + fansN + " متابع.";
-          } else {
-            dbEl.textContent = lang === "en"
-              ? "Local only on this device. Connect Supabase to make it real."
-              : "دلوقتي محلي على الجهاز بس. اربط Supabase عشان تبقى حقيقية بين الناس.";
-          }
-        }
+        paintDb(lang);
         window.dispatchEvent(new CustomEvent("zivv-lang"));
         if (window.ZIVV_I18N) ZIVV_I18N.apply();
       }
@@ -451,6 +423,34 @@
         btn.textContent = on ? p.ccOn : p.ccOff;
         btn.classList.toggle("go", on);
         btn.classList.toggle("ghost", !on);
+      }
+
+      function paintDb(lang) {
+        const dbEl = document.getElementById("db-line");
+        if (!dbEl) return;
+        lang = lang || langNow();
+        const usersN = Object.keys(users()).length;
+        const postsN = (window.ZIVV_CORE && ZIVV_CORE.getPosts ? ZIVV_CORE.getPosts().length : 0);
+        fetch("/api/health", { cache: "no-store" }).then((r) => r.json()).then((j) => {
+          if (j && j.ok) {
+            const a = j.accounts != null ? j.accounts : usersN;
+            const p = j.posts != null ? j.posts : postsN;
+            dbEl.textContent = lang === "en"
+              ? "Live cloud database is on for everyone. " + a + " accounts · " + p + " posts."
+              : "قاعدة سحابية شغالة تلقائي لكل الناس. " + a + " حساب · " + p + " منشور.";
+          } else {
+            dbEl.textContent = lang === "en" ? "Cloud database unreachable." : "القاعدة السحابية مش واصلة دلوقتي.";
+          }
+        }).catch(() => {
+          const mode = (window.ZIVV_DB && ZIVV_DB.mode) || "";
+          if (mode === "api") {
+            dbEl.textContent = lang === "en"
+              ? "Live cloud database is on for everyone."
+              : "قاعدة سحابية شغالة تلقائي لكل الناس.";
+          } else {
+            dbEl.textContent = lang === "en" ? "Checking cloud database…" : "جاري فحص القاعدة السحابية…";
+          }
+        });
       }
 
       function paintLock(p) {
