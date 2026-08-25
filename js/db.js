@@ -237,8 +237,20 @@
       try {
         const posts = await api("GET", "/api/posts");
         if (Array.isArray(posts)) {
-          writeLS("zivv.feed", posts.map(fromRemotePost));
-          out.posts = posts.length;
+          const mapped = posts.map(fromRemotePost);
+          const local = readLS("zivv.feed", []);
+          const by = {};
+          local.forEach((x) => { if (x && x.id) by[x.id] = x; });
+          mapped.forEach((p) => {
+            const L = by[p.id];
+            if (!L) return;
+            if (!p.image && L.image) p.image = L.image;
+            if ((!p.avatar || p.avatar === "brand/logo-sm.png") && L.avatar) p.avatar = L.avatar;
+            if (!p.videoId && L.videoId) p.videoId = L.videoId;
+            if (!p.audioId && L.audioId) p.audioId = L.audioId;
+          });
+          writeLS("zivv.feed", mapped);
+          out.posts = mapped.length;
         }
       } catch {}
       try {
