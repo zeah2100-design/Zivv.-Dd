@@ -1,9 +1,21 @@
 {
   "name": "zivv",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "ZIVV social — static HTML",
+  "description": "ZIVV social — real database with Supabase + SQLite",
+  "type": "commonjs",
   "scripts": {
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "db:init": "node scripts/init-db.js",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed": "node scripts/seed.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "bcryptjs": "^2.4.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

@@ -1,39 +1,70 @@
-# ZIVV
+# ZIVV - Real Database Edition 🚀
 
-قاعدة البيانات الحقيقية: **Supabase** (مش GitHub).
-1. اعمل مشروع على supabase.com
-2. شغّل `sql/zivv.sql` من SQL Editor
-3. افتح `setup.html` وحط Project URL + anon key
+## قاعدة البيانات الحقيقية - تم ✅
 
+الموقع الآن يعمل بقاعدة بيانات حقيقية بدلاً من localStorage و JSON:
 
-كل ملفات الموقع هنا. المرحلة الجاية هتشتغل من الفولدر ده فقط.
+- **Production**: Supabase Postgres (19 جدول) مع bcrypt و foreign keys و triggers
+- **Local**: SQLite (Node 22 built-in) في `data/zivv.db` - يشتغل تلقائي بدون إعداد
+- **AI**: محادثات زيفي محفوظة في `ai_chats` و `ai_messages`
 
-## المرحلة الحالية — مكتملة
-- `index.html` تسجيل الدخول وإنشاء الحساب + الأسئلة
-- `home.html` الصفحة الرئيسية (فيد + نشر + فلاتر)
-- `stories.html` الحالات (إضافة ومشاهدة)
-- شريط أعلى في كل الصفحات: خيارات الفيد · بحث · قائمة الصفحات
+### التشغيل السريع
 
-- `publish.html` صفحة النشر (صورة / فيديو / نص / صوت / رابط)
+```bash
+npm install
+npm run db:init   # يفحص قاعدة البيانات
+npm run db:seed   # حساب تجريبي demo@zivv.app / demo123
+npm run dev       # http://localhost:8787
+```
 
-## الصفحات الجاهزة للمرحلة الجاية
-- `explore.html` استكشف
-- `settings.html` الإعدادات
-- `chat.html` الدردشة
-- `private.html` دردشة خاصة
-- `store.html` المتجر الإلكتروني
-- `ai.html` دردشة الذكاء
-- `alerts.html` الإشعارات
-- `friends.html` الأصدقاء
-- `music.html` الموسيقى
+### Supabase Production Setup
 
-## الأصول المشتركة
-- `css/theme.css` ألوان الشعار
-- `css/shell.css` الشريط والقوائم
-- `js/shell.js` القائمة والفلاتر
-- `brand/` الشعار
-- `avatars/` صور الحسابات
-- `posts/` صور المنشورات
+1. افتح Supabase Dashboard > SQL Editor
+2. شغل `sql/zivv-v2.sql` (المخطط الجديد الكامل)
+3. اضبط env vars في Vercel:
+   ```
+   SUPABASE_URL=https://ldionpdfplvbnpoelkqe.supabase.co
+   SUPABASE_SECRET_KEY=sb_secret_...
+   USE_SUPABASE=true
+   ```
+4. Deploy
 
-## المرحلة الجاية المقترحة
-نبني صفحة صفحة من القائمة: الدردشة أو الإعدادات أو البحث.
+### الملفات الجديدة
+
+- `lib/database.js` - واجهة موحدة (Supabase | SQLite)
+- `lib/supabase.js` - عميل Supabase بجداول حقيقية
+- `lib/sqlite.js` - عميل SQLite حقيقي
+- `lib/auth.js` - تشفير bcrypt
+- `sql/zivv-v2.sql` - مخطط الإنتاج مع AI tables
+- `api/[...path].js` - أعيد كتابته لجداول حقيقية
+- `api/ai.js` - AI proxy مع usage logging
+- `js/db.js` - v2 يدعم real-db mode
+- `scripts/` - init, migrate, seed
+
+### الفرق
+
+| قبل | الآن |
+|-----|------|
+| JSON file واحد في Storage | 19 جدول Postgres |
+| password plain text | bcrypt hash |
+| AI chats localStorage فقط | محفوظة في DB |
+| لا indexes | indexes + triggers |
+
+### الصفحات
+
+- `index.html` - تسجيل دخول حقيقي (بريد+باسورد مشفر)
+- `home.html` - الفيد + نشر
+- `ai.html` - دردشة زيفي مع حفظ حقيقي
+- `chat.html` - الدردشة
+- `store.html` - المتجر
+- `explore.html`, `reels.html`, `music.html`, etc
+
+### حساب تجريبي
+
+بعد `npm run db:seed`:
+- Email: demo@zivv.app
+- Password: demo123
+
+### تفاصيل أكثر
+
+شوف `README_DB.md` و `REAL_DB_SUMMARY.md`

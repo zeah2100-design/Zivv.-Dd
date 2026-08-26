@@ -314,6 +314,17 @@
     const list = read().filter((c) => c.id !== chat.id);
     list.unshift(chat);
     write(list.slice(0, 40));
+    // Push to real database if available
+    try {
+      if (window.ZIVV_DB && ZIVV_DB.pushAiChat) {
+        ZIVV_DB.pushAiChat(chat);
+        // Also push messages
+        const last = chat.messages && chat.messages[chat.messages.length - 1];
+        if (last && ZIVV_DB.pushAiMessage) {
+          ZIVV_DB.pushAiMessage(chat.id, { id: last.id || "aim_" + Date.now(), role: last.role, content: last.content, image: last.image || "", sources: last.sources || [], chatTitle: chat.title });
+        }
+      }
+    } catch {}
   }
   function newChat() {
     const chat = { id: uid(), title: "دردشة جديدة", messages: [], at: now() };

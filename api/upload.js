@@ -1,4 +1,4 @@
-const store = require("../lib/store");
+const { getDatabase } = require("../lib/database");
 
 function cors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
     if (!raw) return res.status(400).json({ error: "no data" });
     const buf = Buffer.from(raw, "base64");
     if (!buf.length) return res.status(400).json({ error: "bad data" });
-    if (buf.length > 4200000) return res.status(413).json({ error: "file too big" });
+    if (buf.length > 10000000) return res.status(413).json({ error: "file too big (max 10MB)" });
     const ext =
       /png/i.test(mime) ? "png" :
       /webp/i.test(mime) ? "webp" :
@@ -53,9 +53,12 @@ module.exports = async (req, res) => {
       /jpeg|jpg/i.test(mime) ? "jpg" : "bin";
     const base = String(body.name || "f" + Date.now()).replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 80);
     const path = "files/" + base + "-" + Date.now().toString(36) + "." + ext;
-    const url = await store.uploadFile(path, buf, mime);
-    return res.status(200).json({ ok: true, url });
+
+    const db = getDatabase();
+    const url = await db.uploadFile(path, buf, mime);
+    return res.status(200).json({ ok: true, url, mode: db.mode });
   } catch (e) {
+    console.error("[UPLOAD ERROR]", e);
     return res.status(500).json({ error: String(e.message || e) });
   }
 };

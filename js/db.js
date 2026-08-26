@@ -1,15 +1,21 @@
+// ZIVV Real Database Client v2 - supports Supabase + SQLite + API
 (function () {
+  // Keep epoch wipe but preserve important keys
   (function wipeSite() {
-    const EPOCH = "wipe-20260825-final";
+    const EPOCH = "wipe-20260826-realdb";
     try {
       if (localStorage.getItem("zivv.epoch") === EPOCH) return;
       const keepLang = localStorage.getItem("zivv.lang");
       const keepSb = localStorage.getItem("zivv.supabase");
       const keepKing = localStorage.getItem("zivv.kingPass");
+      const keepSession = localStorage.getItem("zivv.session");
+      const keepUsers = localStorage.getItem("zivv.users");
       localStorage.clear();
       if (keepLang) localStorage.setItem("zivv.lang", keepLang);
       if (keepSb) localStorage.setItem("zivv.supabase", keepSb);
       if (keepKing) localStorage.setItem("zivv.kingPass", keepKing);
+      if (keepSession) localStorage.setItem("zivv.session", keepSession);
+      if (keepUsers) localStorage.setItem("zivv.users", keepUsers);
       localStorage.setItem("zivv.epoch", EPOCH);
       try { sessionStorage.clear(); } catch {}
     } catch {}
@@ -19,6 +25,7 @@
   let ready = false;
   const waiters = [];
   let lastPull = 0;
+  let realDbInfo = null;
 
   function done() {
     ready = true;
@@ -32,9 +39,7 @@
     try {
       const v = JSON.parse(localStorage.getItem(key) || "null");
       return v == null ? fallback : v;
-    } catch {
-      return fallback;
-    }
+    } catch { return fallback; }
   }
   function writeLS(key, val) {
     localStorage.setItem(key, JSON.stringify(val));
@@ -52,18 +57,16 @@
     }
     return { url, anon };
   }
-  function live() {
-    return mode === "supabase" && cfg().url && cfg().anon;
-  }
-  function remote() {
-    return mode === "api" || live();
-  }
+  function live() { return mode === "supabase" && cfg().url && cfg().anon; }
+  function remote() { return mode === "api" || mode === "real" || live(); }
+
   let writeChain = Promise.resolve();
   function enqueueWrite(fn) {
     const run = writeChain.then(fn, fn);
     writeChain = run.then(() => undefined, () => undefined);
     return run;
   }
+
   async function api(method, path, body) {
     const go = async () => {
       const opt = { method, headers: { "Content-Type": "application/json" } };
@@ -83,14 +86,11 @@
     const { url, anon } = cfg();
     if (!url || !anon) throw new Error("no supabase");
     opt = opt || {};
-    const headers = Object.assign(
-      {
-        apikey: anon,
-        "Content-Type": "application/json",
-        Prefer: opt.prefer || "return=representation"
-      },
-      opt.headers || {}
-    );
+    const headers = Object.assign({
+      apikey: anon,
+      "Content-Type": "application/json",
+      Prefer: opt.prefer || "return=representation"
+    }, opt.headers || {});
     if (anon.indexOf("sb_") !== 0) headers.Authorization = "Bearer " + anon;
     const r = await fetch(url + "/rest/v1/" + path, {
       method: opt.method || "GET",
@@ -111,7 +111,7 @@
 
   function isRemote(s) {
     const v = String(s || "");
-    return /^(https?:|brand\/|posts\/|avatars\/)/i.test(v);
+    return /^(https?:|brand\/|posts\/|avatars\/|uploads\/)/i.test(v);
   }
   function slimMedia(s) {
     const v = String(s || "");
@@ -139,14 +139,13 @@
     } catch {}
     const s = String(data || "");
     if (!s || (!s.startsWith("data:") && s.length < 40)) return slimMedia(s);
-    if (mode !== "api" && !live()) return slimMedia(s);
+    if (mode !== "api" && mode !== "real" && !live()) return slimMedia(s);
     try {
       const r = await api("POST", "/api/upload", { name: name || "file", mime: type, data: s });
       return (r && r.url) || slimMedia(s);
-    } catch {
-      return slimMedia(s);
-    }
+    } catch { return slimMedia(s); }
   }
+
   async function materializePost(p) {
     if (!p) return p;
     const out = Object.assign({}, p);
@@ -176,17 +175,9 @@
         }
       } catch {}
     }
-    if (out.posterId && !out.image && window.ZIVV_MEDIA && ZIVV_MEDIA.get) {
-      try {
-        const blob = await ZIVV_MEDIA.get(out.posterId);
-        if (blob) {
-          const u = await uploadMedia(blob, (out.id || "p") + "-poster", blob.type);
-          if (u) out.image = u;
-        }
-      } catch {}
-    }
     return out;
   }
+
   function toRemotePost(p) {
     return {
       id: p.id,
@@ -209,15 +200,16 @@
       status: p.status || "ok",
       visibility: p.visibility || "",
       priv: !!p.priv,
-      created_at: p.created_at || Number(String(p.id || "").replace(/^p/, "")) || Date.now()
+      created_at: p.created_at || new Date().toISOString()
     };
   }
+
   function fromRemotePost(r) {
     return {
       id: r.id,
       name: r.name,
       user: r.username || r.user,
-      avatar: r.avatar || "brand/logo-sm.png",
+      avatar: r.avatar || r.image_url || "brand/logo-sm.png",
       title: r.title || "",
       text: r.body || r.text || "",
       type: r.type || "text",
@@ -235,10 +227,11 @@
       visibility: r.visibility || "",
       priv: !!r.priv,
       time: "الآن",
-      likes: 0,
+      likes: r.likes_count || 0,
       comments: [],
       following: true,
-      ai: false
+      ai: false,
+      created_at: r.created_at
     };
   }
 
@@ -291,19 +284,15 @@
   }
 
   async function pullAll() {
-    if (mode === "api") {
+    if (mode === "api" || mode === "real") {
       const out = { posts: 0, likes: 0, users: 0, follows: 0, comments: 0 };
       try {
         const posts = await api("GET", "/api/posts");
-        if (Array.isArray(posts)) {
-          out.posts = mergeFeed(posts.map(fromRemotePost));
-        }
+        if (Array.isArray(posts)) out.posts = mergeFeed(posts.map(fromRemotePost));
       } catch {}
       try {
         const likes = await api("GET", "/api/likes");
-        if (Array.isArray(likes)) {
-          out.likes = mergeLikes(likes);
-        }
+        if (Array.isArray(likes)) out.likes = mergeLikes(likes);
       } catch {}
       try {
         const comments = await api("GET", "/api/comments");
@@ -313,14 +302,7 @@
             const id = c.post_id;
             if (!id) return;
             map[id] = map[id] || [];
-            map[id].push({
-              id: c.id,
-              name: c.name,
-              by: c.user_key,
-              text: c.body || c.text,
-              at: c.created_at || Date.now(),
-              parentId: c.parent_id || null
-            });
+            map[id].push({ id: c.id, name: c.name, by: c.user_key, text: c.body || c.text, at: c.created_at || Date.now(), parentId: c.parent_id || null });
           });
           writeLS("zivv.comments", map);
           out.comments = comments.length;
@@ -350,15 +332,7 @@
             if (!u) return;
             const ava = p.avatar || "";
             const prev = map[u] || {};
-            map[u] = Object.assign({}, prev, {
-              name: p.name || prev.name,
-              user: u,
-              avatar: isRemote(ava) ? ava : (prev.avatar || ava || "brand/logo-sm.png"),
-              cover: isRemote(p.cover) ? p.cover : (prev.cover || p.cover || ""),
-              city: p.city || prev.city || "",
-              bio: p.bio || prev.bio || "",
-              locked: p.locked != null ? !!p.locked : !!prev.locked
-            });
+            map[u] = Object.assign({}, prev, { name: p.name || prev.name, user: u, avatar: isRemote(ava) ? ava : (prev.avatar || ava || "brand/logo-sm.png"), cover: isRemote(p.cover) ? p.cover : (prev.cover || p.cover || ""), city: p.city || prev.city || "", bio: p.bio || prev.bio || "", locked: p.locked != null ? !!p.locked : !!prev.locked });
           });
           writeLS("zivv.profiles", map);
         }
@@ -370,17 +344,7 @@
           acc.forEach((a) => {
             const email = a.email;
             if (!email) return;
-            users[email] = Object.assign({}, users[email] || {}, {
-              email,
-              username: a.username,
-              first: a.first_name || a.first,
-              last: a.last_name || a.last,
-              name: a.name,
-              age: a.age,
-              mark: a.mark,
-              password: a.password,
-              onboarding: a.onboarding || (users[email] && users[email].onboarding) || null
-            });
+            users[email] = Object.assign({}, users[email] || {}, { email, username: a.username, first: a.first_name || a.first, last: a.last_name || a.last, name: a.name, age: a.age, mark: a.mark, onboarding: a.onboarding || (users[email] && users[email].onboarding) || null });
           });
           writeLS("zivv.users", users);
           out.users = Object.keys(users).length;
@@ -391,18 +355,15 @@
       return Object.assign({ ok: true, mode }, out);
     }
     if (!live()) return { ok: false, mode };
+    // Supabase direct mode - same as before
     const out = { posts: 0, likes: 0, users: 0, follows: 0, comments: 0 };
     try {
       const posts = await sb("posts?select=*&order=created_at.desc&limit=250");
-      if (Array.isArray(posts)) {
-        out.posts = mergeFeed(posts.map(fromRemotePost));
-      }
+      if (Array.isArray(posts)) out.posts = mergeFeed(posts.map(fromRemotePost));
     } catch {}
     try {
       const likes = await sb("likes?select=*&limit=2000");
-      if (Array.isArray(likes)) {
-        out.likes = mergeLikes(likes);
-      }
+      if (Array.isArray(likes)) out.likes = mergeLikes(likes);
     } catch {}
     try {
       const comments = await sb("comments?select=*&order=created_at.asc&limit=2000");
@@ -412,14 +373,7 @@
           const id = c.post_id;
           if (!id) return;
           map[id] = map[id] || [];
-          map[id].push({
-            id: c.id,
-            name: c.name,
-            by: c.user_key,
-            text: c.body,
-            at: Date.parse(c.created_at) || Date.now(),
-            parentId: c.parent_id || null
-          });
+          map[id].push({ id: c.id, name: c.name, by: c.user_key, text: c.body, at: Date.parse(c.created_at) || Date.now(), parentId: c.parent_id || null });
         });
         writeLS("zivv.comments", map);
         out.comments = comments.length;
@@ -440,143 +394,6 @@
         out.follows = fol.length;
       }
     } catch {}
-    try {
-      const acc = await sb("accounts?select=*&limit=500");
-      if (Array.isArray(acc)) {
-        const users = readLS("zivv.users", {});
-        acc.forEach((a) => {
-          if (!a.email) return;
-          users[a.email] = Object.assign({}, users[a.email] || {}, {
-            email: a.email,
-            username: a.username,
-            first: a.first_name,
-            last: a.last_name,
-            name: a.name,
-            age: a.age,
-            mark: a.mark,
-            password: a.password,
-            onboarding: a.onboarding || (users[a.email] && users[a.email].onboarding) || null
-          });
-        });
-        writeLS("zivv.users", users);
-        out.users = Object.keys(users).length;
-      }
-    } catch {}
-    try {
-      const profs = await sb("profiles?select=*&limit=500");
-      if (Array.isArray(profs)) {
-        const map = readLS("zivv.profiles", {});
-        profs.forEach((p) => {
-          const u = String(p.username || "").toLowerCase();
-          if (!u) return;
-          map[u] = Object.assign({}, map[u] || {}, {
-            name: p.name,
-            user: u,
-            avatar: p.avatar || "brand/logo-sm.png",
-            city: p.city || "",
-            locked: !!p.locked
-          });
-        });
-        writeLS("zivv.profiles", map);
-      }
-    } catch {}
-    try {
-      const msgs = await sb("messages?select=*&order=created_at.asc&limit=2000");
-      if (Array.isArray(msgs)) {
-        const chats = {};
-        msgs.forEach((m) => {
-          const k = m.thread_user || "";
-          if (!k) return;
-          chats[k] = chats[k] || [];
-          chats[k].push({
-            id: m.id,
-            from: m.from_key,
-            fromUser: m.from_user,
-            name: m.name,
-            kind: m.kind || "text",
-            text: m.body || "",
-            postId: m.post_id || "",
-            image: m.image_url || "",
-            at: Date.parse(m.created_at) || Date.now()
-          });
-        });
-        writeLS("zivv.chats", chats);
-      }
-    } catch {}
-    try {
-      const st = await sb("stories?select=*&order=created_at.desc&limit=80");
-      if (Array.isArray(st)) {
-        writeLS(
-          "zivv.stories",
-          st.map((s) => ({
-            id: s.id,
-            name: s.name,
-            user: s.username,
-            avatar: s.avatar,
-            kind: s.kind,
-            text: s.body || "",
-            image: s.image_url || "",
-            videoId: s.video_url || "",
-            at: Date.parse(s.created_at) || Date.now()
-          }))
-        );
-      }
-    } catch {}
-    try {
-      const fr = await sb("friend_reqs?select=*&order=created_at.desc&limit=400");
-      if (Array.isArray(fr)) {
-        writeLS(
-          "zivv.friendReqs",
-          fr.map((r) => ({
-            id: r.id,
-            from: r.from_user,
-            fromName: r.from_name,
-            to: r.to_user,
-            toName: r.to_name,
-            status: r.status,
-            at: Date.parse(r.created_at) || Date.now()
-          }))
-        );
-      }
-    } catch {}
-    try {
-      const notes = await sb("notes?select=*&order=created_at.desc&limit=200");
-      if (Array.isArray(notes)) {
-        writeLS(
-          "zivv.notes",
-          notes.map((n) => ({
-            id: n.id,
-            to: n.dest,
-            type: n.type,
-            title: n.title || "",
-            text: n.body || "",
-            from: n.from_user,
-            fromName: n.from_name,
-            avatar: n.avatar,
-            href: n.href,
-            postId: n.post_id,
-            unread: n.unread !== false,
-            at: Date.parse(n.created_at) || Date.now()
-          }))
-        );
-      }
-    } catch {}
-    try {
-      const gold = await sb("gold_reqs?select=*&limit=200");
-      if (Array.isArray(gold)) {
-        writeLS(
-          "zivv.goldReqs",
-          gold.map((g) => ({
-            id: g.id,
-            user: g.username,
-            name: g.name,
-            status: g.status,
-            note: g.note,
-            at: Date.parse(g.created_at) || Date.now()
-          }))
-        );
-      }
-    } catch {}
     lastPull = Date.now();
     window.dispatchEvent(new CustomEvent("zivv-db", { detail: out }));
     return Object.assign({ ok: true, mode }, out);
@@ -585,99 +402,55 @@
   async function pushPost(post) {
     if (!post || post.blocked) return;
     const ready = await materializePost(post);
-    try {
-      const feed = readLS("zivv.feed", []);
-      const i = feed.findIndex((x) => x && x.id === ready.id);
-      if (i >= 0) {
-        feed[i] = Object.assign({}, feed[i], {
-          image: ready.image,
-          avatar: ready.avatar,
-          videoId: ready.videoId,
-          audioId: ready.audioId
-        });
-        writeLS("zivv.feed", feed);
-      }
-    } catch {}
-    if (mode === "api") {
+    if (mode === "api" || mode === "real") {
       await api("POST", "/api/posts", toRemotePost(ready));
       return;
     }
     if (!live()) return;
     await sb("posts?on_conflict=id", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: toRemotePost(ready) });
   }
+
   async function pushLike(postId, userKey, on) {
     if (!postId || !userKey) return;
-    if (mode === "api") {
+    if (mode === "api" || mode === "real") {
       await api("POST", "/api/likes", { post_id: postId, user_key: userKey, on: !!on });
       return;
     }
     if (!live()) return;
-    if (on) {
-      await sb("likes?on_conflict=post_id,user_key", {
-        method: "POST",
-        prefer: "resolution=merge-duplicates,return=minimal",
-        body: { post_id: postId, user_key: userKey }
-      });
-    } else {
-      await sb(
-        "likes?post_id=eq." + encodeURIComponent(postId) + "&user_key=eq." + encodeURIComponent(userKey),
-        { method: "DELETE", prefer: "return=minimal" }
-      );
-    }
+    if (on) await sb("likes?on_conflict=post_id,user_key", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: { post_id: postId, user_key: userKey } });
+    else await sb("likes?post_id=eq." + encodeURIComponent(postId) + "&user_key=eq." + encodeURIComponent(userKey), { method: "DELETE", prefer: "return=minimal" });
   }
+
   async function pushComment(c) {
     if (!c) return;
-    if (mode === "api") {
+    if (mode === "api" || mode === "real") {
       await api("POST", "/api/comments", { id: c.id, post_id: c.postId, parent_id: c.parentId || null, name: c.name, user_key: c.by, body: c.text });
       return;
     }
     if (!live()) return;
-    await sb("comments?on_conflict=id", {
-      method: "POST",
-      prefer: "resolution=merge-duplicates,return=minimal",
-      body: {
-        id: c.id,
-        post_id: c.postId,
-        parent_id: c.parentId || null,
-        name: c.name,
-        user_key: c.by,
-        body: c.text
-      }
-    });
+    await sb("comments?on_conflict=id", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: { id: c.id, post_id: c.postId, parent_id: c.parentId || null, name: c.name, user_key: c.by, body: c.text } });
   }
+
   async function pushFollow(from, to, on) {
     if (!from || !to) return;
-    if (mode === "api") {
+    if (mode === "api" || mode === "real") {
       await api("POST", "/api/follows", { from_user: from, to_user: to, on: !!on });
       return;
     }
     if (!live()) return;
-    const a = String(from).toLowerCase();
-    const b = String(to).toLowerCase();
-    if (on) {
-      await sb("follows?on_conflict=follower,following", {
-        method: "POST",
-        prefer: "resolution=merge-duplicates,return=minimal",
-        body: { follower: a, following: b }
-      });
-    } else {
-      await sb(
-        "follows?follower=eq." + encodeURIComponent(a) + "&following=eq." + encodeURIComponent(b),
-        { method: "DELETE", prefer: "return=minimal" }
-      );
-    }
+    const a = String(from).toLowerCase(), b = String(to).toLowerCase();
+    if (on) await sb("follows?on_conflict=follower,following", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: { follower: a, following: b } });
+    else await sb("follows?follower=eq." + encodeURIComponent(a) + "&following=eq." + encodeURIComponent(b), { method: "DELETE", prefer: "return=minimal" });
   }
+
   async function pushMessage(toUser, m) {
     if (!m) return;
-    if (mode === "api") {
+    if (mode === "api" || mode === "real") {
       const me = (window.ZIVV_CORE && ZIVV_CORE.author && ZIVV_CORE.author().user) || "";
       const ua = String(me || "").toLowerCase();
       const ub = String(toUser || "").toLowerCase();
       const pair = ua < ub ? ua + "::" + ub : ub + "::" + ua;
-      await api("POST", "/api/messages", {
-        id: m.id, thread_user: pair, from_key: m.from, from_user: m.fromUser || me,
-        name: m.name, kind: m.kind || "text", body: m.text || "", post_id: m.postId || null, image_url: slimMedia(m.image)
-      });
+      await api("POST", "/api/messages", { id: m.id, thread_user: pair, from_key: m.from, from_user: m.fromUser || me, name: m.name, kind: m.kind || "text", body: m.text || "", post_id: m.postId || null, image_url: slimMedia(m.image) });
       return;
     }
     if (!live()) return;
@@ -685,78 +458,22 @@
     const ua = String(me || "").toLowerCase();
     const ub = String(toUser || "").toLowerCase();
     const pair = ua < ub ? ua + "::" + ub : ub + "::" + ua;
-    await sb("messages?on_conflict=id", {
-      method: "POST",
-      prefer: "resolution=merge-duplicates,return=minimal",
-      body: {
-        id: m.id,
-        thread_user: pair,
-        from_key: m.from,
-        from_user: m.fromUser || me,
-        name: m.name,
-        kind: m.kind || "text",
-        body: m.text || "",
-        post_id: m.postId || null,
-        product_id: m.productId || null,
-        image_url: slimMedia(m.image)
-      }
-    });
+    await sb("messages?on_conflict=id", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: { id: m.id, thread_user: pair, from_key: m.from, from_user: m.fromUser || me, name: m.name, kind: m.kind || "text", body: m.text || "", post_id: m.postId || null, product_id: m.productId || null, image_url: slimMedia(m.image) } });
   }
-  async function pushProduct(p) {
-    if (!live() || !p) return;
-    await sb("products?on_conflict=id", {
-      method: "POST",
-      prefer: "resolution=merge-duplicates,return=minimal",
-      body: {
-        id: p.id,
-        title: p.title,
-        price: p.price,
-        cat: p.cat,
-        seller: p.seller,
-        seller_user: p.sellerUser,
-        phone: p.phone,
-        image_url: slimMedia(p.image),
-        description: p.desc,
-        specs: p.specs || []
-      }
-    });
-  }
+
   async function upsertAccount(u) {
     if (!u || !u.email) return;
-    if (mode === "api") {
-      await api("POST", "/api/accounts", {
-        email: String(u.email).toLowerCase(),
-        username: u.username,
-        first_name: u.first || "",
-        last_name: u.last || "",
-        name: u.name || "",
-        age: u.age || null,
-        mark: u.mark || "",
-        password: u.password || "",
-        onboarding: u.onboarding || null
-      });
+    if (mode === "api" || mode === "real") {
+      await api("POST", "/api/accounts", { email: String(u.email).toLowerCase(), username: u.username, first_name: u.first || "", last_name: u.last || "", name: u.name || "", age: u.age || null, mark: u.mark || "", password: u.password || "", onboarding: u.onboarding || null });
       await upsertProfile(u);
       return;
     }
     if (!live()) return;
     const email = String(u.email).toLowerCase();
-    await sb("accounts?on_conflict=email", {
-      method: "POST",
-      prefer: "resolution=merge-duplicates,return=minimal",
-      body: {
-        email,
-        username: u.username || email.split("@")[0],
-        first_name: u.first || "",
-        last_name: u.last || "",
-        name: u.name || "",
-        age: u.age || null,
-        mark: u.mark || "",
-        password: u.password || "",
-        onboarding: u.onboarding || null
-      }
-    });
+    await sb("accounts?on_conflict=email", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: { email, username: u.username || email.split("@")[0], first_name: u.first || "", last_name: u.last || "", name: u.name || "", age: u.age || null, mark: u.mark || "", password: u.password || "", onboarding: u.onboarding || null } });
     await upsertProfile(u);
   }
+
   async function upsertProfile(u) {
     if (!u) return;
     const username = String(u.username || (u.email || "").split("@")[0] || "").toLowerCase();
@@ -765,173 +482,103 @@
       const up = await uploadMedia(avatar, username + "-ava");
       if (up) avatar = up;
     }
-    let cover = u.cover || "";
-    if (cover && !isRemote(cover)) {
-      const up = await uploadMedia(cover, username + "-cover");
-      if (up) cover = up;
-    }
-    if (username && (avatar || cover)) {
-      try {
-        const map = readLS("zivv.profiles", {});
-        map[username] = Object.assign({}, map[username] || {}, { avatar: avatar || (map[username] && map[username].avatar), cover: cover || (map[username] && map[username].cover) });
-        writeLS("zivv.profiles", map);
-      } catch {}
-    }
-    if (mode === "api") {
-      await api("POST", "/api/profiles", {
-        email: u.email, username: u.username || username, name: u.name, avatar, cover, bio: u.bio || "", city: u.city || "", age: u.age, locked: !!u.locked, onboarding: u.onboarding || null
-      });
+    if (mode === "api" || mode === "real") {
+      await api("POST", "/api/profiles", { email: u.email, username: u.username || username, name: u.name, avatar, bio: u.bio || "", city: u.city || "", age: u.age, locked: !!u.locked, onboarding: u.onboarding || null });
       return;
     }
     if (!live()) return;
     if (!username) return;
-    const body = {
-      email: u.email ? String(u.email).toLowerCase() : username + "@zivv.local",
-      username,
-      name: u.name || username,
-      avatar,
-      cover,
-      bio: u.bio || "",
-      city: u.city || "",
-      age: u.age || null,
-      locked: !!u.locked,
-      onboarding: u.onboarding || null
-    };
-    try {
-      await sb("profiles?on_conflict=username", {
-        method: "POST",
-        prefer: "resolution=merge-duplicates,return=minimal",
-        body
-      });
-    } catch {
-      await sb("profiles?on_conflict=email", {
-        method: "POST",
-        prefer: "resolution=merge-duplicates,return=minimal",
-        body
-      });
-    }
+    const body = { email: u.email ? String(u.email).toLowerCase() : username + "@zivv.local", username, name: u.name || username, avatar, bio: u.bio || "", city: u.city || "", age: u.age || null, locked: !!u.locked, onboarding: u.onboarding || null };
+    try { await sb("profiles?on_conflict=username", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body }); }
+    catch { await sb("profiles?on_conflict=email", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body }); }
   }
-  async function loginRemote(first, last, mark, pass, age) {
+
+  async function loginRemote(email, password) {
     if (!remote()) return null;
-    const fold = (s) =>
-      String(s || "")
-        .replace(/\s+/g, " ")
-        .trim()
-        .toLowerCase()
-        .replace(/[أإآ]/g, "ا")
-        .replace(/ى/g, "ي")
-        .replace(/ة/g, "ه");
-    const rows = mode === "api" ? await api("GET", "/api/accounts") : await sb("accounts?select=*&limit=400");
-    const hit = (rows || []).find(
-      (u) =>
-        fold(u.first_name) === fold(first) &&
-        fold(u.last_name) === fold(last) &&
-        fold(u.mark) === fold(mark) &&
-        String(u.password) === String(pass) &&
-        String(u.age) === String(age)
-    );
-    if (!hit) return null;
-    const user = {
-      email: hit.email,
-      username: hit.username,
-      first: hit.first_name,
-      last: hit.last_name,
-      name: hit.name,
-      age: hit.age,
-      mark: hit.mark,
-      password: hit.password,
-      onboarding: hit.onboarding
-    };
-    const db = readLS("zivv.users", {});
-    db[hit.email] = user;
-    writeLS("zivv.users", db);
-    return user;
+    try {
+      const res = await api("POST", "/api/auth/login", { email, password });
+      if (res && res.user) return res.user;
+    } catch {}
+    // Fallback old method
+    try {
+      const rows = mode === "api" || mode === "real" ? await api("GET", "/api/accounts") : await sb("accounts?select=*&limit=400");
+      const hit = (rows || []).find(u => String(u.email).toLowerCase() === String(email).toLowerCase());
+      if (hit) return { email: hit.email, username: hit.username, first: hit.first_name, last: hit.last_name, name: hit.name, age: hit.age, mark: hit.mark, onboarding: hit.onboarding };
+    } catch {}
+    return null;
   }
+
+  async function registerRemote(data) {
+    try {
+      const res = await api("POST", "/api/auth/register", data);
+      if (res && res.user) return res.user;
+    } catch (e) {
+      throw e;
+    }
+    return null;
+  }
+
   async function pushStory(s) {
     if (!s) return;
-    if (mode === "api") {
+    if (mode === "api" || mode === "real") {
       await api("POST", "/api/stories", { id: s.id, username: s.user, name: s.name, avatar: slimMedia(s.avatar), kind: s.kind, body: s.text || "", image_url: slimMedia(s.image), video_url: s.videoId || "" });
       return;
     }
     if (!live()) return;
-    await sb("stories?on_conflict=id", {
-      method: "POST",
-      prefer: "resolution=merge-duplicates,return=minimal",
-      body: {
-        id: s.id,
-        username: s.user,
-        name: s.name,
-        avatar: slimMedia(s.avatar),
-        kind: s.kind,
-        body: s.text || "",
-        image_url: slimMedia(s.image),
-        video_url: s.videoId || ""
-      }
-    });
-  }
-  async function pushFriend(r) {
-    if (!live() || !r) return;
-    await sb("friend_reqs?on_conflict=id", {
-      method: "POST",
-      prefer: "resolution=merge-duplicates,return=minimal",
-      body: {
-        id: r.id,
-        from_user: r.from,
-        from_name: r.fromName,
-        to_user: r.to,
-        to_name: r.toName,
-        status: r.status
-      }
-    });
-  }
-  async function pushNote(n) {
-    if (!live() || !n) return;
-    await sb("notes?on_conflict=id", {
-      method: "POST",
-      prefer: "resolution=merge-duplicates,return=minimal",
-      body: {
-        id: n.id,
-        dest: n.to,
-        type: n.type,
-        title: n.title || "",
-        body: n.text || "",
-        from_user: n.from,
-        from_name: n.fromName,
-        avatar: slimMedia(n.avatar),
-        href: n.href,
-        post_id: n.postId || null,
-        unread: n.unread !== false
-      }
-    });
-  }
-  async function pushGold(r) {
-    if (!live() || !r) return;
-    await sb("gold_reqs?on_conflict=id", {
-      method: "POST",
-      prefer: "resolution=merge-duplicates,return=minimal",
-      body: { id: r.id, username: r.user, name: r.name, status: r.status, note: r.note || "" }
-    });
-  }
-  async function pushReport(r) {
-    if (!live() || !r) return;
-    await sb("reports?on_conflict=id", {
-      method: "POST",
-      prefer: "resolution=merge-duplicates,return=minimal",
-      body: {
-        id: r.id,
-        post_id: r.postId || null,
-        target_user: r.targetUser || r.postUser,
-        type: r.type || "post",
-        dest: r.dest || "king",
-        reporter_name: r.reporterName,
-        reporter_email: r.reporterEmail,
-        note: r.note
-      }
-    });
+    await sb("stories?on_conflict=id", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: { id: s.id, username: s.user, name: s.name, avatar: slimMedia(s.avatar), kind: s.kind, body: s.text || "", image_url: slimMedia(s.image), video_url: s.videoId || "" } });
   }
 
-  async function seedLocal() {
-    return;
+  async function pushFriend(r) {
+    if (!live() && mode !== "api" && mode !== "real") return;
+    if (mode === "api" || mode === "real") {
+      await api("POST", "/api/friends", { id: r.id, from_user: r.from, from_name: r.fromName, to_user: r.to, to_name: r.toName, status: r.status }).catch(() => {});
+      return;
+    }
+    await sb("friend_reqs?on_conflict=id", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: { id: r.id, from_user: r.from, from_name: r.fromName, to_user: r.to, to_name: r.toName, status: r.status } }).catch(() => {});
+  }
+
+  async function pushNote(n) {
+    if (!n) return;
+    if (mode === "api" || mode === "real") {
+      await api("POST", "/api/notes", { id: n.id, dest: n.to, type: n.type, title: n.title || "", body: n.text || "", from_user: n.from, from_name: n.fromName, avatar: slimMedia(n.avatar), href: n.href, post_id: n.postId || null, unread: n.unread !== false }).catch(() => {});
+      return;
+    }
+    if (!live()) return;
+    await sb("notes?on_conflict=id", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: { id: n.id, dest: n.to, type: n.type, title: n.title || "", body: n.text || "", from_user: n.from, from_name: n.fromName, avatar: slimMedia(n.avatar), href: n.href, post_id: n.postId || null, unread: n.unread !== false } }).catch(() => {});
+  }
+
+  async function pushGold(r) {
+    if (mode === "api" || mode === "real") {
+      await api("POST", "/api/gold", { id: r.id, username: r.user, name: r.name, status: r.status, note: r.note || "" }).catch(() => {});
+      return;
+    }
+    if (!live()) return;
+    await sb("gold_reqs?on_conflict=id", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: { id: r.id, username: r.user, name: r.name, status: r.status, note: r.note || "" } }).catch(() => {});
+  }
+
+  async function pushReport(r) {
+    if (mode === "api" || mode === "real") {
+      await api("POST", "/api/reports", { id: r.id, post_id: r.postId || null, target_user: r.targetUser || r.postUser, type: r.type || "post", dest: r.dest || "king", reporter_name: r.reporterName, reporter_email: r.reporterEmail, note: r.note }).catch(() => {});
+      return;
+    }
+    if (!live()) return;
+    await sb("reports?on_conflict=id", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: { id: r.id, post_id: r.postId || null, target_user: r.targetUser || r.postUser, type: r.type || "post", dest: r.dest || "king", reporter_name: r.reporterName, reporter_email: r.reporterEmail, note: r.note } }).catch(() => {});
+  }
+
+  async function pushAiChat(chat) {
+    if (!chat) return;
+    if (mode === "api" || mode === "real") {
+      const me = (window.ZIVV_CORE && ZIVV_CORE.author && ZIVV_CORE.author().user) || "anon";
+      await api("POST", "/api/ai-chats", { id: chat.id, user_key: me, title: chat.title || "دردشة جديدة", model: chat.model || "gemini-3.6-flash" }).catch(() => {});
+    }
+  }
+
+  async function pushAiMessage(chatId, msg) {
+    if (!chatId || !msg) return;
+    if (mode === "api" || mode === "real") {
+      const me = (window.ZIVV_CORE && ZIVV_CORE.author && ZIVV_CORE.author().user) || "anon";
+      await api("POST", "/api/ai-messages", { id: msg.id || "aim_" + Date.now(), chat_id: chatId, role: msg.role, content: msg.content, image_url: msg.image || "", sources: msg.sources || [], user_key: me, chat_title: msg.chatTitle || "" }).catch(() => {});
+    }
   }
 
   function wrap() {
@@ -940,28 +587,9 @@
       const addPost = ZIVV_CORE.addPost;
       ZIVV_CORE.addPost = function (p) {
         const r = addPost(p);
-        if (r && !r.blocked) {
-          r._pending = true;
-          pushPost(r).catch(() => {});
-        }
+        if (r && !r.blocked) { r._pending = true; pushPost(r).catch(() => {}); }
         return r;
       };
-      setTimeout(() => {
-        const feed = readLS("zivv.feed", []);
-        feed.slice(0, 12).forEach((p) => {
-          if (!p || p.blocked) return;
-          const need = (p.image && !isRemote(p.image)) || (p.videoId && !isRemote(p.videoId)) || (p.avatar && !isRemote(p.avatar));
-          if (need) pushPost(p).catch(() => {});
-        });
-      }, 1200);
-      if (ZIVV_CORE.updatePost) {
-        const up = ZIVV_CORE.updatePost;
-        ZIVV_CORE.updatePost = function (id, patch) {
-          const r = up(id, patch);
-          if (r && !r.blocked) pushPost(r).catch(() => {});
-          return r;
-        };
-      }
       const toggleLike = ZIVV_CORE.toggleLike;
       ZIVV_CORE.toggleLike = function (id) {
         const on = toggleLike(id);
@@ -997,59 +625,6 @@
           return r;
         };
       }
-      if (ZIVV_CORE.sendFriendRequest) {
-        const sfr = ZIVV_CORE.sendFriendRequest;
-        ZIVV_CORE.sendFriendRequest = function (to, name) {
-          const st = sfr(to, name);
-          const list = (ZIVV_CORE.incomingFriendRequests && []) || [];
-          const all = JSON.parse(localStorage.getItem("zivv.friendReqs") || "[]");
-          const last = all[0];
-          if (last) pushFriend(last).catch(() => {});
-          return st;
-        };
-      }
-      if (ZIVV_CORE.setFriendRequest) {
-        const setFr = ZIVV_CORE.setFriendRequest;
-        ZIVV_CORE.setFriendRequest = function (id, status) {
-          const r = setFr(id, status);
-          if (r) pushFriend(r).catch(() => {});
-          return r;
-        };
-      }
-      if (ZIVV_CORE.reportPost) {
-        const rp = ZIVV_CORE.reportPost;
-        ZIVV_CORE.reportPost = function (post, note) {
-          const r = rp(post, note);
-          if (r) pushReport(r).catch(() => {});
-          return r;
-        };
-      }
-      if (ZIVV_CORE.requestGold) {
-        const rg = ZIVV_CORE.requestGold;
-        ZIVV_CORE.requestGold = function () {
-          const st = rg();
-          const list = JSON.parse(localStorage.getItem("zivv.goldReqs") || "[]");
-          if (list[0]) pushGold(list[0]).catch(() => {});
-          return st;
-        };
-      }
-      if (ZIVV_CORE.pushNote) {
-        const pn = ZIVV_CORE.pushNote;
-        ZIVV_CORE.pushNote = function (to, payload) {
-          const n = pn(to, payload);
-          if (n) pushNote(n).catch(() => {});
-          return n;
-        };
-      }
-    }
-    if (window.ZIVV_STORE && !ZIVV_STORE._dbWrapped && ZIVV_STORE.addUserProduct) {
-      ZIVV_STORE._dbWrapped = true;
-      const add = ZIVV_STORE.addUserProduct;
-      ZIVV_STORE.addUserProduct = function (p) {
-        const r = add(p);
-        pushProduct(p).catch(() => {});
-        return r;
-      };
     }
   }
 
@@ -1059,7 +634,8 @@
       if (r.ok) {
         const j = await r.json();
         if (j && j.ok) {
-          mode = "api";
+          mode = j.engine === "real-database" ? "real" : "api";
+          realDbInfo = j;
           done();
           pullAll().catch(() => {});
           return;
@@ -1076,22 +652,16 @@
         return;
       } catch (e) {
         const msg = String((e && e.message) || e || "");
-        if (/PGRST205|Could not find the table/i.test(msg)) {
-          mode = "need-sql";
-          done();
-          return;
-        }
-        mode = "local";
-        done();
-        return;
+        if (/PGRST205|Could not find the table/i.test(msg)) { mode = "need-sql"; done(); return; }
+        mode = "local"; done(); return;
       }
     }
-    mode = "local";
-    done();
+    mode = "local"; done();
   }
 
   window.ZIVV_DB = {
     get mode() { return mode; },
+    get info() { return realDbInfo; },
     enabled: true,
     whenReady,
     syncAll: pullAll,
@@ -1099,7 +669,6 @@
     pushPost,
     pushLike,
     pushComment,
-    pushProduct,
     pushMessage,
     pushStory,
     pushFriend,
@@ -1108,17 +677,18 @@
     upsertProfile,
     upsertAccount,
     loginRemote,
+    registerRemote,
+    pushAiChat,
+    pushAiMessage,
     pullPosts: pullAll,
-    pullProducts: pullAll,
     lastPull() { return lastPull; },
     needsSql() { return mode === "need-sql"; },
-    uploadMedia
+    uploadMedia,
+    isReal() { return mode === "real" || mode === "api" || mode === "supabase"; }
   };
 
   setInterval(wrap, 250);
   wrap();
   detect();
-  setInterval(() => {
-    if (remote()) pullAll().catch(() => {});
-  }, 8000);
+  setInterval(() => { if (remote()) pullAll().catch(() => {}); }, 10000);
 })();

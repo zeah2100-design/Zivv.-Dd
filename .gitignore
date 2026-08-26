@@ -7,5 +7,10 @@ node_modules/
 .env.*
 data/ai-secret.json
 data/zivv.json
+data/zivv.db
+data/*.db
+data/*.db-journal
+data/*.db-wal
+uploads/
 .vscode/
 .idea/
