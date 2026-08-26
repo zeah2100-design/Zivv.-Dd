@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>ZIVV - جاري التحويل</title>
+<script>
+// GitHub Pages SPA hack - redirect 404 to index.html with real DB
+// يحافظ على المسار للـ SPA
+sessionStorage.redirect = location.href;
+location.replace(location.pathname.split('/').slice(0,2).join('/') + '/');
+</script>
+    <link rel="stylesheet" href="css/professional.css" />
+  </head>
+<body>
+<p>جاري تحويلك إلى ZIVV...</p>
+<p><a href="./">اضغط هنا لو لم يتم التحويل</a></p>
+</body>
+</html>

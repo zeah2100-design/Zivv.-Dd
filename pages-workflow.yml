@@ -1,0 +1,48 @@
+# انسخ هذا الملف إلى .github/workflows/pages.yml عبر GitHub Website
+# الطريقة: افتح https://github.com/zeah2100-design/Zivv.-Dd/new/main?filename=.github/workflows/pages.yml
+# والصق المحتوى ده
+
+name: Deploy ZIVV to GitHub Pages (Real DB)
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Build site (real DB - static mode)
+        run: |
+          echo "ZIVV Real Database - Static build for GitHub Pages"
+          echo "Mode: Supabase direct (no Node API needed)"
+          echo '{"version":"2.0-real-db","mode":"github-pages","supabase":"https://ldionpdfplvbnpoelkqe.supabase.co"}' > version.json
+          ls -lh *.html | head -20
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

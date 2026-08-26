@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "ZIVV",
+  "name": "ZIVV - منصة التواصل الاحترافية",
   "short_name": "ZIVV",
-  "description": "ZIVV social network 18+",
+  "description": "ZIVV منصة تواصل اجتماعي احترافية بقاعدة بيانات حقيقية 100% - صور، فيديو، شات، ومتجر",
   "start_url": "index.html",
   "scope": "./",
   "display": "standalone",
@@ -11,6 +11,38 @@
   "theme_color": "#000000",
   "lang": "ar",
   "dir": "rtl",
+  "categories": ["social", "photo", "video", "communication"],
+  "screenshots": [
+    {
+      "src": "brand/logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "إنشاء منشور",
+      "short_name": "نشر",
+      "description": "انشر صورة أو فيديو جديد",
+      "url": "publish.html",
+      "icons": [{ "src": "brand/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "الرسائل",
+      "short_name": "شات",
+      "description": "افتح الرسائل",
+      "url": "chat.html",
+      "icons": [{ "src": "brand/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "استكشاف",
+      "short_name": "استكشاف",
+      "description": "اكتشف منشورات جديدة",
+      "url": "explore.html",
+      "icons": [{ "src": "brand/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "brand/icon-192.png",
