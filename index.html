@@ -3,651 +3,582 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZIVV - منصة التواصل الاجتماعي الاحترافية | قاعدة بيانات حقيقية</title>
-  <meta name="description" content="ZIVV منصة تواصل اجتماعي احترافية بقاعدة بيانات حقيقية 100% - انشر صورك، فيديوهاتك، وتواصل مع العالم" />
-  <meta name="keywords" content="ZIVV, تواصل اجتماعي, منصة, صور, فيديو, شات" />
-  <meta name="author" content="ZIVV" />
-  <meta property="og:title" content="ZIVV - منصة التواصل الاحترافية" />
-  <meta property="og:description" content="منصة تواصل اجتماعي بقاعدة بيانات حقيقية 100%" />
-  <meta property="og:image" content="brand/logo.png" />
-  <meta property="og:type" content="website" />
-  <meta name="theme-color" content="#000000" />
+  <title>ZIVV — شكل خاص • Noir Aurora</title>
+  <meta name="description" content="ZIVV بتصميم خاص جديد كلياً - Noir Aurora - تجربة تواصل فاخرة بقاعدة بيانات حقيقية" />
   <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#050507" />
   <link rel="icon" href="brand/icon-192.png" />
-  <link rel="apple-touch-icon" href="brand/icon-192.png" />
   <link rel="stylesheet" href="css/theme.css" />
-  <link rel="stylesheet" href="css/professional.css" />
+  <link rel="stylesheet" href="css/zivv-special.css" />
   <style>
-    /* Professional Landing */
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    
     body {
-      font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
-      background: #000;
+      font-family: 'Space Grotesk', 'Cairo', sans-serif;
+      background: #050507;
       color: #fff;
       min-height: 100dvh;
       overflow-x: hidden;
     }
     
-    /* Background effects */
-    .bg-effects {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
+    .app {
+      position: relative;
+      min-height: 100dvh;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      z-index: 1;
+    }
+    
+    /* Left - Special Brand */
+    .left {
+      position: relative;
+      padding: 48px 48px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       overflow: hidden;
     }
     
-    .bg-gradient {
-      position: absolute;
-      width: 800px;
-      height: 800px;
-      border-radius: 50%;
-      filter: blur(120px);
-      opacity: 0.15;
+    .watermark {
+      top: 20%;
+      left: -10%;
+      transform: rotate(-8deg);
     }
     
-    .bg-gradient-1 {
-      background: radial-gradient(circle, #fcaf45, transparent 70%);
-      top: -200px;
-      left: -200px;
-      animation: float 20s ease-in-out infinite;
-    }
-    
-    .bg-gradient-2 {
-      background: radial-gradient(circle, #833ab4, transparent 70%);
-      bottom: -200px;
-      right: -200px;
-      animation: float 25s ease-in-out infinite reverse;
-    }
-    
-    .bg-gradient-3 {
-      background: radial-gradient(circle, #e1306c, transparent 70%);
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 600px;
-      height: 600px;
-      opacity: 0.08;
-      animation: pulse 15s ease-in-out infinite;
-    }
-    
-    @keyframes float {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      50% { transform: translate(30px, -30px) scale(1.1); }
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 0.08; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 0.12; transform: translate(-50%, -50%) scale(1.05); }
-    }
-    
-    /* Layout */
-    .app {
-      position: relative;
-      z-index: 1;
-      min-height: 100dvh;
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-    
-    /* Left - Branding */
-    .brand-side {
-      padding: 48px 40px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      position: relative;
-    }
-    
-    .brand-header {
-      margin-bottom: 48px;
-    }
-    
-    .logo-row {
+    .top {
       display: flex;
       align-items: center;
-      gap: 16px;
-      margin-bottom: 24px;
+      justify-content: space-between;
+      position: relative;
+      z-index: 2;
     }
     
-    .logo-img {
-      width: 56px;
-      height: 56px;
-      border-radius: 16px;
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    
+    .logo-mark {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
       background: #000;
       padding: 2px;
+      position: relative;
       box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 8px 24px rgba(0,0,0,0.5);
     }
     
-    .logo-img img {
+    .logo-mark img {
       width: 100%;
       height: 100%;
-      border-radius: 14px;
+      border-radius: 12px;
       object-fit: cover;
     }
     
-    .logo-text {
-      font-size: 32px;
+    .logo-mark::after {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: 14px;
+      padding: 1px;
+      background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    .logo-type {
+      font-family: 'Syne', sans-serif;
       font-weight: 800;
+      font-size: 22px;
       letter-spacing: 0.32em;
-      background: linear-gradient(135deg, #fcaf45 0%, #f77737 22%, #e1306c 55%, #c13584 78%, #833ab4 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-    
-    .brand-title {
-      font-size: clamp(32px, 5vw, 48px);
-      font-weight: 800;
-      line-height: 1.1;
-      letter-spacing: -0.02em;
-      margin-bottom: 16px;
-    }
-    
-    .brand-title span {
       background: linear-gradient(135deg, #fcaf45 0%, #e1306c 50%, #833ab4 100%);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
     }
     
-    .brand-desc {
-      font-size: 18px;
-      line-height: 1.6;
-      color: #a8a8a8;
-      max-width: 480px;
-    }
-    
-    .features {
-      display: grid;
-      gap: 20px;
-      margin: 40px 0;
-    }
-    
-    .feature {
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-      padding: 16px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 16px;
-      backdrop-filter: blur(10px);
-      transition: all 0.3s ease;
-    }
-    
-    .feature:hover {
+    .edition {
+      padding: 6px 12px;
       background: rgba(255,255,255,0.04);
-      border-color: rgba(225,48,108,0.2);
-      transform: translateX(-4px);
-    }
-    
-    .feature-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #fcaf45, #e1306c);
-      display: grid;
-      place-items: center;
-      flex-shrink: 0;
-      font-size: 20px;
-    }
-    
-    .feature-content h3 {
-      font-size: 15px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px;
+      font-size: 10px;
       font-weight: 700;
-      margin-bottom: 4px;
-      color: #fff;
-    }
-    
-    .feature-content p {
-      font-size: 13px;
+      letter-spacing: 0.12em;
       color: #888;
-      line-height: 1.5;
     }
     
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-top: 32px;
-      padding-top: 32px;
-      border-top: 1px solid rgba(255,255,255,0.06);
+    .hero {
+      position: relative;
+      z-index: 2;
+      margin-top: 64px;
     }
     
-    .stat {
-      text-align: center;
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #aaa;
+      margin-bottom: 24px;
     }
     
-    .stat-num {
-      font-size: 24px;
+    .hero-kicker .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulseDot 2s infinite;
+    }
+    
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.2); }
+    }
+    
+    .hero-title {
+      font-family: 'Syne', sans-serif;
       font-weight: 800;
-      background: linear-gradient(135deg, #fcaf45, #e1306c);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      font-size: clamp(40px, 6vw, 72px);
+      line-height: 0.9;
+      letter-spacing: -0.04em;
+      margin-bottom: 20px;
+    }
+    
+    .hero-title .line {
       display: block;
     }
     
-    .stat-label {
-      font-size: 12px;
-      color: #666;
-      margin-top: 4px;
-      font-weight: 600;
+    .hero-title .line.gradient {
+      background: linear-gradient(90deg, #fcaf45, #e1306c, #833ab4, #fcaf45);
+      background-size: 200% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: gradientShift 6s linear infinite;
     }
     
-    /* Right - Auth */
-    .auth-side {
-      padding: 32px 24px;
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+    
+    .hero-desc {
+      font-size: 17px;
+      line-height: 1.6;
+      color: #8a8a9a;
+      max-width: 440px;
+      margin-bottom: 32px;
+    }
+    
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      max-width: 440px;
+    }
+    
+    .bento-item {
+      padding: 18px 16px;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    
+    .bento-item .icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+    
+    .bento-item h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    
+    .bento-item p {
+      font-size: 11px;
+      line-height: 1.4;
+      color: #6b6b80;
+    }
+    
+    .bento-item.wide {
+      grid-column: span 2;
+      flex-direction: row;
+      align-items: center;
+      min-height: 80px;
+      gap: 16px;
+    }
+    
+    .bento-item.wide .icon {
+      margin-bottom: 0;
+    }
+    
+    .bottom {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 32px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      margin-top: 40px;
+    }
+    
+    .stats {
+      display: flex;
+      gap: 24px;
+    }
+    
+    .stat b {
+      display: block;
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    
+    .stat span {
+      font-size: 10px;
+      color: #555;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      margin-top: 4px;
+      display: block;
+    }
+    
+    .links {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+    }
+    
+    .links a {
+      color: #444;
+      text-decoration: none;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      transition: color 0.2s ease;
+    }
+    
+    .links a:hover { color: #fff; }
+    
+    /* Right - Special Auth */
+    .right {
+      position: relative;
+      padding: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(0,0,0,0.3);
+      background: rgba(0,0,0,0.2);
       backdrop-filter: blur(20px);
       border-inline-start: 1px solid rgba(255,255,255,0.06);
     }
     
-    .auth-card {
+    .auth {
       width: 100%;
-      max-width: 400px;
-      background: #0a0a0a;
-      border: 1px solid #1f1f1f;
-      border-radius: 24px;
-      padding: 32px 28px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03) inset;
+      max-width: 380px;
       position: relative;
-      overflow: hidden;
     }
     
-    .auth-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      padding: 1px;
-      background: linear-gradient(135deg, #fcaf45 0%, #f77737 22%, #e1306c 55%, #c13584 78%, #833ab4 100%);
-      border-radius: 24px;
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor;
-      mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      mask-composite: exclude;
-      pointer-events: none;
-      opacity: 0.5;
+    .auth-card {
+      padding: 28px 24px;
+      position: relative;
     }
     
-    .db-status {
-      display: flex;
+    .db-pill {
+      display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 14px;
+      padding: 8px 12px;
       background: rgba(16,185,129,0.08);
       border: 1px solid rgba(16,185,129,0.15);
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
       color: #10b981;
       margin-bottom: 20px;
-      animation: slideDown 0.5s ease;
+      letter-spacing: 0.02em;
     }
     
-    .db-status.local {
+    .db-pill.local {
       background: rgba(245,158,11,0.08);
       border-color: rgba(245,158,11,0.15);
       color: #f59e0b;
     }
     
-    .db-status .dot {
-      width: 8px;
-      height: 8px;
+    .db-pill .dot {
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
       background: currentColor;
-      animation: pulse-dot 2s infinite;
+      box-shadow: 0 0 8px currentColor;
+      animation: pulseDot 2s infinite;
     }
     
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .auth-head {
+      margin-bottom: 24px;
     }
     
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.7; transform: scale(1.1); }
+    .auth-head h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
     }
     
-    .auth-tabs {
+    .auth-head p {
+      font-size: 13px;
+      color: #6b6b80;
+      line-height: 1.5;
+    }
+    
+    .tabs {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 4px;
       padding: 4px;
-      background: #141414;
-      border-radius: 12px;
-      margin-bottom: 24px;
-      border: 1px solid #1f1f1f;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      margin-bottom: 20px;
     }
     
-    .auth-tab {
-      padding: 10px 16px;
+    .tab {
+      padding: 10px;
       background: transparent;
       border: none;
-      border-radius: 8px;
-      color: #888;
-      font-size: 14px;
+      border-radius: 10px;
+      color: #666;
+      font-size: 13px;
       font-weight: 600;
+      font-family: inherit;
       cursor: pointer;
       transition: all 0.2s ease;
-      font-family: inherit;
     }
     
-    .auth-tab.on {
-      background: #1f1f1f;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    .tab.on {
+      background: #fff;
+      color: #000;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
     }
     
-    .auth-tab:hover:not(.on) {
-      color: #fff;
+    .field {
+      margin-bottom: 14px;
     }
     
-    .form-group {
-      margin-bottom: 16px;
-    }
-    
-    .form-label {
+    .field label {
       display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: #a8a8a8;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #888;
       margin-bottom: 8px;
-      letter-spacing: 0.02em;
     }
     
-    .form-input {
+    .field input {
       width: 100%;
       padding: 14px 16px;
-      background: #141414;
-      border: 1px solid #262626;
-      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
       color: #fff;
       font-size: 14px;
       font-family: inherit;
       outline: none;
-      transition: all 0.2s ease;
+      transition: all 0.25s ease;
     }
     
-    .form-input::placeholder {
-      color: #555;
+    .field input::placeholder { color: #444; }
+    .field input:focus {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(225,48,108,0.4);
+      box-shadow: 0 0 0 4px rgba(225,48,108,0.08);
     }
     
-    .form-input:focus {
-      border-color: #e1306c;
-      background: #1a1a1a;
-      box-shadow: 0 0 0 3px rgba(225,48,108,0.1);
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
     
-    .form-input.error {
-      border-color: #ef4444;
-      background: rgba(239,68,68,0.05);
-    }
-    
-    .input-with-icon {
-      position: relative;
-    }
-    
-    .input-icon {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #666;
-      font-size: 16px;
-      pointer-events: none;
-    }
-    
-    .input-with-icon .form-input {
-      padding-left: 44px;
-    }
-    
-    .password-toggle {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: #666;
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 6px;
-      transition: all 0.2s ease;
-    }
-    
-    .password-toggle:hover {
-      color: #fff;
-      background: rgba(255,255,255,0.05);
-    }
-    
-    .btn-primary {
+    .btn {
       width: 100%;
       padding: 14px 20px;
-      background: linear-gradient(135deg, #fcaf45 0%, #f77737 22%, #e1306c 55%, #c13584 78%, #833ab4 100%);
-      color: #fff;
+      border-radius: 999px;
       border: none;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 700;
       font-family: inherit;
+      font-weight: 700;
+      font-size: 13px;
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
+      position: relative;
+      overflow: hidden;
       margin-top: 8px;
     }
     
+    .btn-primary {
+      background: #fff;
+      color: #000;
+    }
+    
     .btn-primary::before {
-      content: '';
+      content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, #ffb84d 0%, #ff7f3f 22%, #e93d77 55%, #cc3d90 78%, #8d45c0 100%);
+      background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
       opacity: 0;
       transition: opacity 0.3s ease;
     }
     
-    .btn-primary:hover::before {
-      opacity: 1;
-    }
+    .btn-primary:hover::before { opacity: 1; }
+    .btn-primary:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 12px 24px rgba(225,48,108,0.2); }
+    .btn-primary span { position: relative; z-index: 1; }
     
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(225,48,108,0.25);
-    }
-    
-    .btn-primary:active {
-      transform: translateY(0);
-    }
-    
-    .btn-primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-    
-    .btn-primary .btn-text {
-      position: relative;
-      z-index: 1;
-    }
-    
-    .btn-loader {
-      width: 18px;
-      height: 18px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      display: none;
-    }
-    
-    .btn-primary.loading .btn-loader {
-      display: block;
-    }
-    
-    .btn-primary.loading .btn-text {
-      opacity: 0.8;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    
-    .form-hint {
+    .msg {
+      padding: 12px 14px;
+      border-radius: 14px;
       font-size: 12px;
-      color: #666;
+      line-height: 1.5;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 8px;
+      animation: slideDown 0.3s ease;
+    }
+    
+    .msg.err { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.12); color: #fca5a5; }
+    .msg.ok { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.12); color: #6ee7b7; }
+    
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .hint {
+      font-size: 11px;
+      color: #555;
       line-height: 1.5;
       margin-top: 12px;
       padding: 12px;
       background: rgba(255,255,255,0.02);
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.03);
-    }
-    
-    .msg {
-      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.04);
       border-radius: 12px;
-      font-size: 13px;
-      line-height: 1.5;
-      margin-bottom: 16px;
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      animation: slideDown 0.3s ease;
     }
     
-    .msg.err {
-      background: rgba(239,68,68,0.08);
-      border: 1px solid rgba(239,68,68,0.15);
-      color: #fca5a5;
-    }
-    
-    .msg.ok {
-      background: rgba(16,185,129,0.08);
-      border: 1px solid rgba(16,185,129,0.15);
-      color: #6ee7b7;
-    }
-    
-    .quiz-fieldset {
-      border: 1px solid #262626;
-      border-radius: 12px;
-      padding: 14px;
+    .quiz {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 16px;
       margin-bottom: 14px;
-      background: rgba(255,255,255,0.01);
+      background: rgba(255,255,255,0.02);
     }
     
-    .quiz-legend {
-      font-size: 13px;
-      font-weight: 600;
+    .quiz legend {
+      font-size: 12px;
+      font-weight: 700;
       color: #fff;
       padding: 0 8px;
     }
     
-    .quiz-options {
+    .quiz-opts {
       display: flex;
-      gap: 12px;
-      margin-top: 10px;
+      gap: 8px;
+      margin-top: 12px;
     }
     
-    .quiz-option {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      background: #141414;
-      border: 1px solid #262626;
-      border-radius: 10px;
+    .quiz-opt {
+      flex: 1;
+      padding: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      color: #888;
+      font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
-      font-size: 13px;
-      color: #aaa;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: center;
     }
     
-    .quiz-option:hover {
-      border-color: #333;
-      background: #1a1a1a;
-      color: #fff;
-    }
-    
-    .quiz-option:has(input:checked) {
-      border-color: #e1306c;
+    .quiz-opt:has(input:checked) {
       background: rgba(225,48,108,0.1);
+      border-color: rgba(225,48,108,0.3);
       color: #fff;
     }
     
-    .quiz-option input {
-      accent-color: #e1306c;
-    }
+    .quiz-opt input { accent-color: #e1306c; }
     
-    .auth-footer {
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid #1f1f1f;
+    .foot {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.06);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      font-size: 10px;
+      color: #444;
     }
     
-    .lang-switch {
+    .lang {
       display: flex;
       gap: 4px;
-      background: #141414;
+      background: rgba(255,255,255,0.04);
       padding: 3px;
       border-radius: 8px;
-      border: 1px solid #1f1f1f;
+      border: 1px solid rgba(255,255,255,0.06);
     }
     
-    .lang-btn {
-      padding: 6px 12px;
+    .lang button {
+      padding: 6px 10px;
       background: transparent;
       border: none;
       border-radius: 6px;
-      color: #666;
-      font-size: 12px;
-      font-weight: 600;
+      color: #555;
+      font-size: 10px;
+      font-weight: 700;
       cursor: pointer;
       transition: all 0.2s ease;
       font-family: inherit;
     }
     
-    .lang-btn.on {
-      background: #1f1f1f;
-      color: #fff;
-    }
-    
-    .foot-links {
-      display: flex;
-      gap: 12px;
-      font-size: 11px;
-      color: #555;
-    }
-    
-    .foot-links a {
-      color: #666;
-      text-decoration: none;
-      transition: color 0.2s ease;
-    }
-    
-    .foot-links a:hover {
-      color: #fff;
-    }
+    .lang button.on { background: #fff; color: #000; }
     
     .hidden { display: none !important; }
     
-    /* Done state */
-    .done-icon {
+    .done {
+      text-align: center;
+      padding: 24px 0;
+    }
+    
+    .done-ic {
       width: 64px;
       height: 64px;
       margin: 0 auto 16px;
@@ -655,335 +586,188 @@
       border-radius: 50%;
       display: grid;
       place-items: center;
-      font-size: 32px;
+      font-size: 28px;
       color: #fff;
-      animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    
-    @keyframes scaleIn {
-      from { transform: scale(0); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-    
-    .done-title {
-      text-align: center;
-      font-size: 20px;
-      font-weight: 800;
-      margin-bottom: 8px;
-      background: linear-gradient(135deg, #fcaf45, #e1306c);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      box-shadow: 0 8px 24px rgba(16,185,129,0.25);
     }
     
     /* Responsive */
     @media (max-width: 1024px) {
-      .app {
-        grid-template-columns: 1fr;
-      }
-      
-      .brand-side {
-        padding: 32px 24px;
-        text-align: center;
-        align-items: center;
-      }
-      
-      .brand-desc {
-        text-align: center;
-      }
-      
-      .features {
-        max-width: 480px;
-        width: 100%;
-      }
-      
-      .feature:hover {
-        transform: none;
-      }
-      
-      .auth-side {
+      .app { grid-template-columns: 1fr; }
+      .left { padding: 32px 24px; }
+      .hero { margin-top: 32px; }
+      .bento-grid { max-width: 100%; }
+      .right {
         border-inline-start: none;
         border-top: 1px solid rgba(255,255,255,0.06);
-        padding: 24px 16px 40px;
+        padding: 24px 16px 48px;
         background: transparent;
       }
-      
-      .stats {
-        max-width: 400px;
-        width: 100%;
-      }
+      .watermark { font-size: 160px; }
     }
     
     @media (max-width: 640px) {
-      .brand-side {
-        padding: 24px 20px;
-      }
-      
-      .brand-title {
-        font-size: 28px;
-      }
-      
-      .brand-desc {
-        font-size: 16px;
-      }
-      
-      .auth-card {
-        padding: 24px 20px;
-        border-radius: 20px;
-      }
+      .left { padding: 24px 20px; }
+      .hero-title { font-size: 36px; }
+      .bento-grid { grid-template-columns: 1fr; }
+      .bento-item.wide { grid-column: span 1; }
+      .row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-<body>
-  <div class="bg-effects">
-    <div class="bg-gradient bg-gradient-1"></div>
-    <div class="bg-gradient bg-gradient-2"></div>
-    <div class="bg-gradient bg-gradient-3"></div>
+<body class="grain">
+  <div class="aurora">
+    <div class="aurora-blob"></div>
+    <div class="aurora-blob"></div>
+    <div class="aurora-blob"></div>
+    <div class="aurora-blob"></div>
   </div>
   
   <div class="app">
-    <!-- Brand Side -->
-    <div class="brand-side">
-      <div class="brand-header">
-        <div class="logo-row">
-          <div class="logo-img">
-            <img src="brand/logo-sm.png" alt="ZIVV" />
-          </div>
-          <div class="logo-text">ZIVV</div>
+    <div class="left">
+      <div class="watermark">ZIVV</div>
+      
+      <div class="top">
+        <div class="logo">
+          <div class="logo-mark"><img src="brand/logo-sm.png" alt="ZIVV" /></div>
+          <div class="logo-type">ZIVV</div>
         </div>
+        <div class="edition">NOIR AURORA • V2.1</div>
+      </div>
+      
+      <div class="hero stagger">
+        <div class="hero-kicker"><span class="dot"></span> REAL DATABASE • 100% SECURE • LIVE</div>
         
-        <h1 class="brand-title">
-          تواصل <span>احترافي</span><br>
-          بقاعدة بيانات حقيقية
+        <h1 class="hero-title">
+          <span class="line">شكل خاص</span>
+          <span class="line gradient">وتجديد بنا</span>
+          <span class="line">بقاعدة حقيقية</span>
         </h1>
         
-        <p class="brand-desc">
-          منصة تواصل اجتماعي متكاملة - انشر صورك وفيديوهاتك، تواصل مع الأصدقاء، واستكشف عالم من الإبداع بخصوصية وأمان.
-        </p>
-      </div>
-      
-      <div class="features">
-        <div class="feature">
-          <div class="feature-icon">📸</div>
-          <div class="feature-content">
-            <h3>شارك لحظاتك</h3>
-            <p>صور، فيديوهات، قصص، وريلز - كل ما تحتاجه في مكان واحد بجودة عالية</p>
-          </div>
-        </div>
+        <p class="hero-desc">ZIVV بتصميم Noir Aurora الجديد كلياً - تجربة تواصل فاخرة، مظلمة، مع aurora متحركة، bento cards، وقاعدة بيانات حقيقية مشفرة.</p>
         
-        <div class="feature">
-          <div class="feature-icon">💬</div>
-          <div class="feature-content">
-            <h3>دردشة فورية</h3>
-            <p>رسائل خاصة، مجموعات، ومكالمات - تواصل آمن وسريع مع تشفير كامل</p>
+        <div class="bento-grid">
+          <div class="bento bento-item">
+            <div class="bento-glow"></div>
+            <div class="icon">◐</div>
+            <div>
+              <h4>Noir Aurora</h4>
+              <p>تصميم مظلم فاخر مع aurora متحركة و grain texture</p>
+            </div>
           </div>
-        </div>
-        
-        <div class="feature">
-          <div class="feature-icon">🛡️</div>
-          <div class="feature-content">
-            <h3>آمان حقيقي</h3>
-            <p>قاعدة بيانات حقيقية مشفرة، حماية bcrypt، وخصوصية كاملة لبياناتك</p>
+          
+          <div class="bento bento-item">
+            <div class="bento-glow"></div>
+            <div class="icon">⬙</div>
+            <div>
+              <h4>Bento System</h4>
+              <p>كروت bento مع hover glow و magnetic effect</p>
+            </div>
           </div>
-        </div>
-        
-        <div class="feature">
-          <div class="feature-icon">🚀</div>
-          <div class="feature-content">
-            <h3>سريع ومتطور</h3>
-            <p>ذكاء اصطناعي، فلترة ذكية، وتجربة استخدام احترافية على كل الأجهزة</p>
+          
+          <div class="bento bento-item wide">
+            <div class="bento-glow"></div>
+            <div class="icon">⚡</div>
+            <div>
+              <h4>قاعدة بيانات حقيقية 100% - SQLite + Supabase + bcrypt</h4>
+              <p>مش localStorage - ملف حقيقي على القرص</p>
+            </div>
           </div>
         </div>
       </div>
       
-      <div class="stats">
-        <div class="stat">
-          <span class="stat-num" id="stat-posts">1.2K+</span>
-          <div class="stat-label">منشور</div>
+      <div class="bottom">
+        <div class="stats">
+          <div class="stat"><b id="s-posts">1.2K+</b><span>POSTS</span></div>
+          <div class="stat"><b>100%</b><span>REAL DB</span></div>
+          <div class="stat"><b>NOIR</b><span>EDITION</span></div>
         </div>
-        <div class="stat">
-          <span class="stat-num">100%</span>
-          <div class="stat-label">آمن</div>
-        </div>
-        <div class="stat">
-          <span class="stat-num">24/7</span>
-          <div class="stat-label">متاح</div>
+        <div class="links">
+          <a href="DOMAIN.md" target="_blank">DOMAIN</a>
+          <a href="home.html">HOME</a>
+          <a href="https://github.com/zeah2100-design/Zivv.-Dd/pull/1" target="_blank">PR #1</a>
         </div>
       </div>
     </div>
     
-    <!-- Auth Side -->
-    <div class="auth-side">
-      <div class="auth-card">
-        <div id="db-status" class="db-status">
-          <span class="dot"></span>
-          <span>🔄 جاري الاتصال بقاعدة البيانات الحقيقية...</span>
-        </div>
-        
-        <div class="auth-tabs" id="auth-tabs">
-          <button type="button" id="tab-login" class="auth-tab on">تسجيل الدخول</button>
-          <button type="button" id="tab-signup" class="auth-tab">إنشاء حساب</button>
-        </div>
-        
-        <div id="msg"></div>
-        
-        <form id="form-login">
-          <div class="form-group">
-            <label class="form-label">البريد الإلكتروني</label>
-            <div class="input-with-icon">
-              <span class="input-icon">✉️</span>
-              <input id="login-email" type="email" required class="form-input" placeholder="example@zivv.app" autocomplete="email" />
-            </div>
+    <div class="right">
+      <div class="auth">
+        <div class="bento auth-card">
+          <div class="bento-glow"></div>
+          
+          <div id="db-status" class="db-pill"><span class="dot"></span> CONNECTING TO REAL DB...</div>
+          
+          <div class="auth-head">
+            <h2>دخول فاخر</h2>
+            <p>قاعدة بيانات حقيقية مشفرة بـ bcrypt - آمن 100%</p>
           </div>
           
-          <div class="form-group">
-            <label class="form-label">كلمة المرور</label>
-            <div class="input-with-icon">
-              <span class="input-icon">🔒</span>
-              <input id="login-pass" type="password" required class="form-input" placeholder="••••••••" autocomplete="current-password" />
-              <button type="button" class="password-toggle" data-target="login-pass">👁️</button>
-            </div>
+          <div class="tabs" id="auth-tabs">
+            <button type="button" id="tab-login" class="tab on">دخول</button>
+            <button type="button" id="tab-signup" class="tab">حساب جديد</button>
           </div>
           
-          <details style="margin:12px 0">
-            <summary style="font-size:12px;color:#666;cursor:pointer;padding:8px">دخول قديم (اسم + علامة) - للتوافق</summary>
-            <div style="margin-top:12px;display:grid;gap:10px">
-              <input id="login-first" type="text" class="form-input" placeholder="الاسم" />
-              <input id="login-last" type="text" class="form-input" placeholder="اسم العائلة" />
-              <input id="login-age" type="number" min="18" max="120" class="form-input" placeholder="السن" />
-              <input id="login-mark" type="text" class="form-input" placeholder="العلامة المميزة" />
-            </div>
-          </details>
+          <div id="msg"></div>
           
-          <button class="btn-primary" type="submit" id="login-btn">
-            <span class="btn-loader"></span>
-            <span class="btn-text">دخول آمن بقاعدة البيانات الحقيقية</span>
-          </button>
-        </form>
-        
-        <form id="form-signup" class="hidden">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="form-group">
-              <label class="form-label">الاسم</label>
-              <input id="signup-first" type="text" required class="form-input" placeholder="محمد" />
+          <form id="form-login">
+            <div class="field">
+              <label>البريد الإلكتروني</label>
+              <input id="login-email" type="email" required placeholder="you@zivv.app" autocomplete="email" />
             </div>
-            <div class="form-group">
-              <label class="form-label">العائلة</label>
-              <input id="signup-last" type="text" required class="form-input" placeholder="أحمد" />
+            <div class="field">
+              <label>كلمة المرور</label>
+              <input id="login-pass" type="password" required placeholder="••••••••" autocomplete="current-password" />
             </div>
+            <details style="margin:10px 0">
+              <summary style="font-size:11px;color:#444;cursor:pointer">دخول قديم - توافق</summary>
+              <div style="display:grid;gap:8px;margin-top:10px">
+                <input id="login-first" type="text" placeholder="الاسم" />
+                <input id="login-last" type="text" placeholder="العائلة" />
+                <input id="login-age" type="number" min="18" max="120" placeholder="السن" />
+                <input id="login-mark" type="text" placeholder="العلامة" />
+              </div>
+            </details>
+            <button class="btn btn-primary" type="submit"><span>دخول آمن • Real DB</span></button>
+          </form>
+          
+          <form id="form-signup" class="hidden">
+            <div class="row">
+              <div class="field"><label>الاسم</label><input id="signup-first" type="text" required placeholder="محمد" /></div>
+              <div class="field"><label>العائلة</label><input id="signup-last" type="text" required placeholder="أحمد" /></div>
+            </div>
+            <div class="field"><label>السن</label><input id="signup-age" type="number" min="18" max="120" required placeholder="25" /></div>
+            <div class="field"><label>البريد</label><input id="signup-email" type="email" required placeholder="your@email.com" /></div>
+            <div class="field"><label>كلمة المرور</label><input id="signup-pass" type="password" required placeholder="6+ أحرف" /></div>
+            <div class="field"><label>تأكيد</label><input id="signup-pass2" type="password" required placeholder="أعد الكتابة" /></div>
+            <div class="field"><label>العلامة المميزة</label><input id="signup-mark" type="text" required placeholder="كلمة تميزك" /></div>
+            <div class="hint">🔐 مشفرة بـ bcrypt في قاعدة بيانات حقيقية - مش localStorage</div>
+            <button class="btn btn-primary" type="submit"><span>إنشاء حساب حقيقي</span></button>
+          </form>
+          
+          <form id="form-quiz" class="hidden">
+            <p style="font-size:12px;color:#666;margin-bottom:14px">خصص تجربتك • 3 أسئلة سريعة</p>
+            <fieldset class="quiz"><legend>صانع محتوى؟</legend><div class="quiz-opts"><label class="quiz-opt"><input type="radio" name="creator" value="yes" required /> نعم</label><label class="quiz-opt"><input type="radio" name="creator" value="no" /> لا</label></div></fieldset>
+            <fieldset class="quiz"><legend>بائع منتجات؟</legend><div class="quiz-opts"><label class="quiz-opt"><input type="radio" name="seller" value="yes" required /> نعم</label><label class="quiz-opt"><input type="radio" name="seller" value="no" /> لا</label></div></fieldset>
+            <fieldset class="quiz"><legend>فنان؟</legend><div class="quiz-opts"><label class="quiz-opt"><input type="radio" name="artist" value="yes" required /> نعم</label><label class="quiz-opt"><input type="radio" name="artist" value="no" /> لا</label></div></fieldset>
+            <div class="field"><label>سمعت عنا إزاي؟</label><select id="heard" required style="width:100%;padding:14px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;color:#fff"><option value="">اختار</option><option value="friend">صديق</option><option value="instagram">إنستجرام</option><option value="tiktok">تيك توك</option><option value="google">جوجل</option><option value="other">أخرى</option></select></div>
+            <input id="heard-other" class="hidden" type="text" placeholder="المصدر" style="width:100%;padding:14px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;color:#fff;margin-top:8px" />
+            <button class="btn btn-primary" type="submit"><span>ابدأ • Noir Aurora 🚀</span></button>
+          </form>
+          
+          <div id="done" class="hidden done">
+            <div class="done-ic">✓</div>
+            <div id="done-name" style="font-family:Syne;font-weight:800;font-size:18px;margin-bottom:8px"></div>
+            <p style="font-size:12px;color:#666;margin-bottom:16px">حساب حقيقي محفوظ ✅<br>تحويل للرئيسية...</p>
+            <a href="home.html" class="btn btn-primary" style="text-decoration:none"><span>الرئيسية</span></a>
+            <button id="out-btn" type="button" style="background:none;border:none;color:#c13584;font-size:11px;margin-top:12px;cursor:pointer;width:100%">خروج</button>
           </div>
           
-          <div class="form-group">
-            <label class="form-label">السن</label>
-            <input id="signup-age" type="number" min="18" max="120" required class="form-input" placeholder="25" />
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">البريد الإلكتروني</label>
-            <div class="input-with-icon">
-              <span class="input-icon">✉️</span>
-              <input id="signup-email" type="email" required class="form-input" placeholder="your@email.com" autocomplete="email" />
+          <div class="foot">
+            <div class="lang">
+              <button id="btn-ar" class="on">عربي</button>
+              <button id="btn-en">EN</button>
             </div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">كلمة المرور</label>
-            <div class="input-with-icon">
-              <span class="input-icon">🔒</span>
-              <input id="signup-pass" type="password" required class="form-input" placeholder="6+ أحرف، قوية وآمنة" autocomplete="new-password" />
-              <button type="button" class="password-toggle" data-target="signup-pass">👁️</button>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">تأكيد كلمة المرور</label>
-            <div class="input-with-icon">
-              <span class="input-icon">🔒</span>
-              <input id="signup-pass2" type="password" required class="form-input" placeholder="أعد كتابة كلمة المرور" autocomplete="new-password" />
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">العلامة المميزة</label>
-            <input id="signup-mark" type="text" required class="form-input" placeholder="كلمة تميزك - حروف فقط" />
-          </div>
-          
-          <div class="form-hint">
-            🔐 كلمة المرور هتتشفر بـ <strong>bcrypt</strong> وتتحفظ في قاعدة بيانات حقيقية آمنة. العلامة المميزة كلام فقط ومش نفس اسمك.
-          </div>
-          
-          <button class="btn-primary" type="submit" id="signup-btn">
-            <span class="btn-loader"></span>
-            <span class="btn-text">إنشاء حساب حقيقي وآمن</span>
-          </button>
-        </form>
-        
-        <form id="form-quiz" class="hidden">
-          <p style="color:#a8a8a8;font-size:13px;line-height:1.6;margin-bottom:16px">جاوب على الأسئلة دي عشان نخصص تجربتك ✨</p>
-          
-          <fieldset class="quiz-fieldset">
-            <legend class="quiz-legend">هل أنت صانع محتوى؟</legend>
-            <div class="quiz-options">
-              <label class="quiz-option"><input type="radio" name="creator" value="yes" required /> نعم، أنشئ محتوى</label>
-              <label class="quiz-option"><input type="radio" name="creator" value="no" /> لا، متابع فقط</label>
-            </div>
-          </fieldset>
-          
-          <fieldset class="quiz-fieldset">
-            <legend class="quiz-legend">هل أنت بائع منتجات؟</legend>
-            <div class="quiz-options">
-              <label class="quiz-option"><input type="radio" name="seller" value="yes" required /> نعم، أبيع منتجات</label>
-              <label class="quiz-option"><input type="radio" name="seller" value="no" /> لا</label>
-            </div>
-          </fieldset>
-          
-          <fieldset class="quiz-fieldset">
-            <legend class="quiz-legend">هل أنت فنان أو مبدع؟</legend>
-            <div class="quiz-options">
-              <label class="quiz-option"><input type="radio" name="artist" value="yes" required /> نعم</label>
-              <label class="quiz-option"><input type="radio" name="artist" value="no" /> لا</label>
-            </div>
-          </fieldset>
-          
-          <div class="form-group">
-            <label class="form-label">سمعت عنا إزاي؟</label>
-            <select id="heard" required class="form-input">
-              <option value="">اختار المصدر</option>
-              <option value="friend">صديق رشحنا لك</option>
-              <option value="instagram">إنستجرام</option>
-              <option value="tiktok">تيك توك</option>
-              <option value="google">جوجل</option>
-              <option value="other">مصدر آخر</option>
-            </select>
-          </div>
-          
-          <input id="heard-other" class="hidden form-input" type="text" placeholder="اكتب المصدر" />
-          
-          <button class="btn-primary" type="submit">
-            <span class="btn-text">ابدأ رحلتك مع ZIVV 🚀</span>
-          </button>
-        </form>
-        
-        <div id="done" class="hidden" style="text-align:center;padding:20px 0">
-          <div class="done-icon">✓</div>
-          <p class="done-title" id="done-name"></p>
-          <p style="color:#a8a8a8;font-size:13px;line-height:1.6;margin-bottom:20px">الحساب جاهز ومحفوظ في قاعدة البيانات الحقيقية ✅<br>جاري تحويلك للرئيسية...</p>
-          <a class="btn-primary" href="home.html" style="text-decoration:none">
-            <span class="btn-text">الذهاب للرئيسية</span>
-          </a>
-          <button type="button" id="out-btn" style="display:block;width:100%;margin-top:12px;background:none;border:none;color:#c13584;font-size:13px;cursor:pointer;padding:8px">خروج من الحساب</button>
-        </div>
-        
-        <div class="auth-footer">
-          <div class="lang-switch">
-            <button type="button" id="btn-ar" class="lang-btn on">عربي</button>
-            <button type="button" id="btn-en" class="lang-btn">EN</button>
-          </div>
-          
-          <div class="foot-links">
-            <span id="foot-mode" style="color:#444">real-db</span>
-            <span>·</span>
-            <a href="DOMAIN.md" target="_blank">الدومين</a>
+            <div id="foot-mode">noir-aurora • real-db</div>
           </div>
         </div>
       </div>
@@ -994,50 +778,12 @@
   <script src="js/db.js"></script>
   <script>
     const T = {
-      ar: { 
-        login: "تسجيل الدخول", signup: "إنشاء حساب", 
-        go: "دخول آمن بقاعدة البيانات الحقيقية", 
-        first: "الاسم", last: "اسم العائلة", age: "السن", 
-        email: "البريد الإلكتروني", pass: "كلمة المرور", pass2: "تأكيد كلمة المرور", 
-        mark: "العلامة المميزة (كلام بس)", 
-        ageHint: "العلامة كلام فقط، ومش نفس الاسم أو اسم العائلة. ZIVV من 18 سنة. كلمة المرور هتتشفر في قاعدة البيانات الحقيقية.",
-        quiz: "جاوب على الأسئلة دي عشان نخصص تجربتك.", 
-        q1: "هل أنت صانع محتوى؟", q2: "هل أنت بائع منتجات؟", q3: "هل أنت فنان؟", q4: "سمعت عنا إزاي؟", 
-        yes: "نعم", no: "لا", choose: "اختار", f: "صديق", ig: "إنستجرام", tt: "تيك توك", g: "جوجل", o: "أخرى", other: "اكتب المصدر", 
-        start: "ابدأ رحلتك مع ZIVV 🚀", done: "الحساب جاهز ومحفوظ في قاعدة البيانات الحقيقية ✅", out: "خروج",
-        needAge: "السن لازم 18 أو أكثر.", needName: "اكتب الاسم واسم العائلة.", needMark: "العلامة كلام بس، ومش نفس الاسم أو العائلة.", 
-        needPass: "كلمة المرور قصيرة أو التأكيد مش مطابق.", needAll: "لازم تجاوب على كل الأسئلة.", 
-        exists: "الحساب موجود. سجّل دخول.", missing: "البيانات مش مطابقة لأي حساب.", make: "إنشاء حساب حقيقي وآمن" 
-      },
-      en: { 
-        login: "Log in", signup: "Sign up", go: "Secure login with real DB", 
-        first: "First name", last: "Family name", age: "Age", 
-        email: "Email", pass: "Password", pass2: "Confirm password", 
-        mark: "Unique mark (words only)", 
-        ageHint: "Mark is words only, not your name. ZIVV is 18+. Password hashed with bcrypt.",
-        quiz: "Answer these to personalize your experience.", 
-        q1: "Are you a content creator?", q2: "Are you a product seller?", q3: "Are you an artist?", q4: "How did you hear about us?", 
-        yes: "Yes", no: "No", choose: "Choose", f: "Friend", ig: "Instagram", tt: "TikTok", g: "Google", o: "Other", other: "Tell us where", 
-        start: "Start your ZIVV journey 🚀", done: "You're all set. Saved in real DB ✅", out: "Log out",
-        needAge: "You must be 18 or older.", needName: "Enter first and family name.", needMark: "Mark must be words only, and not your name.", 
-        needPass: "Password too short or confirmation does not match.", needAll: "Answer every question.", 
-        exists: "Account exists. Log in.", missing: "No matching account.", make: "Create secure real account" 
-      }
+      ar: { login: "دخول", signup: "حساب جديد", go: "دخول آمن • Real DB", make: "إنشاء حساب حقيقي", start: "ابدأ • Noir Aurora 🚀", needAge: "لازم 18+", needName: "اكتب الاسم", needMark: "العلامة كلام بس", needPass: "كلمة المرور قصيرة", needAll: "جاوب على الكل", exists: "الحساب موجود", missing: "مفيش حساب" },
+      en: { login: "Login", signup: "Sign up", go: "Secure login", make: "Create real account", start: "Start • Noir Aurora 🚀", needAge: "Must be 18+", needName: "Enter name", needMark: "Mark words only", needPass: "Password short", needAll: "Answer all", exists: "Exists", missing: "No account" }
     };
-    
     const $ = (id) => document.getElementById(id);
     let lang = localStorage.getItem("zivv.lang") || "ar";
     let pending = null;
-    
-    // Password toggle
-    document.querySelectorAll('.password-toggle').forEach(btn => {
-      btn.onclick = () => {
-        const target = document.getElementById(btn.dataset.target);
-        const isPass = target.type === 'password';
-        target.type = isPass ? 'text' : 'password';
-        btn.textContent = isPass ? '🙈' : '👁️';
-      };
-    });
     
     function users() { try { return JSON.parse(localStorage.getItem("zivv.users") || "{}"); } catch { return {}; } }
     function saveUsers(u) { localStorage.setItem("zivv.users", JSON.stringify(u)); }
@@ -1045,36 +791,16 @@
     function cleanName(s) { return String(s || "").replace(/\s+/g, " ").trim(); }
     function fold(s) { return cleanName(s).toLowerCase().replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه"); }
     function isWords(s) { return /^[\p{L} ]{3,40}$/u.test(cleanName(s)); }
-    function markOk(mark, first, last) {
-      const m = fold(mark), f = fold(first), l = fold(last);
-      if (!isWords(mark)) return false;
-      if (m === f || m === l) return false;
-      if (m === f + " " + l || m === l + " " + f) return false;
+    function markOk(m, f, l) {
+      const mm = fold(m), ff = fold(f), ll = fold(l);
+      if (!isWords(m)) return false;
+      if (mm === ff || mm === ll) return false;
       return true;
-    }
-    function findUser(first, last, mark, pass, age) {
-      const db = users();
-      const f = fold(first), l = fold(last), m = fold(mark), a = String(age);
-      return Object.keys(db).map((k) => db[k]).find((u) => fold(u.first) === f && fold(u.last) === l && fold(u.mark) === m && String(u.password) === String(pass) && String(u.age) === a) || null;
     }
     function uname(first, email) {
       const fromMail = String(email || "").split("@")[0].replace(/[^a-zA-Z0-9_]/g, "");
       if (fromMail.length >= 3) return fromMail.toLowerCase();
       return ("u" + Date.now()).slice(0, 12);
-    }
-    
-    function apply() {
-      const p = t();
-      document.documentElement.lang = lang === "ar" ? "ar" : "en";
-      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
-      $("tab-login").textContent = p.login;
-      $("tab-signup").textContent = p.signup;
-      document.querySelector("#form-login .btn-text").textContent = p.go;
-      document.querySelector("#form-signup .btn-text").textContent = p.make;
-      document.querySelector("#form-quiz .btn-text").textContent = p.start;
-      $("btn-ar").classList.toggle("on", lang === "ar");
-      $("btn-en").classList.toggle("on", lang === "en");
-      localStorage.setItem("zivv.lang", lang);
     }
     
     function show(id) {
@@ -1083,11 +809,7 @@
         $(x).classList.toggle("hidden", hide);
       });
     }
-    
-    function msg(text, kind) { 
-      $("msg").innerHTML = text ? `<div class="msg ${kind}">${kind === 'err' ? '⚠️' : '✅'} ${text}</div>` : ""; 
-    }
-    
+    function msg(text, kind) { $("msg").innerHTML = text ? `<div class="msg ${kind}">${text}</div>` : ""; }
     function setTab(m) {
       $("tab-login").classList.toggle("on", m === "login");
       $("tab-signup").classList.toggle("on", m === "signup");
@@ -1095,135 +817,74 @@
       msg("", "");
     }
     
-    function setLoading(btnId, loading) {
-      const btn = $(btnId);
-      if (!btn) return;
-      btn.disabled = loading;
-      btn.classList.toggle('loading', loading);
-    }
-    
     $("tab-login").onclick = () => setTab("login");
     $("tab-signup").onclick = () => setTab("signup");
-    $("btn-ar").onclick = () => { lang = "ar"; apply(); };
-    $("btn-en").onclick = () => { lang = "en"; apply(); };
+    $("btn-ar").onclick = () => { lang = "ar"; localStorage.setItem("zivv.lang", lang); document.documentElement.lang = "ar"; document.documentElement.dir = "rtl"; $("btn-ar").classList.add("on"); $("btn-en").classList.remove("on"); };
+    $("btn-en").onclick = () => { lang = "en"; localStorage.setItem("zivv.lang", lang); document.documentElement.lang = "en"; document.documentElement.dir = "ltr"; $("btn-en").classList.add("on"); $("btn-ar").classList.remove("on"); };
     
-    // Real DB status - Professional
+    // DB status
     function updateDbStatus() {
       const el = $("db-status");
-      const foot = $("foot-mode");
       if (!window.ZIVV_DB) return;
       ZIVV_DB.whenReady((mode) => {
         const info = ZIVV_DB.info;
         if (mode === "real") {
-          el.innerHTML = `<span class="dot"></span><span>✅ قاعدة بيانات حقيقية - ${info.mode} - ${info.posts || 0} منشور - آمن 100%</span>`;
-          el.className = "db-status";
-          foot.textContent = `real-db: ${info.mode} | ${info.engine}`;
-          $("stat-posts").textContent = (info.posts || 0) + "+";
+          el.innerHTML = `<span class="dot"></span> REAL DB • ${info.mode} • ${info.posts || 0} POSTS • SECURE`;
+          el.className = "db-pill";
+          const sp = $("s-posts"); if (sp) sp.textContent = (info.posts || 0) + "+";
+          $("foot-mode").textContent = `noir-aurora • ${info.mode} • real`;
         } else if (mode === "api") {
-          el.innerHTML = `<span class="dot"></span><span>✅ API متصل - قاعدة بيانات حقيقية - ${info.posts || 0} منشور</span>`;
-          el.className = "db-status";
-          foot.textContent = `api: ${info.engine}`;
+          el.innerHTML = `<span class="dot"></span> API • REAL DB • ${info.posts || 0} POSTS`;
+          el.className = "db-pill";
         } else if (mode === "supabase") {
-          el.innerHTML = `<span class="dot"></span><span>✅ Supabase مباشر متصل - آمن</span>`;
-          el.className = "db-status";
-          foot.textContent = "supabase direct";
-        } else if (mode === "need-sql") {
-          el.innerHTML = `<span class="dot"></span><span>⚠️ تحتاج تشغيل sql/zivv-v2.sql في Supabase</span>`;
-          el.className = "db-status local";
-          foot.textContent = "need-sql";
+          el.innerHTML = `<span class="dot"></span> SUPABASE DIRECT • SECURE`;
+          el.className = "db-pill";
         } else {
-          el.innerHTML = `<span class="dot"></span><span>⚠️ وضع محلي - شغّل npm run dev للـ real DB</span>`;
-          el.className = "db-status local";
-          foot.textContent = "local";
+          el.innerHTML = `<span class="dot"></span> LOCAL • RUN npm run dev`;
+          el.className = "db-pill local";
         }
       });
     }
-    
     setTimeout(updateDbStatus, 500);
     setInterval(updateDbStatus, 3000);
     window.addEventListener("zivv-db", updateDbStatus);
     
+    // Mouse glow for bento
+    document.querySelectorAll('.bento').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        card.style.setProperty('--mouse-x', x + '%');
+        card.style.setProperty('--mouse-y', y + '%');
+      });
+    });
+    
     $("form-login").onsubmit = async (e) => {
       e.preventDefault();
-      setLoading('login-btn', true);
       const email = $("login-email").value.trim().toLowerCase();
       const pass = $("login-pass").value;
-      const first = cleanName($("login-first").value);
-      const last = cleanName($("login-last").value);
-      const age = Number($("login-age").value);
-      const mark = cleanName($("login-mark").value);
-      
       if (email && pass) {
         try {
-          const r = await fetch("/api/auth/login", { 
-            method: "POST", 
-            headers: { "Content-Type": "application/json" }, 
-            body: JSON.stringify({ email, password: pass }) 
-          });
+          const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password: pass }) });
           const data = await r.json();
           if (r.ok && data.user) {
-            const u = { 
-              email: data.user.email, 
-              username: data.user.username, 
-              first: data.user.first_name || first, 
-              last: data.user.last_name || last, 
-              name: data.user.name || data.user.username, 
-              age: data.user.age || age, 
-              mark: data.user.mark || mark, 
-              password: pass, 
-              onboarding: data.user.onboarding || null 
-            };
+            const u = { email: data.user.email, username: data.user.username, first: data.user.first_name || "", last: data.user.last_name || "", name: data.user.name || data.user.username, age: data.user.age || 25, mark: data.user.mark || "", password: pass, onboarding: data.user.onboarding || null };
             pending = u;
             localStorage.setItem("zivv.session", JSON.stringify(u));
             const db = users(); db[u.email] = u; saveUsers(db);
             if (window.ZIVV_DB) ZIVV_DB.upsertProfile(u);
-            msg("تم الدخول بنجاح بقاعدة البيانات الحقيقية - مرحباً بك! 🎉", "ok");
-            setLoading('login-btn', false);
-            if (u.onboarding) setTimeout(() => paint(u), 600);
-            else show("form-quiz");
+            msg("تم الدخول • Real DB • مرحباً! 🎉", "ok");
+            if (u.onboarding) setTimeout(() => paint(u), 600); else show("form-quiz");
             return;
-          } else { 
-            msg(data.error || t().missing, "err"); 
-            setLoading('login-btn', false);
-            return; 
-          }
-        } catch (err) { 
-          console.warn(err);
-          msg("تعذر الاتصال بقاعدة البيانات، جاري المحاولة بالوضع المحلي...", "err");
-        }
+          } else { msg(data.error || t().missing, "err"); return; }
+        } catch (err) { msg("تعذر الاتصال - محاولة محلية...", "err"); }
       }
-      
-      if (!first || !last) { 
-        msg("اكتب البريد وكلمة المرور للدخول الحقيقي، أو املأ الحقول القديمة", "err"); 
-        setLoading('login-btn', false);
-        return; 
-      }
-      if (!age || age < 18) { 
-        msg(t().needAge, "err"); 
-        setLoading('login-btn', false);
-        return; 
-      }
-      
-      let u = findUser(first, last, mark, pass, age);
-      if (!u && window.ZIVV_DB && window.ZIVV_DB.loginRemote) { 
-        try { 
-          const ru = await ZIVV_DB.loginRemote(first, last, mark, pass, age); 
-          if (ru) u = ru; 
-        } catch {} 
-      }
-      
-      setLoading('login-btn', false);
-      if (!u) { msg(t().missing, "err"); return; }
-      pending = u;
-      localStorage.setItem("zivv.session", JSON.stringify(u));
-      if (window.ZIVV_DB) ZIVV_DB.upsertProfile(u);
-      msg("", "");
-      if (u.onboarding) paint(u); else show("form-quiz");
+      msg("اكتب البريد وكلمة المرور", "err");
     };
     
     $("form-signup").onsubmit = async (e) => {
       e.preventDefault();
-      setLoading('signup-btn', true);
       const first = cleanName($("signup-first").value);
       const last = cleanName($("signup-last").value);
       const age = Number($("signup-age").value);
@@ -1231,79 +892,33 @@
       const pass = $("signup-pass").value;
       const pass2 = $("signup-pass2").value;
       const mark = cleanName($("signup-mark").value);
-      
-      if (first.length < 2 || last.length < 2) { 
-        msg(t().needName, "err"); 
-        setLoading('signup-btn', false);
-        return; 
-      }
-      if (!age || age < 18) { 
-        msg(t().needAge, "err"); 
-        setLoading('signup-btn', false);
-        return; 
-      }
-      if (!markOk(mark, first, last)) { 
-        msg(t().needMark, "err"); 
-        setLoading('signup-btn', false);
-        return; 
-      }
-      if (pass.length < 6 || pass !== pass2) { 
-        msg(t().needPass, "err"); 
-        setLoading('signup-btn', false);
-        return; 
-      }
-      
+      if (first.length < 2 || last.length < 2) { msg(t().needName, "err"); return; }
+      if (!age || age < 18) { msg(t().needAge, "err"); return; }
+      if (!markOk(mark, first, last)) { msg(t().needMark, "err"); return; }
+      if (pass.length < 6 || pass !== pass2) { msg(t().needPass, "err"); return; }
       try {
-        const r = await fetch("/api/auth/register", { 
-          method: "POST", 
-          headers: { "Content-Type": "application/json" }, 
-          body: JSON.stringify({ 
-            email, 
-            username: uname(first, email), 
-            password: pass, 
-            first_name: first, 
-            last_name: last, 
-            name: first + " " + last, 
-            age, 
-            mark, 
-            onboarding: null 
-          }) 
-        });
+        const r = await fetch("/api/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, username: uname(first, email), password: pass, first_name: first, last_name: last, name: first + " " + last, age, mark, onboarding: null }) });
         const data = await r.json();
-        if (!r.ok) { 
-          msg(data.error || t().exists, "err"); 
-          setLoading('signup-btn', false);
-          return; 
-        }
+        if (!r.ok) { msg(data.error || t().exists, "err"); return; }
         const u = { email, first, last, name: first + " " + last, age, password: pass, mark, username: data.user.username };
         const db = users(); db[email] = u; saveUsers(db);
         pending = u;
         localStorage.setItem("zivv.session", JSON.stringify(u));
-        msg("تم إنشاء الحساب في قاعدة البيانات الحقيقية - مشفر بـ bcrypt وآمن 100% 🔐", "ok");
-        setLoading('signup-btn', false);
+        msg("تم إنشاء حساب حقيقي • bcrypt 🔐", "ok");
         show("form-quiz");
         return;
       } catch (err) {
-        console.warn("Real DB register failed, fallback local", err);
         const db = users();
-        if (db[email]) { 
-          msg(t().exists, "err"); 
-          setLoading('signup-btn', false);
-          return; 
-        }
+        if (db[email]) { msg(t().exists, "err"); return; }
         const u = { email, first, last, name: first + " " + last, age, password: pass, mark, username: uname(first, email) };
         db[email] = u; saveUsers(db);
         pending = u;
         localStorage.setItem("zivv.session", JSON.stringify(u));
-        if (window.ZIVV_DB && ZIVV_DB.upsertAccount) ZIVV_DB.upsertAccount(u);
-        msg("", "");
-        setLoading('signup-btn', false);
         show("form-quiz");
       }
     };
     
     $("heard").onchange = () => $("heard-other").classList.toggle("hidden", $("heard").value !== "other");
-    
     $("form-quiz").onsubmit = async (e) => {
       e.preventDefault();
       const creator = document.querySelector("input[name=creator]:checked");
@@ -1311,34 +926,27 @@
       const artist = document.querySelector("input[name=artist]:checked");
       const heard = $("heard").value;
       if (!creator || !seller || !artist || !heard) { msg(t().needAll, "err"); return; }
-      if (heard === "other" && !$("heard-other").value.trim()) { msg(t().needAll, "err"); return; }
       const onboarding = { creator: creator.value === "yes", seller: seller.value === "yes", artist: artist.value === "yes", heard, heardOther: $("heard-other").value.trim() };
       const db = users();
-      const email = pending.email;
-      if (db[email]) { db[email].onboarding = onboarding; saveUsers(db); }
+      if (db[pending.email]) { db[pending.email].onboarding = onboarding; saveUsers(db); }
       pending.onboarding = onboarding;
       localStorage.setItem("zivv.session", JSON.stringify(pending));
-      try {
-        await fetch("/api/accounts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, onboarding }) });
-      } catch {}
-      if (window.ZIVV_DB) ZIVV_DB.upsertAccount(pending);
+      try { await fetch("/api/accounts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: pending.email, onboarding }) }); } catch {}
       paint(pending);
     };
     
     $("out-btn").onclick = () => { localStorage.removeItem("zivv.session"); setTab("login"); };
-    
     function paint(u) {
       $("done-name").textContent = u.name || u.email;
       show("done");
       setTimeout(() => location.href = "home.html", 1200);
     }
     
-    apply();
-    const adding = new URLSearchParams(location.search).get("add") === "1" || sessionStorage.getItem("zivv.addAccount") === "1";
-    if (adding) { sessionStorage.removeItem("zivv.addAccount"); setTab("signup"); }
+    const adding = new URLSearchParams(location.search).get("add") === "1";
+    if (adding) setTab("signup");
     else {
       const s = JSON.parse(localStorage.getItem("zivv.session") || "null");
-      if (s && (s.email || s.mark) && s.password) { pending = s; if (s.onboarding) paint(s); else show("form-quiz"); }
+      if (s && s.email && s.password) { pending = s; if (s.onboarding) paint(s); else show("form-quiz"); }
     }
   </script>
 </body>

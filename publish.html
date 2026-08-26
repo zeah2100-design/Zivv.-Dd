@@ -3,800 +3,381 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZIVV - إنشاء منشور احترافي</title>
+  <title>ZIVV — Noir Aurora • نشر خاص</title>
   <link rel="stylesheet" href="css/theme.css" />
-  <link rel="stylesheet" href="css/professional.css" />
+  <link rel="stylesheet" href="css/zivv-special.css" />
   <link rel="stylesheet" href="css/shell.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
-      background: #000;
-      color: #f5f5f5;
+      font-family: 'Space Grotesk', 'Cairo', sans-serif;
+      background: #050507;
+      color: #fff;
       min-height: 100dvh;
     }
-    
     .wrap {
-      width: min(640px, 100%);
+      position: relative;
+      z-index: 1;
+      width: min(680px, 100%);
       margin: 0 auto;
-      padding: 0 0 100px;
+      min-height: 100dvh;
+      padding-bottom: 100px;
     }
-    
-    .top-bar {
+    .top {
       position: sticky;
       top: 0;
-      z-index: 40;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(20px) saturate(180%);
-      border-bottom: 1px solid #1f1f1f;
-      padding: 12px 20px;
+      z-index: 30;
+      background: rgba(5,5,7,0.85);
+      backdrop-filter: blur(24px) saturate(180%);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 14px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-    
-    .top-bar .left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    
-    .back-btn {
+    .back {
       width: 40px;
       height: 40px;
       border-radius: 12px;
-      border: 1px solid #1f1f1f;
-      background: #0a0a0a;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
       color: #fff;
       display: grid;
       place-items: center;
       cursor: pointer;
-      transition: all 0.2s ease;
       text-decoration: none;
+      transition: all 0.2s ease;
     }
-    
-    .back-btn:hover {
-      background: #141414;
-      transform: translateY(-1px);
-    }
-    
-    .page-title {
-      font-size: 18px;
+    .back:hover { background: rgba(255,255,255,0.06); transform: translateY(-1px); }
+    .title {
+      font-family: 'Syne', sans-serif;
       font-weight: 800;
+      font-size: 16px;
+      letter-spacing: -0.01em;
       background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
     }
-    
-    .publish-btn {
+    .publish {
       padding: 10px 20px;
-      background: linear-gradient(135deg, #fcaf45 0%, #f77737 22%, #e1306c 55%, #c13584 78%, #833ab4 100%);
-      color: #fff;
+      background: #fff;
+      color: #000;
       border: none;
-      border-radius: 12px;
+      border-radius: 999px;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 13px;
       cursor: pointer;
-      transition: all 0.25s ease;
+      transition: all 0.3s ease;
       display: flex;
       align-items: center;
       gap: 8px;
+      font-family: inherit;
+      position: relative;
+      overflow: hidden;
     }
-    
-    .publish-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(225,48,108,0.25);
+    .publish::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
+    .publish:hover::before { opacity: 1; }
+    .publish:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(225,48,108,0.2); }
+    .publish span { position: relative; z-index: 1; }
+    .publish:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
     
-    .publish-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
+    .content { padding: 20px; }
     
-    .content {
-      padding: 20px;
-    }
-    
-    .author-card {
+    .author {
       display: flex;
       align-items: center;
       gap: 12px;
       padding: 16px;
-      background: #0a0a0a;
-      border: 1px solid #1f1f1f;
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.06);
       border-radius: 16px;
+      backdrop-filter: blur(20px);
       margin-bottom: 20px;
     }
+    .author img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(225,48,108,0.3); }
+    .author .name { font-weight: 700; font-size: 14px; }
+    .author .handle { font-size: 11px; color: #666; margin-top: 2px; }
     
-    .author-card img {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #e1306c;
-    }
-    
-    .author-info .name {
-      font-weight: 700;
-      font-size: 15px;
-      color: #fff;
-    }
-    
-    .author-info .handle {
-      font-size: 12px;
-      color: #666;
-      margin-top: 2px;
-    }
-    
-    .type-selector {
+    .types {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
       margin-bottom: 20px;
     }
-    
-    .type-btn {
-      padding: 16px 12px;
-      background: #0a0a0a;
-      border: 1px solid #1f1f1f;
+    .t-btn {
+      padding: 16px 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.06);
       border-radius: 16px;
-      color: #888;
+      color: #6b6b80;
       cursor: pointer;
-      transition: all 0.25s ease;
+      transition: all 0.3s ease;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 8px;
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
     }
-    
-    .type-btn:hover {
-      background: #141414;
-      border-color: #2a2a2a;
-      color: #fff;
-      transform: translateY(-2px);
+    .t-btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(300px circle at 50% 50%, rgba(255,255,255,0.04), transparent 50%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
+    .t-btn:hover::before { opacity: 1; }
+    .t-btn:hover { border-color: rgba(255,255,255,0.1); color: #fff; transform: translateY(-2px); }
+    .t-btn.active { background: #fff; color: #000; border-color: #fff; font-weight: 700; box-shadow: 0 8px 20px rgba(255,255,255,0.1); }
+    .t-btn.active::before { display: none; }
+    .t-btn .ic { font-size: 22px; }
+    .t-btn .lb { font-size: 11px; font-weight: 600; }
     
-    .type-btn.active {
-      background: rgba(225,48,108,0.1);
-      border-color: #e1306c;
-      color: #fff;
-      box-shadow: 0 0 0 1px rgba(225,48,108,0.2), 0 4px 16px rgba(225,48,108,0.15);
-    }
-    
-    .type-btn .icon {
-      font-size: 24px;
-    }
-    
-    .type-btn .label {
-      font-size: 12px;
-      font-weight: 600;
-    }
-    
-    .media-drop {
-      border: 2px dashed #2a2a2a;
+    .drop {
+      border: 2px dashed rgba(255,255,255,0.08);
       border-radius: 20px;
       min-height: 200px;
-      background: #0a0a0a;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));
       display: grid;
       place-items: center;
       text-align: center;
       padding: 24px;
-      color: #888;
+      color: #666;
       position: relative;
       overflow: hidden;
       margin-bottom: 20px;
-      transition: all 0.25s ease;
+      transition: all 0.3s ease;
       cursor: pointer;
-    }
-    
-    .media-drop:hover {
-      border-color: #e1306c;
-      background: rgba(225,48,108,0.02);
-    }
-    
-    .media-drop.dragover {
-      border-color: #e1306c;
-      background: rgba(225,48,108,0.05);
-      transform: scale(1.01);
-    }
-    
-    .media-drop.has-media {
-      padding: 0;
-      min-height: 300px;
-      border-style: solid;
-      border-color: #1f1f1f;
-    }
-    
-    .media-drop img,
-    .media-drop video {
-      width: 100%;
-      max-height: 400px;
-      object-fit: cover;
-      display: block;
-    }
-    
-    .media-drop audio {
-      width: 90%;
-      margin: 20px auto;
-    }
-    
-    .drop-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-    
-    .drop-icon {
-      width: 56px;
-      height: 56px;
-      background: #141414;
-      border-radius: 16px;
-      display: grid;
-      place-items: center;
-      font-size: 24px;
-      color: #666;
-    }
-    
-    .drop-text {
-      font-size: 14px;
-      font-weight: 600;
-      color: #aaa;
-    }
-    
-    .drop-hint {
-      font-size: 12px;
-      color: #555;
-    }
-    
-    .pick-btn {
-      margin-top: 8px;
-      padding: 10px 20px;
-      background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .pick-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(225,48,108,0.2);
-    }
-    
-    .clear-btn {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(0,0,0,0.7);
       backdrop-filter: blur(10px);
-      color: #fff;
-      font-size: 18px;
-      cursor: pointer;
-      display: grid;
-      place-items: center;
-      z-index: 2;
-      transition: all 0.2s ease;
     }
+    .drop:hover { border-color: rgba(225,48,108,0.3); background: rgba(225,48,108,0.02); }
+    .drop.has { padding: 0; min-height: 320px; border-style: solid; border-color: rgba(255,255,255,0.06); }
+    .drop img, .drop video { width: 100%; max-height: 400px; object-fit: cover; display: block; }
+    .drop audio { width: 90%; margin: 20px auto; }
+    .drop-content { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .drop-ic { width: 56px; height: 56px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; display: grid; place-items: center; font-size: 24px; }
+    .pick { margin-top: 8px; padding: 10px 20px; background: #fff; color: #000; border: none; border-radius: 999px; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+    .pick:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,255,255,0.15); }
+    .x { position: absolute; top: 12px; left: 12px; width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); color: #fff; font-size: 18px; cursor: pointer; display: grid; place-items: center; z-index: 2; }
+    .x:hover { background: rgba(239,68,68,0.8); }
     
-    .clear-btn:hover {
-      background: rgba(239,68,68,0.8);
-      transform: scale(1.1);
-    }
-    
-    .options-grid {
-      display: grid;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-    
-    .option-card {
-      background: #0a0a0a;
-      border: 1px solid #1f1f1f;
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.06);
       border-radius: 16px;
       padding: 16px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(20px);
     }
+    .card h4 { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.01em; }
     
-    .option-card h4 {
-      font-size: 13px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .vkind-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    
-    .vkind-btn {
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .opt {
       padding: 14px 12px;
-      background: #141414;
-      border: 1px solid #1f1f1f;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
       border-radius: 12px;
-      color: #888;
+      color: #6b6b80;
       cursor: pointer;
       transition: all 0.2s ease;
       text-align: start;
+      font-family: inherit;
     }
+    .opt:hover { background: rgba(255,255,255,0.04); color: #fff; border-color: rgba(255,255,255,0.1); }
+    .opt.active { background: #fff; color: #000; border-color: #fff; font-weight: 700; }
+    .opt b { display: block; font-size: 13px; margin-bottom: 4px; }
+    .opt span { font-size: 11px; color: #666; line-height: 1.4; }
+    .opt.active span { color: #444; }
     
-    .vkind-btn:hover {
-      border-color: #2a2a2a;
-      background: #1a1a1a;
-      color: #fff;
-    }
-    
-    .vkind-btn.active {
-      border-color: #e1306c;
-      background: rgba(225,48,108,0.08);
-      color: #fff;
-    }
-    
-    .vkind-btn b {
-      display: block;
-      font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 4px;
-      color: inherit;
-    }
-    
-    .vkind-btn span {
-      font-size: 11px;
-      color: #666;
-      line-height: 1.4;
-    }
-    
-    .vkind-btn.active span {
-      color: #aaa;
-    }
-    
-    .field-group {
-      margin-bottom: 16px;
-    }
-    
-    .field-label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: #a8a8a8;
-      margin-bottom: 8px;
-    }
-    
-    .field-input,
-    .field-textarea {
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #888; margin-bottom: 8px; }
+    .field input, .field textarea {
       width: 100%;
       padding: 14px 16px;
-      background: #0a0a0a;
-      border: 1px solid #1f1f1f;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
       border-radius: 12px;
       color: #fff;
-      font-size: 14px;
+      font-size: 13px;
       font-family: inherit;
       outline: none;
-      transition: all 0.2s ease;
+      transition: all 0.25s ease;
     }
+    .field input:focus, .field textarea:focus { background: rgba(255,255,255,0.05); border-color: rgba(225,48,108,0.3); box-shadow: 0 0 0 4px rgba(225,48,108,0.06); }
+    .field textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
+    .count { text-align: left; font-size: 10px; color: #444; margin-top: 6px; }
     
-    .field-input:focus,
-    .field-textarea:focus {
-      border-color: #e1306c;
-      background: #141414;
-      box-shadow: 0 0 0 3px rgba(225,48,108,0.08);
-    }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .chip { padding: 6px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 999px; color: #6b6b80; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+    .chip:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .chip.active { background: #fff; color: #000; border-color: #fff; font-weight: 700; }
     
-    .field-textarea {
-      min-height: 100px;
-      resize: vertical;
-      line-height: 1.6;
-    }
-    
-    .char-count {
-      text-align: left;
-      font-size: 11px;
-      color: #555;
-      margin-top: 6px;
-    }
-    
-    .chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    
-    .chip {
-      padding: 6px 12px;
-      background: #141414;
-      border: 1px solid #1f1f1f;
-      border-radius: 999px;
-      color: #888;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .chip:hover {
-      background: #1a1a1a;
-      color: #fff;
-      border-color: #2a2a2a;
-    }
-    
-    .chip.active {
-      background: rgba(225,48,108,0.1);
-      border-color: #e1306c;
-      color: #e1306c;
-    }
-    
-    .dest-card {
+    .dest {
       padding: 12px 16px;
-      background: #0a0a0a;
-      border: 1px solid #1f1f1f;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.06);
       border-radius: 12px;
-      font-size: 13px;
-      color: #aaa;
-      margin-bottom: 16px;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
       gap: 8px;
     }
+    .dest b { color: #fff; }
+    .dest.ok { border-color: rgba(16,185,129,0.15); background: rgba(16,185,129,0.05); color: #6ee7b7; }
+    .dest.bad { border-color: rgba(239,68,68,0.15); background: rgba(239,68,68,0.05); color: #fca5a5; }
     
-    .dest-card b {
-      color: #e1306c;
-    }
-    
-    .dest-card.ok {
-      border-color: rgba(16,185,129,0.2);
-      background: rgba(16,185,129,0.05);
-      color: #a7f3d0;
-    }
-    
-    .dest-card.bad {
-      border-color: rgba(239,68,68,0.2);
-      background: rgba(239,68,68,0.05);
-      color: #fca5a5;
-    }
-    
-    .vis-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-    
-    .vis-btn {
-      padding: 14px;
-      background: #0a0a0a;
-      border: 1px solid #1f1f1f;
-      border-radius: 12px;
-      color: #888;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: start;
-    }
-    
-    .vis-btn:hover {
-      border-color: #2a2a2a;
-      background: #141414;
-      color: #fff;
-    }
-    
-    .vis-btn.active {
-      border-color: #e1306c;
-      background: rgba(225,48,108,0.08);
-      color: #fff;
-    }
-    
-    .vis-btn b {
-      display: block;
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-    
-    .vis-btn span {
-      font-size: 11px;
-      color: #666;
-      line-height: 1.4;
-    }
-    
-    .vis-btn.active span {
-      color: #aaa;
-    }
-    
-    .ban-alert {
-      display: none;
-      padding: 14px 16px;
-      background: rgba(239,68,68,0.08);
-      border: 1px solid rgba(239,68,68,0.15);
-      border-radius: 12px;
-      color: #fca5a5;
-      font-size: 13px;
-      line-height: 1.5;
-      margin-bottom: 16px;
-    }
-    
-    .ban-alert.show {
-      display: block;
-      animation: slideDown 0.3s ease;
-    }
-    
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    .ban { display: none; padding: 14px 16px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.12); border-radius: 12px; color: #fca5a5; font-size: 12px; line-height: 1.5; margin-bottom: 14px; }
+    .ban.show { display: block; animation: slideDown 0.3s ease; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
     
     .toast {
       position: fixed;
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      background: #161616;
-      border: 1px solid #2a2a2a;
+      background: #111;
+      border: 1px solid rgba(255,255,255,0.08);
       color: #fff;
       padding: 12px 18px;
       border-radius: 999px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
       z-index: 70;
       display: none;
       box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       max-width: min(90vw, 400px);
       text-align: center;
+      backdrop-filter: blur(20px);
     }
     
     input[type="file"] { display: none; }
+    .cover { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; margin: 12px auto 0; display: none; border: 1px solid rgba(255,255,255,0.08); }
     
-    .cover-preview {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 12px;
-      margin: 12px auto 0;
-      display: none;
-      border: 2px solid #1f1f1f;
-    }
-    
-    .sound-box {
-      display: none;
-      padding: 14px;
-      background: #0a0a0a;
-      border: 1px solid #1f1f1f;
-      border-radius: 12px;
-      margin-bottom: 16px;
-    }
-    
-    .sound-box.show { display: block; }
-    
-    .sound-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-    
-    .sound-btn {
-      padding: 8px 14px;
-      background: #141414;
-      border: 1px solid #1f1f1f;
-      border-radius: 10px;
-      color: #fff;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .sound-btn:hover {
-      background: #1a1a1a;
-      border-color: #2a2a2a;
-    }
-    
-    .sound-btn.active {
-      background: rgba(225,48,108,0.1);
-      border-color: #e1306c;
-      color: #e1306c;
-    }
-    
-    @media (max-width: 640px) {
-      .type-selector {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-      }
-      
-      .type-btn {
-        padding: 12px 8px;
-      }
-      
-      .type-btn .icon {
-        font-size: 20px;
-      }
-    }
+    .sound { display: none; padding: 14px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; margin-bottom: 14px; }
+    .sound.show { display: block; }
+    .sound-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .s-btn { padding: 8px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; color: #fff; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+    .s-btn:hover { background: rgba(255,255,255,0.06); }
+    .s-btn.active { background: #fff; color: #000; border-color: #fff; }
   </style>
 </head>
-<body>
+<body class="grain">
+  <div class="aurora">
+    <div class="aurora-blob"></div>
+    <div class="aurora-blob"></div>
+    <div class="aurora-blob"></div>
+    <div class="aurora-blob"></div>
+  </div>
+  
   <div class="wrap">
-    <div class="top-bar">
-      <div class="left">
-        <a class="back-btn" href="home.html">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        </a>
-        <div class="page-title">إنشاء منشور</div>
-      </div>
-      <button class="publish-btn" id="go" type="button">
-        <span>نشر</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      </button>
+    <div class="top">
+      <a class="back" href="home.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </a>
+      <div class="title">Noir Aurora • نشر خاص</div>
+      <button class="publish" id="go" type="button"><span>نشر</span></button>
     </div>
     
     <div class="content">
-      <div class="author-card" id="me"></div>
-      <div class="ban-alert" id="ban"></div>
+      <div class="author" id="me"></div>
+      <div class="ban" id="ban"></div>
       
-      <div class="type-selector" id="types">
-        <button type="button" class="type-btn active" data-t="photo">
-          <span class="icon">🖼️</span>
-          <span class="label">صورة</span>
-        </button>
-        <button type="button" class="type-btn" data-t="video">
-          <span class="icon">🎬</span>
-          <span class="label">فيديو</span>
-        </button>
-        <button type="button" class="type-btn" data-t="text">
-          <span class="icon">📝</span>
-          <span class="label">نص</span>
-        </button>
-        <button type="button" class="type-btn" data-t="audio">
-          <span class="icon">🎵</span>
-          <span class="label">صوت</span>
-        </button>
-        <button type="button" class="type-btn" data-t="link">
-          <span class="icon">🔗</span>
-          <span class="label">رابط</span>
-        </button>
-        <button type="button" class="type-btn" data-t="product">
-          <span class="icon">🛍️</span>
-          <span class="label">منتج</span>
-        </button>
+      <div class="types" id="types">
+        <button type="button" class="t-btn active" data-t="photo"><span class="ic">◐</span><span class="lb">صورة</span></button>
+        <button type="button" class="t-btn" data-t="video"><span class="ic">▶</span><span class="lb">فيديو</span></button>
+        <button type="button" class="t-btn" data-t="text"><span class="ic">✎</span><span class="lb">نص</span></button>
+        <button type="button" class="t-btn" data-t="audio"><span class="ic">♫</span><span class="lb">صوت</span></button>
+        <button type="button" class="t-btn" data-t="link"><span class="ic">↗</span><span class="lb">رابط</span></button>
+        <button type="button" class="t-btn" data-t="product"><span class="ic">◫</span><span class="lb">منتج</span></button>
       </div>
       
-      <div class="option-card" id="vkind" style="display:none">
-        <h4>🎥 نوع الفيديو</h4>
-        <div class="vkind-grid">
-          <button type="button" class="vkind-btn" data-vk="short">
-            <b>شورتس - قصير</b>
-            <span>فيديو قصير مثل تيك توك، يظهر في الشريط</span>
-          </button>
-          <button type="button" class="vkind-btn" data-vk="video">
-            <b>فيديو عادي</b>
-            <span>فيديو طويل، يظهر في الرئيسية</span>
-          </button>
+      <div class="card" id="vkind" style="display:none">
+        <h4>نوع الفيديو</h4>
+        <div class="grid2">
+          <button type="button" class="opt" data-vk="short"><b>شورتس</b><span>قصير مثل تيك توك - في الشريط</span></button>
+          <button type="button" class="opt" data-vk="video"><b>فيديو عادي</b><span>طويل - في الرئيسية</span></button>
         </div>
       </div>
       
-      <div class="sound-box" id="sound-box">
-        <h4 style="font-size:13px;font-weight:700;margin-bottom:12px">🎵 إعدادات الصوت</h4>
-        <div class="sound-actions">
-          <button type="button" class="sound-btn" id="add-sound">+ إضافة صوت</button>
-          <button type="button" class="sound-btn" id="mute-orig">🔇 كتم الأصلي</button>
+      <div class="sound" id="sound-box">
+        <h4 style="font-size:11px;font-weight:700;margin-bottom:10px">إعدادات الصوت</h4>
+        <div class="sound-row">
+          <button type="button" class="s-btn" id="add-sound">+ صوت</button>
+          <button type="button" class="s-btn" id="mute-orig">كتم الأصلي</button>
         </div>
-        <div style="font-size:12px;color:#666;line-height:1.5" id="sound-name">الصوت الأصلي سيبقى كما هو. يمكنك إضافة صوت إضافي.</div>
+        <div style="font-size:11px;color:#666" id="sound-name">الأصلي سيبقى</div>
       </div>
       
-      <div class="option-card" id="product-box" style="display:none">
-        <h4>🛍️ تفاصيل المنتج</h4>
-        <div class="field-group">
-          <label class="field-label">سعر المنتج (ج.م)</label>
-          <input class="field-input" id="p-price" type="number" min="0" placeholder="مثلاً 250" />
-        </div>
-        <div class="field-group">
-          <label class="field-label">رقم التواصل</label>
-          <input class="field-input" id="p-phone" placeholder="01xxxxxxxxx" />
-        </div>
-        <div class="field-group">
-          <label class="field-label">المواصفات (اختياري)</label>
-          <input class="field-input" id="p-specs" placeholder="المقاس، الخامة، اللون - افصل بفاصلة" />
-        </div>
+      <div class="card" id="product-box" style="display:none">
+        <h4>تفاصيل المنتج</h4>
+        <div class="field"><label>السعر (ج.م)</label><input id="p-price" type="number" min="0" placeholder="250" /></div>
+        <div class="field"><label>التواصل</label><input id="p-phone" placeholder="01xxxxxxxxx" /></div>
+        <div class="field"><label>المواصفات</label><input id="p-specs" placeholder="المقاس، الخامة - بفاصلة" /></div>
       </div>
       
-      <div class="media-drop" id="drop">
+      <div class="drop" id="drop">
         <div class="drop-content" id="drop-empty">
-          <div class="drop-icon">📁</div>
-          <div class="drop-text">اسحب الملف هنا أو اختر من جهازك</div>
-          <div class="drop-hint">صور، فيديوهات، أو ملفات صوتية</div>
-          <button class="pick-btn" type="button" data-action="pick">اختيار ملف</button>
+          <div class="drop-ic">◫</div>
+          <div style="font-size:13px;font-weight:600;color:#aaa">اسحب الملف أو اختر</div>
+          <div style="font-size:11px;color:#444">صور، فيديو، صوت</div>
+          <button class="pick" type="button" data-action="pick">اختيار</button>
         </div>
-        <button class="clear-btn" id="clear-media" type="button" hidden>×</button>
+        <button class="x" id="clear-media" type="button" hidden>×</button>
         <img id="prev-img" alt="" hidden />
         <video id="prev-vid" muted playsinline controls hidden></video>
         <audio id="prev-aud" controls hidden></audio>
-        <img class="cover-preview" id="prev-cover" alt="غلاف" />
+        <img class="cover" id="prev-cover" alt="غلاف" />
       </div>
       
-      <div class="vis-grid" id="vis-box">
-        <button type="button" class="vis-btn active" data-vis="public">
-          <b>🌍 عام</b>
-          <span>الجميع يمكنه رؤية المنشور</span>
-        </button>
-        <button type="button" class="vis-btn" data-vis="friends">
-          <b>🔒 خاص</b>
-          <span>الأصدقاء فقط</span>
-        </button>
+      <div class="grid2" id="vis-box" style="margin-bottom:14px">
+        <button type="button" class="opt active" data-vis="public"><b>🌍 عام</b><span>الجميع يراه</span></button>
+        <button type="button" class="opt" data-vis="friends"><b>🔒 خاص</b><span>الأصدقاء فقط</span></button>
       </div>
       
-      <div class="option-card" id="link-box" hidden>
-        <h4>🔗 رابط خارجي</h4>
-        <div class="field-group">
-          <input class="field-input" id="link-url" type="url" placeholder="https://example.com" dir="ltr" />
-        </div>
-        <div id="link-card" hidden style="padding:12px;background:#111;border:1px solid #1f1f1f;border-radius:12px;margin-top:12px">
-          <div style="color:#e1306c;font-size:12px;font-weight:700" id="link-host"></div>
-          <div style="color:#ccc;font-size:13px;margin-top:4px;word-break:break-all" id="link-text"></div>
+      <div class="card" id="link-box" hidden>
+        <h4>رابط</h4>
+        <div class="field"><input id="link-url" type="url" placeholder="https://example.com" dir="ltr" /></div>
+        <div id="link-card" hidden style="padding:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;margin-top:10px">
+          <div style="color:#e1306c;font-size:11px;font-weight:700" id="link-host"></div>
+          <div style="color:#aaa;font-size:12px;margin-top:4px;word-break:break-all" id="link-text"></div>
         </div>
       </div>
       
-      <div class="field-group">
-        <label class="field-label">العنوان *</label>
-        <input class="field-input" id="post-title" maxlength="80" placeholder="عنوان جذاب لمنشورك" />
-      </div>
+      <div class="field"><label>العنوان *</label><input id="post-title" maxlength="80" placeholder="عنوان جذاب" /></div>
+      <div class="field"><label>الوصف *</label><textarea id="caption" maxlength="2000" placeholder="ماذا يحدث؟ شارك لحظتك بـ Noir Aurora..."></textarea><div class="count"><span id="n">0</span>/2000</div></div>
+      <div class="field"><label>هاشتاجات</label><input id="tags" placeholder="#NoirAurora #تصوير #القاهرة" /><div class="chips" id="chips"></div></div>
+      <div class="dest" id="dest">سينشر في: <b>استكشاف</b></div>
+      <div class="field"><label>المكان (اختياري)</label><input id="place" placeholder="القاهرة، الجيزة" /></div>
       
-      <div class="field-group">
-        <label class="field-label">الوصف *</label>
-        <textarea class="field-textarea" id="caption" maxlength="2000" placeholder="شارك ما يدور في ذهنك... ماذا يحدث؟"></textarea>
-        <div class="char-count"><span id="n">0</span>/2000 حرف</div>
-      </div>
-      
-      <div class="field-group">
-        <label class="field-label">الهاشتاجات - لتنظيم ظهور المنشور</label>
-        <input class="field-input" id="tags" placeholder="#تصوير #سفر #القاهرة" />
-        <div class="chips" id="chips"></div>
-      </div>
-      
-      <div class="dest-card" id="dest">📍 سينشر في: <b>استكشاف</b></div>
-      
-      <div class="field-group">
-        <label class="field-label">المكان (اختياري)</label>
-        <input class="field-input" id="place" placeholder="مثلاً: القاهرة، الجيزة" />
-      </div>
-      
-      <div class="option-card" id="ai-box">
-        <h4>🤖 هل هذا المحتوى من الذكاء الاصطناعي؟</h4>
-        <div class="vis-grid">
-          <button type="button" class="vis-btn" data-ai="no">
-            <b>👤 محتوى بشري</b>
-            <span>صنعته بنفسك</span>
-          </button>
-          <button type="button" class="vis-btn" data-ai="yes">
-            <b>🤖 ذكاء اصطناعي</b>
-            <span>تم إنشاؤه بالـ AI</span>
-          </button>
+      <div class="card" id="ai-box">
+        <h4>هل هذا AI؟</h4>
+        <div class="grid2">
+          <button type="button" class="opt" data-ai="no"><b>👤 بشري</b><span>صنعته بنفسك</span></button>
+          <button type="button" class="opt" data-ai="yes"><b>🤖 AI</b><span>ذكاء اصطناعي</span></button>
         </div>
       </div>
       
-      <div class="dest-card" id="scan-box">🔍 فحص المحتوى سيظهر هنا تلقائياً</div>
+      <div class="dest" id="scan-box">فحص تلقائي...</div>
       
-      <label style="display:flex;align-items:center;gap:8px;padding:12px;background:#0a0a0a;border:1px solid #1f1f1f;border-radius:12px;margin-bottom:16px;cursor:pointer;font-size:13px" id="promo-wrap" hidden>
+      <label style="display:flex;align-items:center;gap:8px;padding:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;margin-bottom:14px;cursor:pointer;font-size:12px" id="promo-wrap" hidden>
         <input type="checkbox" id="promo" style="accent-color:#e1306c" />
-        <span>✨ ترويج المنشور كإعلان (للأعضاء المميزين فقط)</span>
+        <span>✨ ترويج كإعلان (مميز فقط)</span>
       </label>
       
-      <p style="font-size:12px;color:#555;line-height:1.6;text-align:center;padding:16px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid rgba(255,255,255,0.03)">
-        💡 يتم فحص المنشور تلقائياً. المنشورات العادية تنشر حتى لو كانت AI مع وسم. المنتجات المزيفة لا تنشر.
-      </p>
+      <p style="font-size:11px;color:#444;line-height:1.6;text-align:center;padding:14px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid rgba(255,255,255,0.03)">Noir Aurora • فحص ذكي • منتجات مزيفة لا تنشر • AI ينشر مع وسم</p>
     </div>
   </div>
   
@@ -811,133 +392,44 @@
   <script src="js/creator.js?v=30"></script>
   <script src="js/shell.js?v=31"></script>
   <script>
-    // Professional publish - fixed bugs
-    const SUGGEST = ["شورتس", "موسيقى", "صورة", "موضة", "سفر", "فن", "ليل", "القاهرة", "الجيزة", "منتج", "تصوير", "إبداع"];
+    const SUGGEST = ["NoirAurora", "تصوير", "سفر", "فن", "القاهرة", "موضة", "ليل", "إبداع", "منتج", "موسيقى"];
     const me = ZIVV_CORE.author();
-    document.getElementById("me").innerHTML = `<img src="${me.avatar}" alt=""><div class="author-info"><div class="name">${me.name}</div><div class="handle">@${me.user}</div></div>`;
-    
-    let kind = "photo";
-    let videoKind = "";
-    let imageData = "";
-    let videoFile = null;
-    let audioFile = null;
-    let soundFile = null;
-    let muteOriginal = false;
-    let objectUrl = "";
-    let aiChoice = "";
-    let visibility = "public";
-    
-    const fileEl = document.getElementById("file");
-    const drop = document.getElementById("drop");
-    const empty = document.getElementById("drop-empty");
-    const prevImg = document.getElementById("prev-img");
-    const prevVid = document.getElementById("prev-vid");
-    const prevAud = document.getElementById("prev-aud");
-    const clearBtn = document.getElementById("clear-media");
-    const linkBox = document.getElementById("link-box");
-    const caption = document.getElementById("caption");
-    const titleEl = document.getElementById("post-title");
-    const tagsEl = document.getElementById("tags");
-    const vkindBox = document.getElementById("vkind");
-    
-    function toast(msg) {
-      const el = document.getElementById("toast");
-      el.textContent = msg;
-      el.style.display = "block";
-      setTimeout(() => { el.style.display = "none"; }, 3000);
-    }
-    
-    function revoke() {
-      if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = ""; }
-    }
-    
-    function hidePreviews() {
-      prevImg.hidden = true;
-      prevVid.hidden = true;
-      prevVid.pause();
-      prevAud.hidden = true;
-      prevAud.pause();
-      clearBtn.hidden = true;
-      empty.hidden = false;
-      drop.classList.remove("has-media");
-    }
-    
-    function clearMedia() {
-      revoke();
-      imageData = "";
-      videoFile = null;
-      audioFile = null;
-      fileEl.value = "";
-      hidePreviews();
-    }
-    
-    function showMedia() {
-      empty.hidden = true;
-      drop.classList.add("has-media");
-      clearBtn.hidden = false;
-    }
-    
-    function currentTags() {
-      return ZIVV_CORE.parseTags(tagsEl.value);
-    }
-    
-    function setTags(list) {
-      tagsEl.value = list.map((t) => "#" + t.replace(/^#/, "")).join(" ");
-      paintChips();
-      paintDest();
-    }
-    
+    document.getElementById("me").innerHTML = `<img src="${me.avatar}" alt=""><div><div class="name">${me.name}</div><div class="handle">@${me.user}</div></div>`;
+    let kind = "photo", videoKind = "", imageData = "", videoFile = null, audioFile = null, soundFile = null, muteOriginal = false, objectUrl = "", aiChoice = "", visibility = "public";
+    const fileEl = document.getElementById("file"), drop = document.getElementById("drop"), empty = document.getElementById("drop-empty"), prevImg = document.getElementById("prev-img"), prevVid = document.getElementById("prev-vid"), prevAud = document.getElementById("prev-aud"), clearBtn = document.getElementById("clear-media"), linkBox = document.getElementById("link-box"), caption = document.getElementById("caption"), titleEl = document.getElementById("post-title"), tagsEl = document.getElementById("tags"), vkindBox = document.getElementById("vkind");
+    function toast(m) { const el = document.getElementById("toast"); el.textContent = m; el.style.display = "block"; setTimeout(() => el.style.display = "none", 3000); }
+    function revoke() { if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = ""; } }
+    function hidePreviews() { prevImg.hidden = true; prevVid.hidden = true; prevVid.pause(); prevAud.hidden = true; prevAud.pause(); clearBtn.hidden = true; empty.hidden = false; drop.classList.remove("has"); }
+    function clearMedia() { revoke(); imageData = ""; videoFile = null; audioFile = null; fileEl.value = ""; hidePreviews(); }
+    function showMedia() { empty.hidden = true; drop.classList.add("has"); clearBtn.hidden = false; }
+    function currentTags() { return ZIVV_CORE.parseTags(tagsEl.value); }
+    function setTags(list) { tagsEl.value = list.map((t) => "#" + t.replace(/^#/, "")).join(" "); paintChips(); paintDest(); }
     function paintChips() {
       const have = new Set(currentTags().map((t) => ZIVV_CORE.norm(t)));
-      document.getElementById("chips").innerHTML = SUGGEST.map((t) =>
-        `<button type="button" class="chip ${have.has(ZIVV_CORE.norm(t)) ? "active" : ""}" data-tag="${t}">#${t}</button>`
-      ).join("");
+      document.getElementById("chips").innerHTML = SUGGEST.map((t) => `<button type="button" class="chip ${have.has(ZIVV_CORE.norm(t)) ? "active" : ""}" data-tag="${t}">#${t}</button>`).join("");
     }
-    
     function currentDraft() {
-      return {
-        type: kind,
-        videoKind,
-        tags: tagsEl.value,
-        text: caption.value,
-        title: titleEl.value,
-        image: imageData,
-        price: Number(document.getElementById("p-price")?.value) || 0,
-        phone: document.getElementById("p-phone")?.value.trim() || "",
-        specs: document.getElementById("p-specs")?.value.split(/[,،]/).map((s) => s.trim()).filter(Boolean) || []
-      };
+      return { type: kind, videoKind, tags: tagsEl.value, text: caption.value, title: titleEl.value, image: imageData, price: Number(document.getElementById("p-price")?.value) || 0, phone: document.getElementById("p-phone")?.value.trim() || "", specs: document.getElementById("p-specs")?.value.split(/[,،]/).map((s) => s.trim()).filter(Boolean) || [] };
     }
-    
     function paintDest() {
       const review = ZIVV_CORE.reviewPost(currentDraft());
       const labels = ZIVV_CORE.destLabels();
       const names = review.dests.map((d) => labels[d] || d);
-      document.getElementById("dest").innerHTML = `📍 سينشر في: <b>${names.join(" · ") || "استكشاف"}</b>`;
+      document.getElementById("dest").innerHTML = `سينشر في: <b>${names.join(" · ") || "استكشاف"}</b>`;
       const box = document.getElementById("scan-box");
       if (kind === "product") {
         const ps = review.productScan;
-        if (ps && !ps.real) {
-          box.className = "dest-card bad";
-          box.innerHTML = `❌ <b>المنتج لن ينشر.</b> ${ps.note || ""}`;
-        } else {
-          box.className = "dest-card ok";
-          box.innerHTML = `✅ <b>المنتج حقيقي</b> - لا يوجد ذكاء اصطناعي، يمكن نشره`;
-        }
+        if (ps && !ps.real) { box.className = "dest bad"; box.innerHTML = `❌ المنتج لن ينشر: ${ps.note || ""}`; }
+        else { box.className = "dest ok"; box.innerHTML = `✅ منتج حقيقي - يمكن نشره`; }
       } else {
         const flagged = aiChoice === "yes" || !!(review.aiScan && review.aiScan.ai);
-        box.className = flagged ? "dest-card" : "dest-card ok";
-        box.innerHTML = flagged
-          ? `🤖 <b>تم اكتشاف AI</b> - سينشر مع وسم AI ولن يتم حظره`
-          : `✅ <b>محتوى بشري</b> - سينشر بشكل عادي`;
+        box.className = flagged ? "dest" : "dest ok";
+        box.innerHTML = flagged ? `🤖 AI - سينشر مع وسم` : `✅ بشري - نشر عادي`;
       }
     }
-    
     function setKind(next) {
       kind = next;
-      document.querySelectorAll("#types .type-btn").forEach((b) => {
-        b.classList.toggle("active", b.dataset.t === kind);
-      });
-      
+      document.querySelectorAll("#types .t-btn").forEach((b) => b.classList.toggle("active", b.dataset.t === kind));
       const needsFile = kind === "photo" || kind === "video" || kind === "audio";
       drop.style.display = needsFile || kind === "product" ? "grid" : "none";
       linkBox.hidden = kind !== "link";
@@ -945,87 +437,56 @@
       document.getElementById("sound-box").classList.toggle("show", kind === "video");
       document.getElementById("product-box").style.display = kind === "product" ? "block" : "none";
       document.getElementById("ai-box").style.display = kind === "product" ? "none" : "block";
-      
       if (kind === "product") aiChoice = "";
-      document.querySelectorAll("#ai-box .vis-btn").forEach((b) => b.classList.remove("active"));
-      
-      if (kind !== "video") {
-        videoKind = "";
-        soundFile = null;
-        muteOriginal = false;
-        document.getElementById("mute-orig")?.classList.remove("active");
-      }
-      
+      document.querySelectorAll("#ai-box .opt").forEach((b) => b.classList.remove("active"));
+      if (kind !== "video") { videoKind = ""; soundFile = null; muteOriginal = false; document.getElementById("mute-orig")?.classList.remove("active"); }
       if (kind === "product") {
         const tags = currentTags();
         if (!tags.some((t) => ZIVV_CORE.norm(t) === "منتج")) tags.push("منتج");
         setTags(tags);
       }
-      
-      // Fixed: use data-action delegation instead of innerHTML recreation losing listeners
       const dropEmpty = document.getElementById("drop-empty");
-      if (kind === "photo") {
-        dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-icon">🖼️</div><div class="drop-text">اختر صورة عالية الجودة</div><div class="drop-hint">JPG, PNG - حتى 10MB</div><button class="pick-btn" type="button" data-action="pick">اختيار صورة</button></div>`;
-        fileEl.accept = "image/*";
-      } else if (kind === "video") {
-        dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-icon">🎬</div><div class="drop-text">اختر فيديو احترافي</div><div class="drop-hint">MP4, MOV - حتى 100MB</div><button class="pick-btn" type="button" data-action="pick">اختيار فيديو</button></div>`;
-        fileEl.accept = "video/*";
-      } else if (kind === "audio") {
-        dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-icon">🎵</div><div class="drop-text">اختر مقطع صوتي</div><div class="drop-hint">MP3, WAV - مع غلاف مطلوب</div><button class="pick-btn" type="button" data-action="pick">اختيار صوت</button><button class="pick-btn" type="button" data-action="pick-cover" style="background:#141414;margin-top:8px">+ إضافة غلاف</button></div>`;
-        fileEl.accept = "audio/*";
-      } else if (kind === "product") {
-        dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-icon">🛍️</div><div class="drop-text">صورة المنتج الاحترافية</div><div class="drop-hint">صورة واضحة للمنتج</div><button class="pick-btn" type="button" data-action="pick">اختيار صورة المنتج</button></div>`;
-        fileEl.accept = "image/*";
-      }
-      
+      if (kind === "photo") { dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-ic">◐</div><div style="font-size:13px;font-weight:600;color:#aaa">صورة Noir</div><div style="font-size:11px;color:#444">JPG, PNG - حتى 10MB</div><button class="pick" type="button" data-action="pick">اختيار</button></div>`; fileEl.accept = "image/*"; }
+      else if (kind === "video") { dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-ic">▶</div><div style="font-size:13px;font-weight:600;color:#aaa">فيديو Aurora</div><div style="font-size:11px;color:#444">MP4 - حتى 100MB</div><button class="pick" type="button" data-action="pick">اختيار</button></div>`; fileEl.accept = "video/*"; }
+      else if (kind === "audio") { dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-ic">♫</div><div style="font-size:13px;font-weight:600;color:#aaa">صوت + غلاف</div><div style="font-size:11px;color:#444">MP3 مع غلاف مطلوب</div><button class="pick" type="button" data-action="pick">صوت</button><button class="pick" type="button" data-action="pick-cover" style="background:rgba(255,255,255,0.06);color:#fff;margin-top:8px">+ غلاف</button></div>`; fileEl.accept = "audio/*"; }
+      else if (kind === "product") { dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-ic">◫</div><div style="font-size:13px;font-weight:600;color:#aaa">صورة المنتج</div><div style="font-size:11px;color:#444">واضحة واحترافية</div><button class="pick" type="button" data-action="pick">اختيار</button></div>`; fileEl.accept = "image/*"; }
       paintDest();
     }
     
-    // Event delegation - fixes bug where innerHTML recreation loses listeners
     document.getElementById("types").addEventListener("click", (e) => {
       const b = e.target.closest("button[data-t]");
       if (!b) return;
       clearMedia();
       setKind(b.dataset.t);
     });
-    
     vkindBox.addEventListener("click", (e) => {
       const b = e.target.closest("button[data-vk]");
       if (!b) return;
       videoKind = b.dataset.vk;
-      vkindBox.querySelectorAll(".vkind-btn").forEach((x) => x.classList.toggle("active", x === b));
+      vkindBox.querySelectorAll(".opt").forEach((x) => x.classList.toggle("active", x === b));
       const tags = currentTags().filter((t) => ZIVV_CORE.norm(t) !== "شورتس");
       if (videoKind === "short") tags.unshift("شورتس");
       setTags(tags);
     });
-    
     document.getElementById("chips").addEventListener("click", (e) => {
       const b = e.target.closest("button[data-tag]");
       if (!b) return;
       const t = b.dataset.tag;
       const tags = currentTags();
       const i = tags.findIndex((x) => ZIVV_CORE.norm(x) === ZIVV_CORE.norm(t));
-      if (i >= 0) tags.splice(i, 1);
-      else tags.push(t);
+      if (i >= 0) tags.splice(i, 1); else tags.push(t);
       setTags(tags);
     });
-    
-    // Delegated pick buttons - fixes the bug
     drop.addEventListener("click", (e) => {
       if (e.target.id === "clear-media") return;
       const actionBtn = e.target.closest("[data-action]");
       if (actionBtn) {
         const action = actionBtn.dataset.action;
-        if (action === "pick") {
-          e.stopPropagation();
-          fileEl.click();
-          return;
-        }
+        if (action === "pick") { e.stopPropagation(); fileEl.click(); return; }
         if (action === "pick-cover") {
           e.stopPropagation();
           const inp = document.createElement("input");
-          inp.type = "file";
-          inp.accept = "image/*";
+          inp.type = "file"; inp.accept = "image/*";
           inp.onchange = () => {
             const f = inp.files && inp.files[0];
             if (!f) return;
@@ -1034,7 +495,7 @@
               imageData = data;
               const cov = document.getElementById("prev-cover");
               if (cov) { cov.src = data; cov.style.display = "block"; }
-              toast("تم إضافة غلاف الأغنية ✓");
+              toast("تم إضافة الغلاف ✓");
               paintDest();
             });
             r.readAsDataURL(f);
@@ -1043,33 +504,20 @@
           return;
         }
       }
-      if (!drop.classList.contains("has-media") && kind !== "text" && kind !== "link") {
-        fileEl.click();
-      }
+      if (!drop.classList.contains("has") && kind !== "text" && kind !== "link") fileEl.click();
     });
-    
     const soundFileEl = document.getElementById("sound-file");
     document.getElementById("add-sound").onclick = () => soundFileEl.click();
-    document.getElementById("mute-orig").onclick = () => {
-      muteOriginal = !muteOriginal;
-      document.getElementById("mute-orig").classList.toggle("active", muteOriginal);
-      paintSound();
-    };
-    soundFileEl.onchange = () => {
-      const f = soundFileEl.files && soundFileEl.files[0];
-      if (!f) return;
-      soundFile = f;
-      paintSound();
-    };
+    document.getElementById("mute-orig").onclick = () => { muteOriginal = !muteOriginal; document.getElementById("mute-orig").classList.toggle("active", muteOriginal); paintSound(); };
+    soundFileEl.onchange = () => { const f = soundFileEl.files && soundFileEl.files[0]; if (!f) return; soundFile = f; paintSound(); };
     function paintSound() {
       const el = document.getElementById("sound-name");
-      if (soundFile && muteOriginal) el.textContent = "🔇 الأصلي مكتوم · سيتم تركيب: " + soundFile.name;
-      else if (soundFile) el.textContent = "🔊 الأصلي + إضافي: " + soundFile.name;
-      else if (muteOriginal) el.textContent = "🔇 الأصلي سيتم كتمه - اختر بديل";
-      else el.textContent = "🔊 الأصلي سيبقى - يمكنك إضافة صوت";
+      if (soundFile && muteOriginal) el.textContent = "مكتوم · " + soundFile.name;
+      else if (soundFile) el.textContent = "أصلي + " + soundFile.name;
+      else if (muteOriginal) el.textContent = "سيتم كتمه";
+      else el.textContent = "الأصلي سيبقى";
     }
     clearBtn.onclick = (e) => { e.stopPropagation(); clearMedia(); };
-    
     function compress(dataUrl, max, cb) {
       const img = new Image();
       img.onload = () => {
@@ -1083,27 +531,19 @@
       img.onerror = () => cb(dataUrl);
       img.src = dataUrl;
     }
-    
     function posterFromVideo(file) {
       return new Promise((resolve) => {
         const url = URL.createObjectURL(file);
         const v = document.createElement("video");
-        v.muted = true;
-        v.playsInline = true;
-        v.preload = "metadata";
-        v.src = url;
+        v.muted = true; v.playsInline = true; v.preload = "metadata"; v.src = url;
         const done = (data) => { URL.revokeObjectURL(url); resolve(data || ""); };
-        v.onloadeddata = () => {
-          try { v.currentTime = Math.min(0.3, (v.duration || 1) * 0.1); } catch { done(""); }
-        };
+        v.onloadeddata = () => { try { v.currentTime = Math.min(0.3, (v.duration || 1) * 0.1); } catch { done(""); } };
         v.onseeked = () => {
           try {
             const c = document.createElement("canvas");
-            const w = v.videoWidth || 720;
-            const h = v.videoHeight || 1280;
+            const w = v.videoWidth || 720; const h = v.videoHeight || 1280;
             const scale = Math.min(1, 900 / Math.max(w, h));
-            c.width = Math.round(w * scale);
-            c.height = Math.round(h * scale);
+            c.width = Math.round(w * scale); c.height = Math.round(h * scale);
             c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
             done(c.toDataURL("image/jpeg", 0.8));
           } catch { done(""); }
@@ -1112,99 +552,53 @@
         setTimeout(() => done(""), 4000);
       });
     }
-    
     fileEl.onchange = () => {
       const file = fileEl.files && fileEl.files[0];
       if (!file) return;
-      revoke();
-      objectUrl = URL.createObjectURL(file);
-      hidePreviews();
+      revoke(); objectUrl = URL.createObjectURL(file); hidePreviews();
       if (file.type.startsWith("image/")) {
         if (kind !== "product") setKind("photo");
         const r = new FileReader();
-        r.onload = () => compress(r.result, 1200, (data) => {
-          imageData = data;
-          videoFile = null;
-          audioFile = null;
-          prevImg.src = data;
-          prevImg.hidden = false;
-          showMedia();
-        });
+        r.onload = () => compress(r.result, 1200, (data) => { imageData = data; videoFile = null; audioFile = null; prevImg.src = data; prevImg.hidden = false; showMedia(); });
         r.readAsDataURL(file);
       } else if (file.type.startsWith("video/")) {
-        setKind("video");
-        videoFile = file;
-        imageData = "";
-        audioFile = null;
-        prevVid.src = objectUrl;
-        prevVid.hidden = false;
-        showMedia();
-        posterFromVideo(file).then((p) => { if (p) imageData = p; });
+        setKind("video"); videoFile = file; imageData = ""; audioFile = null; prevVid.src = objectUrl; prevVid.hidden = false; showMedia(); posterFromVideo(file).then((p) => { if (p) imageData = p; });
       } else if (file.type.startsWith("audio/")) {
-        setKind("audio");
-        audioFile = file;
-        videoFile = null;
-        prevAud.src = objectUrl;
-        prevAud.hidden = false;
-        showMedia();
+        setKind("audio"); audioFile = file; videoFile = null; prevAud.src = objectUrl; prevAud.hidden = false; showMedia();
         const cov = document.getElementById("prev-cover");
         if (cov && imageData) { cov.src = imageData; cov.style.display = "block"; }
-      } else {
-        toast("الملف غير مدعوم");
-      }
+      } else { toast("الملف غير مدعوم"); }
     };
-    
-    // Drag & drop
-    drop.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      drop.classList.add("dragover");
-    });
-    drop.addEventListener("dragleave", () => drop.classList.remove("dragover"));
-    drop.addEventListener("drop", (e) => {
-      e.preventDefault();
-      drop.classList.remove("dragover");
-      const file = e.dataTransfer.files[0];
-      if (!file) return;
-      fileEl.files = e.dataTransfer.files;
-      fileEl.dispatchEvent(new Event("change"));
-    });
-    
-    caption.oninput = () => {
-      document.getElementById("n").textContent = caption.value.length;
-      paintDest();
-    };
+    drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.style.borderColor = "rgba(225,48,108,0.4)"; });
+    drop.addEventListener("dragleave", () => drop.style.borderColor = "rgba(255,255,255,0.08)");
+    drop.addEventListener("drop", (e) => { e.preventDefault(); drop.style.borderColor = "rgba(255,255,255,0.08)"; const file = e.dataTransfer.files[0]; if (!file) return; fileEl.files = e.dataTransfer.files; fileEl.dispatchEvent(new Event("change")); });
+    caption.oninput = () => { document.getElementById("n").textContent = caption.value.length; paintDest(); };
     titleEl.oninput = paintDest;
     tagsEl.oninput = () => { paintChips(); paintDest(); };
     document.getElementById("p-price")?.addEventListener("input", paintDest);
     document.getElementById("p-phone")?.addEventListener("input", paintDest);
     document.getElementById("p-specs")?.addEventListener("input", paintDest);
-    
     document.getElementById("vis-box").addEventListener("click", (e) => {
       const b = e.target.closest("button[data-vis]");
       if (!b) return;
       visibility = b.dataset.vis;
-      document.querySelectorAll("#vis-box .vis-btn").forEach((x) => x.classList.toggle("active", x === b));
+      document.querySelectorAll("#vis-box .opt").forEach((x) => x.classList.toggle("active", x === b));
       const dest = document.getElementById("dest");
-      if (visibility === "friends") dest.innerHTML = "🔒 سينشر في: <b>الخاص - الأصدقاء فقط</b>";
+      if (visibility === "friends") dest.innerHTML = "🔒 الخاص - الأصدقاء فقط";
       else paintDest();
     });
-    
     document.getElementById("ai-box").addEventListener("click", (e) => {
       const b = e.target.closest("button[data-ai]");
       if (!b) return;
       aiChoice = b.dataset.ai;
-      document.querySelectorAll("#ai-box .vis-btn").forEach((x) => x.classList.toggle("active", x === b));
+      document.querySelectorAll("#ai-box .opt").forEach((x) => x.classList.toggle("active", x === b));
       paintDest();
     });
-    
     const linkUrl = document.getElementById("link-url");
     function paintLink() {
       const raw = linkUrl.value.trim();
       let href = "";
-      try {
-        const u = new URL(raw);
-        if (u.protocol === "http:" || u.protocol === "https:") href = u.href;
-      } catch {}
+      try { const u = new URL(raw); if (u.protocol === "http:" || u.protocol === "https:") href = u.href; } catch {}
       const card = document.getElementById("link-card");
       if (!href) { card.hidden = true; return ""; }
       let host = "";
@@ -1215,21 +609,11 @@
       return href;
     }
     linkUrl.oninput = paintLink;
-    
     function safeLink(raw) {
-      try {
-        const u = new URL(String(raw || "").trim());
-        if (u.protocol === "http:" || u.protocol === "https:") return u.href;
-      } catch {}
+      try { const u = new URL(String(raw || "").trim()); if (u.protocol === "http:" || u.protocol === "https:") return u.href; } catch {}
       return "";
     }
-    
-    function resetBtn() {
-      const btn = document.getElementById("go");
-      btn.disabled = false;
-      btn.innerHTML = `<span>نشر</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
-    }
-    
+    function resetBtn() { const btn = document.getElementById("go"); btn.disabled = false; btn.innerHTML = "<span>نشر</span>"; }
     document.getElementById("go").onclick = async () => {
       const title = titleEl.value.trim();
       const text = caption.value.trim();
@@ -1237,197 +621,77 @@
       const href = kind === "link" ? safeLink(linkUrl.value) : "";
       const ban = document.getElementById("ban");
       ban.classList.remove("show");
-      
-      if (kind === "photo" && !imageData) return toast("اختر صورة أولاً 📸");
-      if (kind === "video" && !videoFile) return toast("اختر فيديو أولاً 🎬");
-      if (kind === "video" && !videoKind) return toast("حدد نوع الفيديو: شورتس أم عادي؟");
-      if (kind === "audio" && !audioFile) return toast("اختر ملف صوتي أولاً 🎵");
-      if (kind === "audio" && !imageData) return toast("غلاف الأغنية مطلوب 🖼️");
-      if (kind === "link" && !href) return toast("ضع رابط صحيح يبدأ بـ https:// 🔗");
-      if (kind === "product" && !imageData) return toast("ضع صورة للمنتج 🛍️");
-      if (kind === "product" && !document.getElementById("p-phone").value.trim()) return toast("ضع رقم تواصل للمنتج 📞");
-      if (!title) return toast("اكتب عنوان جذاب للمنشور ✍️");
-      if (!text && kind === "text") return toast("اكتب وصف المنشور 📝");
-      if (!text && kind !== "link") return toast("اكتب وصف للمنشور 💬");
-      if (!currentTags().length) return toast("أضف هاشتاج واحد على الأقل #️⃣");
-      
-      const draft = {
-        title,
-        text: text || (kind === "link" ? href : ""),
-        tags: tagsEl.value,
-        type: kind,
-        videoKind: kind === "video" ? videoKind : "",
-        place: place || "",
-        link: href,
-      };
+      if (kind === "photo" && !imageData) return toast("اختر صورة أولاً");
+      if (kind === "video" && !videoFile) return toast("اختر فيديو");
+      if (kind === "video" && !videoKind) return toast("حدد نوع الفيديو");
+      if (kind === "audio" && !audioFile) return toast("اختر صوت");
+      if (kind === "audio" && !imageData) return toast("الغلاف مطلوب");
+      if (kind === "link" && !href) return toast("ضع رابط صحيح");
+      if (kind === "product" && !imageData) return toast("صورة المنتج");
+      if (kind === "product" && !document.getElementById("p-phone").value.trim()) return toast("رقم التواصل");
+      if (!title) return toast("اكتب عنوان");
+      if (!text && kind === "text") return toast("اكتب وصف");
+      if (!text && kind !== "link") return toast("اكتب وصف");
+      if (!currentTags().length) return toast("أضف هاشتاج");
+      const draft = { title, text: text || (kind === "link" ? href : ""), tags: tagsEl.value, type: kind, videoKind: kind === "video" ? videoKind : "", place: place || "", link: href };
       const review = ZIVV_CORE.reviewPost(draft);
-      if (review.scan.level === "ban") {
-        ban.textContent = review.scan.note;
-        ban.classList.add("show");
-        ZIVV_CORE.addPost(draft);
-        toast("المنشور مخالف وتم حذفه");
-        return;
-      }
-      if (review.scan.level === "warn") {
-        if (!confirm(review.scan.note + "\n\nهل تريد النشر رغم التحذير؟")) return;
-      }
-      
+      if (review.scan.level === "ban") { ban.textContent = review.scan.note; ban.classList.add("show"); ZIVV_CORE.addPost(draft); toast("المنشور مخالف"); return; }
+      if (review.scan.level === "warn") { if (!confirm(review.scan.note + "\n\nنشر رغم التحذير؟")) return; }
       const btn = document.getElementById("go");
       btn.disabled = true;
-      btn.innerHTML = `<span>جاري النشر...</span>`;
-      
-      const partial = {
-        title,
-        text: draft.text,
-        tags: tagsEl.value,
-        type: kind,
-        videoKind: draft.videoKind,
-        place: place || "",
-        ai: kind !== "product" && (aiChoice === "yes" || !!(review.aiScan && review.aiScan.ai)),
-        promoted: !!(window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser() && document.getElementById("promo").checked),
-        visibility: visibility,
-        priv: visibility === "friends",
-      };
-      
+      btn.innerHTML = "<span>جاري النشر...</span>";
+      const partial = { title, text: draft.text, tags: tagsEl.value, type: kind, videoKind: draft.videoKind, place: place || "", ai: kind !== "product" && (aiChoice === "yes" || !!(review.aiScan && review.aiScan.ai)), promoted: !!(window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser() && document.getElementById("promo").checked), visibility: visibility, priv: visibility === "friends" };
       async function cloud(src, name, mime) {
         if (!src) return "";
         if (/^https?:/i.test(src) || String(src).indexOf("posts/") === 0 || String(src).indexOf("brand/") === 0) return src;
-        if (window.ZIVV_DB && ZIVV_DB.uploadMedia) {
-          const url = await ZIVV_DB.uploadMedia(src, name, mime);
-          if (url && /^https?:/i.test(url)) return url;
-        }
-        try {
-          const r = await fetch("/api/upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: name || "file", mime: mime || "", data: src })
-          });
-          const j = await r.json();
-          if (j && j.url) return j.url;
-        } catch {}
+        if (window.ZIVV_DB && ZIVV_DB.uploadMedia) { const url = await ZIVV_DB.uploadMedia(src, name, mime); if (url && /^https?:/i.test(url)) return url; }
+        try { const r = await fetch("/api/upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name || "file", mime: mime || "", data: src }) }); const j = await r.json(); if (j && j.url) return j.url; } catch {}
         return "";
       }
-      
       try {
-        if (kind === "photo") {
-          btn.innerHTML = `<span>رفع الصورة...</span>`;
-          const url = await cloud(imageData, "photo");
-          if (!url) throw new Error("no image url");
-          partial.image = url;
-        }
+        if (kind === "photo") { btn.innerHTML = "<span>رفع الصورة...</span>"; const url = await cloud(imageData, "photo"); if (!url) throw new Error("no image"); partial.image = url; }
         else if (kind === "video") {
-          btn.innerHTML = `<span>رفع الفيديو...</span>`;
-          if (imageData) {
-            const poster = await cloud(imageData, "poster");
-            if (poster) partial.image = poster;
-          }
+          btn.innerHTML = "<span>رفع الفيديو...</span>";
+          if (imageData) { const poster = await cloud(imageData, "poster"); if (poster) partial.image = poster; }
           if (videoFile) {
-            if (window.ZIVV_MEDIA) {
-              const id = "vid_" + Date.now();
-              await ZIVV_MEDIA.put(id, videoFile.slice(0, videoFile.size, videoFile.type || "video/mp4"));
-              partial.videoId = id;
-            }
-            if (videoFile.size < 3500000) {
-              const url = await cloud(videoFile, "video", videoFile.type || "video/mp4");
-              if (url) partial.videoId = url;
-            }
+            if (window.ZIVV_MEDIA) { const id = "vid_" + Date.now(); await ZIVV_MEDIA.put(id, videoFile.slice(0, videoFile.size, videoFile.type || "video/mp4")); partial.videoId = id; }
+            if (videoFile.size < 3500000) { const url = await cloud(videoFile, "video", videoFile.type || "video/mp4"); if (url) partial.videoId = url; }
             partial.type = "video";
           }
           if (!partial.videoId && !partial.image) throw new Error("no video");
         } else if (kind === "audio") {
-          btn.innerHTML = `<span>رفع الصوت...</span>`;
+          btn.innerHTML = "<span>رفع الصوت...</span>";
           if (audioFile) {
-            if (window.ZIVV_MEDIA) {
-              const id = "aud_" + Date.now();
-              await ZIVV_MEDIA.put(id, audioFile);
-              partial.audioId = id;
-            }
-            if (audioFile.size < 3500000) {
-              const url = await cloud(audioFile, "audio", audioFile.type || "audio/mpeg");
-              if (url) partial.audioId = url;
-            }
+            if (window.ZIVV_MEDIA) { const id = "aud_" + Date.now(); await ZIVV_MEDIA.put(id, audioFile); partial.audioId = id; }
+            if (audioFile.size < 3500000) { const url = await cloud(audioFile, "audio", audioFile.type || "audio/mpeg"); if (url) partial.audioId = url; }
           }
-          if (imageData) {
-            const cover = await cloud(imageData, "cover");
-            if (!cover) throw new Error("no cover");
-            partial.image = cover;
-          }
-        } else if (kind === "link") {
-          partial.link = href;
-          try { partial.linkTitle = new URL(href).hostname.replace(/^www\./, ""); } catch {}
-        } else if (kind === "product") {
-          btn.innerHTML = `<span>رفع صورة المنتج...</span>`;
-          const url = await cloud(imageData, "product");
-          if (!url) throw new Error("no product image");
-          partial.image = url;
+          if (imageData) { const cover = await cloud(imageData, "cover"); if (!cover) throw new Error("no cover"); partial.image = cover; }
+        } else if (kind === "link") { partial.link = href; try { partial.linkTitle = new URL(href).hostname.replace(/^www\./, ""); } catch {} }
+        else if (kind === "product") {
+          btn.innerHTML = "<span>رفع المنتج...</span>";
+          const url = await cloud(imageData, "product"); if (!url) throw new Error("no product"); partial.image = url;
           partial.price = Number(document.getElementById("p-price").value) || 0;
           partial.phone = document.getElementById("p-phone").value.trim();
           partial.specs = document.getElementById("p-specs").value.split(/[,،]/).map((s) => s.trim()).filter(Boolean);
         }
-        
         if (kind === "video") {
           partial.muteOriginal = !!muteOriginal;
-          if (soundFile && window.ZIVV_MEDIA) {
-            const sid = "snd_" + Date.now();
-            await ZIVV_MEDIA.put(sid, soundFile);
-            partial.soundId = sid;
-            partial.soundName = soundFile.name;
-          }
+          if (soundFile && window.ZIVV_MEDIA) { const sid = "snd_" + Date.now(); await ZIVV_MEDIA.put(sid, soundFile); partial.soundId = sid; partial.soundName = soundFile.name; }
         }
-        
         if (kind === "product") {
           const productScan = ZIVV_CORE.scanProductReal(partial);
-          if (!productScan.real) {
-            ban.textContent = productScan.note || "المنتج مرفوض";
-            ban.classList.add("show");
-            toast("المنتج لم ينشر - غير حقيقي");
-            resetBtn();
-            return;
-          }
+          if (!productScan.real) { ban.textContent = productScan.note || "مرفوض"; ban.classList.add("show"); toast("المنتج مرفوض"); resetBtn(); return; }
           const a = ZIVV_CORE.author();
-          ZIVV_STORE.addUserProduct({
-            id: "pru_" + Date.now(),
-            title,
-            price: Number(document.getElementById("p-price").value) || 0,
-            cat: "عام",
-            seller: a.name,
-            sellerUser: a.user,
-            phone: document.getElementById("p-phone").value.trim(),
-            image: partial.image || "posts/fashion.jpg",
-            desc: text,
-            specs: document.getElementById("p-specs").value.split(/[,،]/).map((s) => s.trim()).filter(Boolean),
-          });
+          ZIVV_STORE.addUserProduct({ id: "pru_" + Date.now(), title, price: Number(document.getElementById("p-price").value) || 0, cat: "عام", seller: a.name, sellerUser: a.user, phone: document.getElementById("p-phone").value.trim(), image: partial.image || "posts/fashion.jpg", desc: text, specs: document.getElementById("p-specs").value.split(/[,،]/).map((s) => s.trim()).filter(Boolean) });
         }
-        
         const made = ZIVV_CORE.addPost(partial);
-        if (made && made.blocked) {
-          ban.textContent = made.note || "المنشور محذوف";
-          ban.classList.add("show");
-          resetBtn();
-          return;
-        }
-        
-        toast("تم النشر بنجاح! 🎉");
-        const go = kind === "product"
-          ? "store.html"
-          : (made.dests || []).includes("reels") && !(made.dests || []).includes("home")
-            ? "reels.html"
-            : (made.dests || []).includes("music") && kind === "audio"
-              ? "music.html"
-              : "home.html";
-        
+        if (made && made.blocked) { ban.textContent = made.note || "محذوف"; ban.classList.add("show"); resetBtn(); return; }
+        toast("تم النشر • Noir Aurora 🎉");
+        const go = kind === "product" ? "store.html" : (made.dests || []).includes("reels") && !(made.dests || []).includes("home") ? "reels.html" : (made.dests || []).includes("music") && kind === "audio" ? "music.html" : "home.html";
         setTimeout(() => location.href = go, 600);
-      } catch (err) {
-        resetBtn();
-        toast("تعذر حفظ الملف - جرب ملف أصغر");
-        console.error(err);
-      }
+      } catch (err) { resetBtn(); toast("تعذر الحفظ - جرب ملف أصغر"); console.error(err); }
     };
-    
-    if (window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser && ZIVV_CREATOR.isGoldUser()) {
-      document.getElementById("promo-wrap").hidden = false;
-    }
-    
+    if (window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser && ZIVV_CREATOR.isGoldUser()) document.getElementById("promo-wrap").hidden = false;
     paintChips();
     setKind("photo");
   </script>
