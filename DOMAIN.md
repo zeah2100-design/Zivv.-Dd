@@ -24,14 +24,29 @@ https://zeah2100-design.github.io/Zivv.-Dd/
 
 ---
 
-## كيفية تفعيل GitHub Pages (خطوة بخطوة)
+## كيفية تفعيل GitHub Pages (خطوة بخطوة) - جاهز الآن
 
-### من GitHub Website:
-1. افتح https://github.com/zeah2100-design/Zivv.-Dd/settings/pages
+### الطريقة السريعة (دقيقة واحدة):
+1. افتح: **https://github.com/zeah2100-design/Zivv.-Dd/settings/pages**
 2. في `Build and deployment`:
-   - Source: `GitHub Actions` (احنا عملنا workflow)
-   - أو `Deploy from a branch` -> Branch: `main` -> `/ (root)`
-3. احفظ - بعد دقيقة هيظهر لينك الموقع
+   - Source: اختر `Deploy from a branch`
+   - Branch: `main` + `/ (root)` + Save
+   - **أو** Source: `GitHub Actions` لو هتستخدم الـ workflow
+3. انتظر دقيقة - هيظهر لينك:
+   ```
+   https://zeah2100-design.github.io/Zivv.-Dd/
+   ```
+   ✅ ده دومينك المجاني من GitHub!
+
+### لو عايز GitHub Actions (أفضل):
+1. افتح: https://github.com/zeah2100-design/Zivv.-Dd/new/main?filename=.github/workflows/pages.yml
+2. انسخ محتوى ملف `pages-workflow.yml` اللي في المشروع
+3. اعمل Commit
+4. روح Settings > Pages > Source: GitHub Actions
+5. الموقع هينتشر تلقائي على نفس الدومين
+
+### ملف الـ workflow جاهز في المشروع:
+- `pages-workflow.yml` في الروت - انسخه لـ `.github/workflows/pages.yml`
 
 ### الدومين هيشتغل بقاعدة بيانات حقيقية!
 حتى على GitHub Pages (static فقط)، الموقع بيستخدم:
