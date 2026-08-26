@@ -1,0 +1,9 @@
+# لو عندك دومين مخصص، انسخ الملف ده لـ CNAME وحط الدومين جواه
+# مثال:
+# zivv.app
+# أو
+# www.zivv.app
+
+# بعد كده روح Settings > Pages وحط نفس الدومين
+# واعمل DNS record:
+# CNAME @ -> zeah2100-design.github.io

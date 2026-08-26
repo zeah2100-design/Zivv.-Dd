@@ -14,3 +14,5 @@ data/*.db-wal
 uploads/
 .vscode/
 .idea/
+*.db-shm
+*.db-wal
