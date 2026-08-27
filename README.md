@@ -68,3 +68,4 @@ npm run dev       # http://localhost:8787
 ### تفاصيل أكثر
 
 شوف `README_DB.md` و `REAL_DB_SUMMARY.md`
+# ZIVV v3.1 - Force redeploy Thu Aug 27 13:06:41 UTC 2026
