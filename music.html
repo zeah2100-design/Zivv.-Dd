@@ -8,98 +8,89 @@
     <link rel="stylesheet" href="css/shell.css" />
     <link rel="stylesheet" href="css/professional.css" />
     <style>
+
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body {
-        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-        background: #000;
-        color: #f5f5f5;
+        font-family: 'Cairo', "Segoe UI", Tahoma, Arial, sans-serif;
+        background: #f5f6f8;
+        color: #101418;
         min-height: 100dvh;
         padding-bottom: 118px;
       }
       .wrap { width: min(640px, 100%); margin: 0 auto; padding: 12px 14px 20px; }
-      h1 {
-        font-size: 26px;
-        font-weight: 800;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-        -webkit-background-clip: text; background-clip: text; color: transparent;
-      }
-      .sub { color: #888; font-size: 13px; margin: 4px 0 12px; }
+      h1 { font-size: 26px; font-weight: 800; color: #101418; }
+      .sub { color: #8b95a1; font-size: 13px; margin: 4px 0 12px; }
       .find { display: flex; gap: 8px; margin-bottom: 12px; }
       .find input {
-        flex: 1; background: #121212; border: 1px solid #262626; color: #fff;
-        border-radius: 999px; padding: 10px 14px; outline: none;
+        flex: 1; background: #ffffff; border: 1px solid #d9dde3; color: #101418;
+        border-radius: 999px; padding: 10px 14px; outline: none; font-family: inherit;
       }
       .find input:focus { border-color: #e1306c; }
       .chips { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px; }
       .chips::-webkit-scrollbar { display: none; }
       .chips button {
-        flex: 0 0 auto; border: 1px solid #262626; background: #111; color: #ddd;
-        border-radius: 999px; padding: 7px 14px; font-size: 13px;
+        flex: 0 0 auto; border: 1px solid #e6e8ec; background: #ffffff; color: #5b6470;
+        border-radius: 999px; padding: 7px 14px; font-size: 13px; cursor: pointer; font-family: inherit;
       }
-      .chips button.on { border-color: #e1306c; color: #fff; background: #1a0b12; }
+      .chips button.on { border-color: #111318; background: #111318; color: #fff; }
       .hero {
         position: relative; border-radius: 16px; overflow: hidden;
         min-height: 180px; margin-bottom: 18px;
       }
       .hero img { width: 100%; height: 200px; object-fit: cover; display: block; filter: brightness(.55); }
-      .hero .info { position: absolute; inset: auto 12px 12px 12px; }
-      .hero .k { font-size: 11px; color: #fcaf45; font-weight: 800; letter-spacing: .08em; }
+      .hero .info { position: absolute; inset: auto 12px 12px 12px; color: #fff; }
+      .hero .k { font-size: 11px; color: #ffd7a8; font-weight: 800; letter-spacing: .08em; }
       .hero h2 { font-size: 22px; margin: 4px 0; }
       .playbig {
         border: 0; border-radius: 999px; padding: 8px 16px; font-weight: 800; color: #fff;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        background: #111318; cursor: pointer; font-family: inherit;
       }
       h3 { font-size: 16px; margin: 6px 0 10px; }
       .rail { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; }
       .rail::-webkit-scrollbar { display: none; }
-      .card { flex: 0 0 132px; background: none; border: 0; color: #fff; text-align: start; }
+      .card { flex: 0 0 132px; background: none; border: 0; color: #101418; text-align: start; }
       .card img, .card .ph {
         width: 132px; height: 132px; border-radius: 12px; object-fit: cover; display: block;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        background: #111318;
       }
-      .card .ph { display: grid; place-items: center; font-size: 36px; }
+      .card .ph { display: grid; place-items: center; font-size: 36px; color: #fff; }
       .card b { display: block; font-size: 13px; margin-top: 6px; }
-      .card span { color: #888; font-size: 11px; }
+      .card span { color: #8b95a1; font-size: 11px; }
       .song {
         display: flex; gap: 10px; align-items: center; width: 100%;
-        background: none; border: 0; color: #fff; text-align: start;
-        padding: 8px 0; border-bottom: 1px solid #1a1a1a;
+        background: none; border: 0; color: #101418; text-align: start;
+        padding: 8px 0; border-bottom: 1px solid #eef0f3; cursor: pointer; font-family: inherit;
       }
       .song img, .song .ph {
         width: 48px; height: 48px; border-radius: 8px; object-fit: cover;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        background: #111318; color: #fff;
         display: grid; place-items: center; flex: 0 0 auto;
       }
       .song.on b { color: #e1306c; }
-      .song .meta { flex: 1; min-width: 0; background: none; border: 0; color: #fff; text-align: start; }
+      .song .meta { flex: 1; min-width: 0; background: none; border: 0; color: #101418; text-align: start; }
       .song .meta b, .song .meta span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .song .meta span { color: #888; font-size: 12px; }
+      .song .meta span { color: #8b95a1; font-size: 12px; }
       .song .acts { display: flex; gap: 4px; }
       .song .acts button {
-        background: #151515; border: 1px solid #2a2a2a; color: #ddd;
-        border-radius: 8px; padding: 6px 8px; font-size: 12px;
+        background: #ffffff; border: 1px solid #e6e8ec; color: #5b6470;
+        border-radius: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer; font-family: inherit;
       }
-      .song .acts button.on { color: #e1306c; border-color: #e1306c; }
-      .mute { color: #888; font-size: 13px; }
+      .song .acts button.on { color: #e1306c; border-color: #e1306c; background: rgba(225,48,108,.06); }
+      .mute { color: #8b95a1; font-size: 13px; }
       .now {
         position: fixed; left: 8px; right: 8px; bottom: 10px; z-index: 40;
         border-radius: 14px; overflow: hidden;
-        background: linear-gradient(180deg, #2a1a14 0%, #161016 70%, #0c0c0c 100%);
-        border: 1px solid #3a2420;
-        box-shadow: 0 10px 28px rgba(0,0,0,.45);
+        background: #ffffff;
+        border: 1px solid #e6e8ec;
+        box-shadow: 0 12px 32px rgba(16,24,40,.16);
         touch-action: pan-y;
       }
-      .seek {
-        height: 14px; margin: 0; position: relative; cursor: pointer;
-      }
+      .seek { height: 14px; margin: 0; position: relative; cursor: pointer; }
       .seek .track {
         position: absolute; left: 10px; right: 10px; top: 6px; height: 3px;
-        background: rgba(255,255,255,.18); border-radius: 99px; overflow: hidden;
+        background: #e9ecef; border-radius: 99px; overflow: hidden;
       }
-      .seek .fill {
-        height: 100%; width: 0;
-        background: linear-gradient(90deg, #fcaf45, #e1306c);
-      }
+      .seek .fill { height: 100%; width: 0; background: #e1306c; }
       .swipe { overflow: hidden; }
       .now-row {
         display: flex; align-items: center; gap: 10px;
@@ -108,31 +99,31 @@
       }
       .now img, .now .ph {
         width: 48px; height: 48px; border-radius: 8px; object-fit: cover;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        background: #111318; color: #fff;
         display: grid; place-items: center; flex: 0 0 auto;
       }
       .now .t { flex: 1; min-width: 0; }
       .now .t b, .now .t span {
         display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
-      .now .t span { color: #b9b9b9; font-size: 12px; }
+      .now .t span { color: #8b95a1; font-size: 12px; }
       .ctrls { display: flex; gap: 2px; align-items: center; flex: 0 0 auto; }
       .ctrls button {
-        width: 36px; height: 36px; border: 0; background: none; color: #fff; font-size: 16px;
+        width: 36px; height: 36px; border: 0; background: none; color: #101418; font-size: 16px; cursor: pointer;
       }
-      .ctrls button.on { color: #fcaf45; }
+      .ctrls button.on { color: #b45309; }
       .ctrls #like.on { color: #e1306c; }
       .ctrls .go {
         width: 40px; height: 40px; border-radius: 50%;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        background: #111318; color: #fff;
       }
-      .hint { color: #777; font-size: 11px; text-align: center; padding: 0 10px 8px; }
+      .hint { color: #8b95a1; font-size: 11px; text-align: center; padding: 0 10px 8px; }
       .toast {
         position: fixed; bottom: 130px; left: 50%; transform: translateX(-50%);
-        background: #1a1a1a; border: 1px solid #333; color: #fff;
+        background: #111318; border: 1px solid #111318; color: #fff;
         padding: 8px 14px; border-radius: 999px; font-size: 13px; z-index: 70; display: none;
       }
-    </style>
+  </style>
   </head>
   <body>
     <main class="wrap">

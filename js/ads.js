@@ -203,12 +203,12 @@
     const s = document.createElement("style");
     s.id = "zivv-ads-css";
     s.textContent =
-      ".zivv-ad-sticky{position:fixed;left:0;right:0;bottom:62px;z-index:11;background:#0a0a0a;border-top:1px solid #262626;min-height:70px}" +
+      ".zivv-ad-sticky{position:fixed;left:0;right:0;bottom:62px;z-index:11;background:#ffffff;border-top:1px solid #e6e8ec;min-height:70px}" +
       ".zivv-ad-sticky span{position:absolute;top:4px;inset-inline-start:8px;font-size:10px;color:#9ad67a}" +
       ".zivv-ad-sticky .ad-slot{min-height:70px}" +
       "body.has-ad-sticky{padding-bottom:140px}" +
-      ".ad-slot{min-height:250px;background:#111}" +
-      ".ad-clip{display:grid;place-items:center;background:#0a0a0a}" +
+      ".ad-slot{min-height:250px;background:#f1f3f5;border:1px solid #e6e8ec;border-radius:12px}" +
+      ".ad-clip{display:grid;place-items:center;background:#f1f3f5}" +
       ".ad-clip .ad-slot{width:min(360px,92%);min-height:250px}";
     document.head.appendChild(s);
   }

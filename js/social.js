@@ -1,19 +1,19 @@
 (function () {
   const css = `
-    .zivv-scrim { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:80; }
+    .zivv-scrim { display:none; position:fixed; inset:0; background:rgba(16,24,40,.35); z-index:80; }
     .zivv-scrim.open { display:block; }
     .zivv-sheet {
       display:none; position:fixed; left:0; right:0; bottom:0; z-index:81;
-      background:#121212; border-radius:16px 16px 0 0; max-height:72dvh;
-      direction:rtl; color:#fff; font-family:"Segoe UI", Tahoma, Arial, sans-serif;
-      box-shadow:0 -12px 40px rgba(0,0,0,.5);
+      background:#ffffff; border-radius:16px 16px 0 0; max-height:72dvh;
+      direction:rtl; color:#101418; font-family:"Segoe UI", Tahoma, Arial, sans-serif;
+      box-shadow:0 -12px 40px rgba(16,24,40,.18);
     }
     .zivv-sheet.open { display:flex; flex-direction:column; }
     .zivv-sheet .hd {
       display:flex; align-items:center; justify-content:space-between;
-      padding:12px 14px; border-bottom:1px solid #262626; font-weight:800;
+      padding:12px 14px; border-bottom:1px solid #e6e8ec; font-weight:800;
     }
-    .zivv-sheet .hd button { background:none; border:0; color:#fff; font-size:20px; }
+    .zivv-sheet .hd button { background:none; border:0; color:#101418; font-size:20px; }
     .zivv-sheet .body { overflow:auto; padding:10px 12px 8px; flex:1; }
     .zivv-c {
       display:grid; grid-template-columns:40px 1fr auto; gap:8px;
@@ -22,18 +22,18 @@
     .zivv-c.reply { margin-right:48px; }
     .zivv-c img { width:36px; height:36px; border-radius:50%; object-fit:cover; }
     .zivv-c .nm { font-weight:800; font-size:13px; }
-    .zivv-c .tm { color:#888; font-size:11px; font-weight:400; }
+    .zivv-c .tm { color:#8b95a1; font-size:11px; font-weight:400; }
     .zivv-c .tx { font-size:14px; line-height:1.5; margin-top:2px; }
-    .zivv-c .row { color:#888; font-size:12px; margin-top:4px; display:flex; gap:12px; }
-    .zivv-c .row button { background:none; border:0; color:#888; font-size:12px; padding:0; }
-    .zivv-c .heart { background:none; border:0; color:#888; font-size:16px; }
+    .zivv-c .row { color:#8b95a1; font-size:12px; margin-top:4px; display:flex; gap:12px; }
+    .zivv-c .row button { background:none; border:0; color:#8b95a1; font-size:12px; padding:0; }
+    .zivv-c .heart { background:none; border:0; color:#8b95a1; font-size:16px; }
     .zivv-c .heart.on { color:#fe2c55; }
     .zivv-add {
-      display:flex; gap:8px; padding:10px 12px 14px; border-top:1px solid #262626; align-items:center;
+      display:flex; gap:8px; padding:10px 12px 14px; border-top:1px solid #e6e8ec; align-items:center;
     }
     .zivv-add img { width:32px; height:32px; border-radius:50%; object-fit:cover; }
     .zivv-add input {
-      flex:1; background:#000; border:1px solid #333; color:#fff;
+      flex:1; background:#f8f9fb; border:1px solid #d9dde3; color:#101418;
       border-radius:999px; padding:10px 12px; outline:none;
     }
     .zivv-add button {
@@ -41,7 +41,7 @@
     }
     .zivv-person {
       display:flex; width:100%; align-items:center; gap:10px; text-align:right;
-      background:#1a1a1a; border:0; color:#fff; border-radius:12px; padding:10px; margin-bottom:8px;
+      background:#f1f3f5; border:1px solid #e6e8ec; color:#101418; border-radius:12px; padding:10px; margin-bottom:8px;
     }
     .zivv-person img { width:40px; height:40px; border-radius:50%; object-fit:cover; }
     .zivv-heartpop {

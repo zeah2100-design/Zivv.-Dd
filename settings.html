@@ -8,99 +8,78 @@
     <link rel="stylesheet" href="css/shell.css" />
     <link rel="stylesheet" href="css/professional.css" />
     <style>
+
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body {
-        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-        background: #000;
-        color: #f5f5f5;
+        font-family: 'Cairo', "Segoe UI", Tahoma, Arial, sans-serif;
+        background: #f5f6f8;
+        color: #101418;
         min-height: 100dvh;
       }
       .wrap { width: min(460px, 100%); margin: 0 auto; padding: 18px 16px 96px; }
-      h1 {
-        font-size: 22px; font-weight: 800; letter-spacing: .04em; margin-bottom: 4px;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-        -webkit-background-clip: text; background-clip: text; color: transparent;
-      }
-      .sub { color: #777; font-size: 13px; margin-bottom: 18px; }
+      h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; color: #101418; }
+      .sub { color: #8b95a1; font-size: 13px; margin-bottom: 18px; }
       .card {
-        background: #0a0a0a;
-        border: 1px solid #1f1f1f;
+        background: #ffffff;
+        border: 1px solid #e6e8ec;
         border-radius: 16px;
         padding: 14px;
         margin-bottom: 12px;
       }
-      .card h2 { font-size: 13px; font-weight: 800; color: #aaa; margin-bottom: 12px; letter-spacing: .04em; }
-      .me {
-        display: flex; align-items: center; gap: 12px;
-      }
-      .me img {
-        width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
-        border: 2px solid #222;
-      }
-      .me img.gold { border-color: #fcaf45; }
+      .card h2 { font-size: 13px; font-weight: 800; color: #8b95a1; margin-bottom: 12px; }
+      .me { display: flex; align-items: center; gap: 12px; }
+      .me img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid #e6e8ec; }
+      .me img.gold { border-color: #f59e0b; }
       .me b { display: block; font-size: 16px; }
-      .me span { color: #888; font-size: 12px; }
+      .me span { color: #8b95a1; font-size: 12px; }
       .acc {
         display: flex; align-items: center; gap: 10px; width: 100%;
-        background: #111; border: 1px solid #242424; color: #fff;
+        background: #f8f9fb; border: 1px solid #e6e8ec; color: #101418;
         border-radius: 12px; padding: 10px; margin-bottom: 8px; text-align: start;
       }
-      .acc.on { border-color: #e1306c; }
+      .acc.on { border-color: #e1306c; background: rgba(225,48,108,0.04); }
       .acc img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
       .acc b { display: block; font-size: 14px; }
-      .acc i { color: #888; font-style: normal; font-size: 12px; }
-      .acc .now { margin-inline-start: auto; font-size: 11px; color: #fcaf45; font-weight: 800; }
+      .acc i { color: #8b95a1; font-style: normal; font-size: 12px; }
+      .acc .now { margin-inline-start: auto; font-size: 11px; color: #b45309; font-weight: 800; }
       .langs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
       .lang {
-        border: 1px solid #2a2a2a; background: #111; color: #ddd;
-        border-radius: 12px; padding: 11px; font-weight: 800;
+        border: 1px solid #e6e8ec; background: #ffffff; color: #384049;
+        border-radius: 12px; padding: 11px; font-weight: 800; cursor: pointer; font-family: inherit;
       }
-      .lang.on {
-        color: #fff; border-color: transparent;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-      }
+      .lang.on { color: #fff; border-color: #111318; background: #111318; }
       .gold-box {
         position: relative; overflow: hidden;
-        background: linear-gradient(165deg, #16110a, #0a0a0a 55%);
-        border: 1px solid #3a2a14;
+        background: #fffaeb;
+        border: 1px solid #fedf89;
       }
-      .feat { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid #1c1c1c; }
+      .feat { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid #f5e9d0; }
       .feat:first-of-type { border-top: 0; }
-      .dot {
-        width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex: 0 0 auto;
-        background: linear-gradient(135deg, #fcaf45, #e1306c);
-      }
+      .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex: 0 0 auto; background: #f59e0b; }
       .feat b { display: block; font-size: 13px; }
-      .feat span { color: #999; font-size: 12px; line-height: 1.55; }
+      .feat span { color: #8b95a1; font-size: 12px; line-height: 1.55; }
       .go, .ghost, .danger {
         display: block; width: 100%; text-align: center; text-decoration: none;
         border-radius: 12px; padding: 11px; font-weight: 800; font-size: 13px; margin-top: 8px;
+        cursor: pointer; font-family: inherit;
       }
-      .go {
-        border: 0; color: #fff;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-      }
-      .ghost { border: 1px solid #2a2a2a; background: #141414; color: #eee; }
-      .danger { border: 1px solid #4a1820; background: #16080b; color: #ff8aa0; }
-      .empty { color: #666; font-size: 13px; padding: 6px 0 2px; }
-      .idrow { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid #1c1c1c; font-size: 13px; }
+      .go { border: 0; color: #fff; background: #111318; }
+      .ghost { border: 1px solid #e6e8ec; background: #ffffff; color: #101418; }
+      .danger { border: 1px solid #fda29b; background: #fef3f2; color: #b42318; }
+      .empty { color: #8b95a1; font-size: 13px; padding: 6px 0 2px; }
+      .idrow { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid #eef0f3; font-size: 13px; }
       .idrow:first-of-type { border-top: 0; }
-      .idrow span { color: #888; }
-      .idrow b { color: #eee; font-weight: 700; text-align: end; }
-      .clock {
-        display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
-        margin: 4px 0 12px;
-      }
+      .idrow span { color: #8b95a1; }
+      .idrow b { color: #101418; font-weight: 700; text-align: end; }
+      .clock { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 4px 0 12px; }
       .tick {
-        background: #110d08; border: 1px solid #3a2a14; border-radius: 12px;
+        background: #fffaeb; border: 1px solid #fedf89; border-radius: 12px;
         text-align: center; padding: 10px 4px;
       }
-      .tick b {
-        display: block; font-size: 22px; font-weight: 800; color: #fcaf45; letter-spacing: .04em;
-      }
-      .tick span { color: #888; font-size: 11px; }
+      .tick b { display: block; font-size: 22px; font-weight: 800; color: #b45309; }
+      .tick span { color: #8b95a1; font-size: 11px; }
       .clock.off { opacity: .45; }
-    </style>
+  </style>
   </head>
   <body>
     <main class="wrap">

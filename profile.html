@@ -8,76 +8,77 @@
     <link rel="stylesheet" href="css/shell.css" />
     <link rel="stylesheet" href="css/professional.css" />
     <style>
+
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: #000; color: #f5f5f5; min-height: 100dvh; }
-      .cover { height: 168px; background: #141414; overflow: hidden; position: relative; z-index: 2; }
+      body { font-family: 'Cairo', "Segoe UI", Tahoma, Arial, sans-serif; background: #f5f6f8; color: #101418; min-height: 100dvh; }
+      .cover { height: 168px; background: #e4e8ec; overflow: hidden; position: relative; z-index: 2; }
       .cover img, .ava { cursor: default; }
       .cover.mine img, .ava.mine { cursor: pointer; }
       .cover img { width: 100%; height: 100%; object-fit: cover; opacity: .9; }
       .head { width: min(560px, 100%); margin: -46px auto 0; padding: 0 16px 20px; position: relative; z-index: 3; }
       .ava-wrap { position: relative; width: 92px; }
-      .ava { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; border: 3px solid #000; background: #111; display: block; }
+      .ava { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; border: 3px solid #ffffff; background: #f1f3f5; display: block; }
       .shop-sec { width: min(560px, 100%); margin: 0 auto 18px; padding: 0 16px; }
       .shop-sec h2 { font-size: 16px; margin-bottom: 10px; }
       .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-      .shop-card { display: block; background: #111; border: 1px solid #262626; border-radius: 12px; overflow: hidden; color: #fff; text-decoration: none; }
+      .shop-card { display: block; background: #ffffff; border: 1px solid #e6e8ec; border-radius: 12px; overflow: hidden; color: #101418; text-decoration: none; }
       .shop-card img { width: 100%; height: 120px; object-fit: cover; }
       .shop-card div { padding: 8px; font-size: 13px; }
       .name { font-size: 20px; font-weight: 800; margin-top: 10px; }
-      .user { color: #888; font-size: 13px; }
-      .bio { margin: 8px 0; font-size: 14px; line-height: 1.6; color: #ddd; }
+      .user { color: #8b95a1; font-size: 13px; }
+      .bio { margin: 8px 0; font-size: 14px; line-height: 1.6; color: #384049; }
       .stats { display: flex; gap: 18px; margin: 12px 0; font-size: 14px; }
       .acts { display: flex; gap: 8px; flex-wrap: wrap; }
       .btn, .ghost, .danger {
-        border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 800; font-size: 13px;
+        border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 800; font-size: 13px; cursor: pointer; font-family: inherit;
       }
-      .btn { background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4); color: #fff; }
+      .btn { background: #111318; color: #fff; }
       .gold {
-        background: linear-gradient(135deg, #fcaf45, #f77737);
-        color: #1a0e00; border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 800; font-size: 13px;
+        background: #f59e0b;
+        color: #3d2500; border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 800; font-size: 13px;
       }
       .badge-gold {
         display: inline-block; margin-inline-start: 6px; font-size: 11px;
-        background: linear-gradient(135deg, #fcaf45, #f77737); color: #1a0e00;
+        background: #fffaeb; color: #b45309; border: 1px solid #fedf89;
         border-radius: 999px; padding: 2px 8px; font-weight: 800;
       }
-      .ghost { background: #161616; color: #fff; border: 1px solid #262626; }
+      .ghost { background: #ffffff; color: #101418; border: 1px solid #d9dde3; }
       .bell {
-        width: 38px; height: 38px; border-radius: 10px; border: 1px solid #262626;
-        background: #161616; color: #fff; font-size: 16px; padding: 0;
+        width: 38px; height: 38px; border-radius: 10px; border: 1px solid #d9dde3;
+        background: #ffffff; color: #101418; font-size: 16px; padding: 0;
       }
-      .bell.on { border-color: #fcaf45; color: #fcaf45; background: #16110a; }
-      .danger { background: #2a0d12; color: #ff8aa0; border: 1px solid #5a1a24; }
-      .tabs { display: flex; border-bottom: 1px solid #262626; margin-top: 16px; }
-      .tabs button { flex: 1; background: none; border: 0; color: #777; padding: 10px; font-weight: 800; }
-      .tabs button.on { color: #fff; box-shadow: inset 0 -2px 0 #e1306c; }
+      .bell.on { border-color: #f59e0b; color: #b45309; background: #fffaeb; }
+      .danger { background: #fef3f2; color: #b42318; border: 1px solid #fda29b; }
+      .tabs { display: flex; border-bottom: 1px solid #e6e8ec; margin-top: 16px; }
+      .tabs button { flex: 1; background: none; border: 0; color: #8b95a1; padding: 10px; font-weight: 800; cursor: pointer; font-family: inherit; }
+      .tabs button.on { color: #101418; box-shadow: inset 0 -2px 0 #e1306c; }
       .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px; }
-      .grid a, .grid .cell { aspect-ratio: 1; background: #111; display: block; overflow: hidden; position: relative; color: #fff; text-decoration: none; }
+      .grid a, .grid .cell { aspect-ratio: 1; background: #ffffff; border: 1px solid #eef0f3; display: block; overflow: hidden; position: relative; color: #101418; text-decoration: none; }
       .grid img { width: 100%; height: 100%; object-fit: cover; }
-      .grid .txt { padding: 8px; font-size: 11px; display: flex; align-items: flex-end; height: 100%; background: #141414; }
+      .grid .txt { padding: 8px; font-size: 11px; display: flex; align-items: flex-end; height: 100%; background: #f8f9fb; }
       .play { position: absolute; top: 6px; left: 6px; }
-      .pcard { background: #111; }
+      .pcard { background: #ffffff; }
       .pcard .pr { position: absolute; bottom: 6px; right: 6px; font-size: 11px; font-weight: 800; }
-      .empty { color: #888; text-align: center; padding: 28px 12px; }
-      .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 60; place-items: center; }
+      .empty { color: #8b95a1; text-align: center; padding: 28px 12px; }
+      .modal { display: none; position: fixed; inset: 0; background: rgba(16,24,40,.4); z-index: 60; place-items: center; }
       .modal.open { display: grid; }
-      .sheet { width: min(360px, 92vw); background: #111; border: 1px solid #262626; border-radius: 16px; padding: 16px; }
-      .sheet input, .sheet textarea { width: 100%; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; padding: 10px; margin: 6px 0 10px; }
-      .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #161616; border: 1px solid #333; padding: 8px 14px; border-radius: 999px; display: none; z-index: 70; font-size: 13px; }
+      .sheet { width: min(360px, 92vw); background: #ffffff; border: 1px solid #e6e8ec; border-radius: 16px; padding: 16px; }
+      .sheet input, .sheet textarea { width: 100%; background: #ffffff; border: 1px solid #d9dde3; color: #101418; border-radius: 10px; padding: 10px; margin: 6px 0 10px; font-family: inherit; outline: none; }
+      .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #111318; border: 1px solid #111318; color: #fff; padding: 8px 14px; border-radius: 999px; display: none; z-index: 70; font-size: 13px; }
       input[type="file"] { display: none; }
       .locked-box {
         margin: 18px 0 8px; padding: 16px;
-        background: #111; border: 1px solid #2a2a2a; border-radius: 14px;
+        background: #ffffff; border: 1px solid #e6e8ec; border-radius: 14px;
       }
       .locked-box b { display: block; margin-bottom: 6px; font-size: 16px; }
-      .locked-box p { color: #999; font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
+      .locked-box p { color: #8b95a1; font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
       .sheet .optb {
         display: block; width: 100%; text-align: start; margin-bottom: 8px;
-        background: #161616; border: 1px solid #2a2a2a; color: #fff;
-        border-radius: 12px; padding: 12px; font-weight: 800;
+        background: #f8f9fb; border: 1px solid #e6e8ec; color: #101418;
+        border-radius: 12px; padding: 12px; font-weight: 800; cursor: pointer; font-family: inherit;
       }
-      .sheet .optb.bad { color: #ff8aa0; border-color: #5a1a24; background: #16080b; }
-    </style>
+      .sheet .optb.bad { color: #b42318; border-color: #fda29b; background: #fef3f2; }
+  </style>
   </head>
   <body>
     <input id="file-ava" type="file" accept="image/*" />

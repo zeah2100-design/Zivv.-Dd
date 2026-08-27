@@ -24,22 +24,22 @@
     }
     .zivv-cc-sheet.open { display: grid; place-items: end center; }
     .zivv-cc-box {
-      width: min(420px, 100%); background: #121212;
+      width: min(420px, 100%); background: #ffffff;
       border-radius: 16px 16px 0 0; padding: 16px 16px 22px;
-      color: #fff; font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      color: #101418; font-family: "Segoe UI", Tahoma, Arial, sans-serif;
     }
     .zivv-cc-box h3 { font-size: 16px; margin: 0 0 6px; }
-    .zivv-cc-box p { color: #888; font-size: 13px; margin: 0 0 12px; line-height: 1.55; }
+    .zivv-cc-box p { color: #8b95a1; font-size: 13px; margin: 0 0 12px; line-height: 1.55; }
     .zivv-cc-row {
       display: flex; align-items: center; justify-content: space-between;
-      gap: 10px; padding: 10px 0; border-top: 1px solid #262626;
+      gap: 10px; padding: 10px 0; border-top: 1px solid #e6e8ec;
     }
     .zivv-cc-row b { font-size: 14px; }
     .zivv-cc-sw {
       width: 46px; height: 26px; border-radius: 999px; border: 0;
-      background: #333; position: relative;
+      background: #cdd3da; position: relative;
     }
-    .zivv-cc-sw.on { background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4); }
+    .zivv-cc-sw.on { background: #e1306c; }
     .zivv-cc-sw i {
       position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
       border-radius: 50%; background: #fff; transition: transform .18s;
@@ -47,10 +47,10 @@
     .zivv-cc-sw.on i { transform: translateX(20px); }
     html[dir="rtl"] .zivv-cc-sw.on i { transform: translateX(-20px); }
     html[dir="rtl"] .zivv-cc-sw i { left: auto; right: 3px; }
-    .zivv-cc-lang { font-size: 13px; color: #fcaf45; font-weight: 800; }
+    .zivv-cc-lang { font-size: 13px; color: #b45309; font-weight: 800; }
     .zivv-cc-x {
       width: 100%; margin-top: 10px; border: 0; border-radius: 12px;
-      padding: 11px; background: #1c1c1c; color: #fff; font-weight: 800;
+      padding: 11px; background: #111318; color: #fff; font-weight: 800;
     }
     .zivv-tr-on { opacity: .95; }
   `;

@@ -8,58 +8,55 @@
     <link rel="stylesheet" href="css/shell.css" />
     <link rel="stylesheet" href="css/professional.css" />
     <style>
+
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: #000; color: #f5f5f5; min-height: 100dvh; }
+      body { font-family: 'Cairo', "Segoe UI", Tahoma, Arial, sans-serif; background: #f5f6f8; color: #101418; min-height: 100dvh; }
       .wrap { width: min(560px, 100%); margin: 0 auto; padding: 16px 14px 80px; }
-      h1 {
-        font-size: 24px; font-weight: 800;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-        -webkit-background-clip: text; background-clip: text; color: transparent;
-      }
-      .count { color: #888; font-size: 13px; margin: 4px 0 12px; }
+      h1 { font-size: 24px; font-weight: 800; color: #101418; }
+      .count { color: #8b95a1; font-size: 13px; margin: 4px 0 12px; }
       .find {
-        width: 100%; background: #121212; border: 1px solid #262626; color: #fff;
-        border-radius: 999px; padding: 10px 14px; outline: none; margin-bottom: 16px;
+        width: 100%; background: #ffffff; border: 1px solid #d9dde3; color: #101418;
+        border-radius: 999px; padding: 10px 14px; outline: none; margin-bottom: 16px; font-family: inherit;
       }
       .find:focus { border-color: #e1306c; }
       h2 { font-size: 17px; margin: 18px 0 10px; display: flex; justify-content: space-between; align-items: center; }
       h2 span { color: #e1306c; font-size: 13px; font-weight: 700; }
       .req {
-        display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid #1d1d1d;
+        display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eef0f3;
       }
       .req img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
       .req .n { font-weight: 800; font-size: 15px; }
-      .req .m { color: #888; font-size: 12px; margin: 3px 0 8px; }
+      .req .m { color: #8b95a1; font-size: 12px; margin: 3px 0 8px; }
       .btns { display: flex; gap: 8px; }
       .btn, .ghost {
-        border: 0; border-radius: 8px; padding: 8px 0; font-weight: 800; font-size: 13px;
-        flex: 1; text-align: center; text-decoration: none; color: #fff;
+        border: 0; border-radius: 10px; padding: 8px 0; font-weight: 800; font-size: 13px;
+        flex: 1; text-align: center; text-decoration: none; cursor: pointer; font-family: inherit;
       }
-      .btn { background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4); }
-      .ghost { background: #262626; }
+      .btn { background: #111318; color: #fff; }
+      .ghost { background: #f1f3f5; border: 1px solid #e6e8ec; color: #101418; }
       .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       .card {
-        background: #111; border: 1px solid #262626; border-radius: 14px; overflow: hidden; color: #fff;
+        background: #ffffff; border: 1px solid #e6e8ec; border-radius: 14px; overflow: hidden; color: #101418;
         text-decoration: none; display: flex; flex-direction: column;
       }
       .card img { width: 100%; height: 140px; object-fit: cover; display: block; }
       .card .pad { padding: 8px 10px 10px; }
       .card b { font-size: 14px; display: block; }
-      .card .m { color: #888; font-size: 11px; margin: 2px 0 8px; }
+      .card .m { color: #8b95a1; font-size: 11px; margin: 2px 0 8px; }
       .row {
         display: flex; gap: 10px; align-items: center; padding: 8px 0;
-        border-bottom: 1px solid #1d1d1d; color: #fff; text-decoration: none;
+        border-bottom: 1px solid #eef0f3; color: #101418; text-decoration: none;
       }
       .row img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
       .row .grow { flex: 1; min-width: 0; }
-      .empty { color: #888; font-size: 13px; padding: 8px 0 12px; }
+      .empty { color: #8b95a1; font-size: 13px; padding: 8px 0 12px; }
       .tabs { display: flex; gap: 8px; margin-bottom: 8px; }
       .tabs button {
-        border: 1px solid #262626; background: #111; color: #aaa;
-        border-radius: 999px; padding: 6px 12px; font-size: 13px;
+        border: 1px solid #e6e8ec; background: #ffffff; color: #5b6470;
+        border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-family: inherit;
       }
-      .tabs button.on { color: #fff; border-color: #e1306c; }
-    </style>
+      .tabs button.on { color: #fff; border-color: #111318; background: #111318; }
+  </style>
   </head>
   <body>
     <main class="wrap" id="root"></main>

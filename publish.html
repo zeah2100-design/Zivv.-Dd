@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZIVV — Noir Aurora • نشر خاص</title>
+  <title>ZIVV — منشور جديد</title>
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/zivv-special.css" />
   <link rel="stylesheet" href="css/shell.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Space Grotesk', 'Cairo', sans-serif;
-      background: #050507;
-      color: #fff;
+      font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+      background: #f5f6f8;
+      color: #101418;
       min-height: 100dvh;
     }
     .wrap {
@@ -27,10 +27,10 @@
       position: sticky;
       top: 0;
       z-index: 30;
-      background: rgba(5,5,7,0.85);
-      backdrop-filter: blur(24px) saturate(180%);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #e6e8ec;
+      padding: 12px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -38,56 +38,41 @@
     .back {
       width: 40px;
       height: 40px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.03);
-      color: #fff;
+      border-radius: 11px;
+      border: 1px solid #e6e8ec;
+      background: #ffffff;
+      color: #101418;
       display: grid;
       place-items: center;
       cursor: pointer;
       text-decoration: none;
-      transition: all 0.2s ease;
+      transition: background 0.15s ease;
     }
-    .back:hover { background: rgba(255,255,255,0.06); transform: translateY(-1px); }
+    .back:hover { background: #f1f3f5; }
     .title {
-      font-family: 'Syne', sans-serif;
       font-weight: 800;
       font-size: 16px;
-      letter-spacing: -0.01em;
-      background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      color: #101418;
     }
     .publish {
-      padding: 10px 20px;
-      background: #fff;
-      color: #000;
+      padding: 11px 22px;
+      background: #111318;
+      color: #ffffff;
       border: none;
-      border-radius: 999px;
+      border-radius: 11px;
       font-weight: 700;
       font-size: 13px;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
       display: flex;
       align-items: center;
       gap: 8px;
       font-family: inherit;
-      position: relative;
-      overflow: hidden;
     }
-    .publish::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    .publish:hover::before { opacity: 1; }
-    .publish:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(225,48,108,0.2); }
+    .publish::before { content: none; }
+    .publish:hover { background: #000; box-shadow: 0 4px 16px rgba(16,24,40,.16); }
     .publish span { position: relative; z-index: 1; }
-    .publish:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .publish:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
     
     .content { padding: 20px; }
     
@@ -95,161 +80,148 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 16px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 16px;
-      backdrop-filter: blur(20px);
-      margin-bottom: 20px;
+      padding: 14px 16px;
+      background: #ffffff;
+      border: 1px solid #e6e8ec;
+      border-radius: 14px;
+      margin-bottom: 18px;
     }
-    .author img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(225,48,108,0.3); }
+    .author img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(225,48,108,0.35); }
     .author .name { font-weight: 700; font-size: 14px; }
-    .author .handle { font-size: 11px; color: #666; margin-top: 2px; }
+    .author .handle { font-size: 11px; color: #8b95a1; margin-top: 2px; }
     
     .types {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
     .t-btn {
-      padding: 16px 10px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 16px;
-      color: #6b6b80;
+      padding: 15px 10px;
+      background: #ffffff;
+      border: 1px solid #e6e8ec;
+      border-radius: 14px;
+      color: #5b6470;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
-      backdrop-filter: blur(10px);
-      position: relative;
-      overflow: hidden;
+      gap: 7px;
+      font-family: inherit;
     }
-    .t-btn::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(300px circle at 50% 50%, rgba(255,255,255,0.04), transparent 50%);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    .t-btn:hover::before { opacity: 1; }
-    .t-btn:hover { border-color: rgba(255,255,255,0.1); color: #fff; transform: translateY(-2px); }
-    .t-btn.active { background: #fff; color: #000; border-color: #fff; font-weight: 700; box-shadow: 0 8px 20px rgba(255,255,255,0.1); }
+    .t-btn::before { content: none; }
+    .t-btn:hover { border-color: #d9dde3; color: #101418; }
+    .t-btn.active { background: #111318; color: #ffffff; border-color: #111318; font-weight: 700; }
     .t-btn.active::before { display: none; }
-    .t-btn .ic { font-size: 22px; }
-    .t-btn .lb { font-size: 11px; font-weight: 600; }
+    .t-btn .ic { font-size: 20px; }
+    .t-btn .lb { font-size: 11px; font-weight: 700; }
     
     .drop {
-      border: 2px dashed rgba(255,255,255,0.08);
-      border-radius: 20px;
-      min-height: 200px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));
+      border: 2px dashed #d9dde3;
+      border-radius: 16px;
+      min-height: 190px;
+      background: #ffffff;
       display: grid;
       place-items: center;
       text-align: center;
       padding: 24px;
-      color: #666;
+      color: #8b95a1;
       position: relative;
       overflow: hidden;
-      margin-bottom: 20px;
-      transition: all 0.3s ease;
+      margin-bottom: 18px;
+      transition: border-color 0.15s ease, background 0.15s ease;
       cursor: pointer;
-      backdrop-filter: blur(10px);
     }
-    .drop:hover { border-color: rgba(225,48,108,0.3); background: rgba(225,48,108,0.02); }
-    .drop.has { padding: 0; min-height: 320px; border-style: solid; border-color: rgba(255,255,255,0.06); }
+    .drop:hover { border-color: #e1306c; background: rgba(225,48,108,0.02); }
+    .drop.has { padding: 0; min-height: 320px; border-style: solid; border-color: #e6e8ec; }
     .drop img, .drop video { width: 100%; max-height: 400px; object-fit: cover; display: block; }
     .drop audio { width: 90%; margin: 20px auto; }
     .drop-content { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-    .drop-ic { width: 56px; height: 56px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; display: grid; place-items: center; font-size: 24px; }
-    .pick { margin-top: 8px; padding: 10px 20px; background: #fff; color: #000; border: none; border-radius: 999px; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
-    .pick:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,255,255,0.15); }
-    .x { position: absolute; top: 12px; left: 12px; width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); color: #fff; font-size: 18px; cursor: pointer; display: grid; place-items: center; z-index: 2; }
-    .x:hover { background: rgba(239,68,68,0.8); }
+    .drop-ic { width: 52px; height: 52px; background: #f1f3f5; border: 1px solid #e6e8ec; border-radius: 14px; display: grid; place-items: center; font-size: 22px; color: #101418; }
+    .pick { margin-top: 6px; padding: 10px 20px; background: #111318; color: #fff; border: none; border-radius: 11px; font-weight: 700; font-size: 12px; cursor: pointer; transition: background 0.15s ease; font-family: inherit; }
+    .pick:hover { background: #000; }
+    .x { position: absolute; top: 12px; left: 12px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #e6e8ec; background: #ffffff; color: #101418; font-size: 16px; cursor: pointer; display: grid; place-items: center; z-index: 2; }
+    .x:hover { background: #fef3f2; border-color: #fda29b; color: #b42318; }
     
     .card {
-      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 16px;
+      background: #ffffff;
+      border: 1px solid #e6e8ec;
+      border-radius: 14px;
       padding: 16px;
-      margin-bottom: 16px;
-      backdrop-filter: blur(20px);
+      margin-bottom: 14px;
     }
-    .card h4 { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.01em; }
+    .card h4 { font-size: 13px; font-weight: 800; margin-bottom: 12px; color: #101418; }
     
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .opt {
-      padding: 14px 12px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.06);
+      padding: 13px 12px;
+      background: #f8f9fb;
+      border: 1px solid #e6e8ec;
       border-radius: 12px;
-      color: #6b6b80;
+      color: #5b6470;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: border-color 0.15s ease, color 0.15s ease;
       text-align: start;
       font-family: inherit;
     }
-    .opt:hover { background: rgba(255,255,255,0.04); color: #fff; border-color: rgba(255,255,255,0.1); }
-    .opt.active { background: #fff; color: #000; border-color: #fff; font-weight: 700; }
+    .opt:hover { border-color: #d9dde3; color: #101418; }
+    .opt.active { background: #111318; color: #ffffff; border-color: #111318; font-weight: 700; }
     .opt b { display: block; font-size: 13px; margin-bottom: 4px; }
-    .opt span { font-size: 11px; color: #666; line-height: 1.4; }
-    .opt.active span { color: #444; }
+    .opt span { font-size: 11px; color: #8b95a1; line-height: 1.5; }
+    .opt.active span { color: #c9ced6; }
     
     .field { margin-bottom: 14px; }
-    .field label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #888; margin-bottom: 8px; }
+    .field label { display: block; font-size: 12px; font-weight: 700; color: #5b6470; margin-bottom: 7px; }
     .field input, .field textarea {
       width: 100%;
-      padding: 14px 16px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 12px;
-      color: #fff;
+      padding: 13px 15px;
+      background: #ffffff;
+      border: 1px solid #d9dde3;
+      border-radius: 11px;
+      color: #101418;
       font-size: 13px;
       font-family: inherit;
       outline: none;
-      transition: all 0.25s ease;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .field input:focus, .field textarea:focus { background: rgba(255,255,255,0.05); border-color: rgba(225,48,108,0.3); box-shadow: 0 0 0 4px rgba(225,48,108,0.06); }
-    .field textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
-    .count { text-align: left; font-size: 10px; color: #444; margin-top: 6px; }
+    .field input:focus, .field textarea:focus { border-color: #e1306c; box-shadow: 0 0 0 3px rgba(225,48,108,0.1); }
+    .field textarea { min-height: 100px; resize: vertical; line-height: 1.7; }
+    .count { text-align: left; font-size: 10px; color: #8b95a1; margin-top: 6px; }
     
     .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .chip { padding: 6px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 999px; color: #6b6b80; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
-    .chip:hover { background: rgba(255,255,255,0.06); color: #fff; }
-    .chip.active { background: #fff; color: #000; border-color: #fff; font-weight: 700; }
+    .chip { padding: 7px 13px; background: #ffffff; border: 1px solid #e6e8ec; border-radius: 999px; color: #5b6470; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; font-family: inherit; }
+    .chip:hover { border-color: #d9dde3; color: #101418; }
+    .chip.active { background: #111318; color: #ffffff; border-color: #111318; font-weight: 700; }
     
     .dest {
-      padding: 12px 16px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 12px;
+      padding: 12px 15px;
+      background: #f8f9fb;
+      border: 1px solid #e6e8ec;
+      border-radius: 11px;
       font-size: 12px;
-      color: #888;
+      color: #5b6470;
       margin-bottom: 14px;
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .dest b { color: #fff; }
-    .dest.ok { border-color: rgba(16,185,129,0.15); background: rgba(16,185,129,0.05); color: #6ee7b7; }
-    .dest.bad { border-color: rgba(239,68,68,0.15); background: rgba(239,68,68,0.05); color: #fca5a5; }
+    .dest b { color: #101418; }
+    .dest.ok { border-color: #abefc6; background: #ecfdf3; color: #067647; }
+    .dest.bad { border-color: #fda29b; background: #fef3f2; color: #b42318; }
     
-    .ban { display: none; padding: 14px 16px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.12); border-radius: 12px; color: #fca5a5; font-size: 12px; line-height: 1.5; margin-bottom: 14px; }
-    .ban.show { display: block; animation: slideDown 0.3s ease; }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .ban { display: none; padding: 13px 15px; background: #fef3f2; border: 1px solid #fda29b; border-radius: 11px; color: #b42318; font-size: 12px; line-height: 1.6; margin-bottom: 14px; }
+    .ban.show { display: block; animation: slideDown 0.25s ease; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
     
     .toast {
       position: fixed;
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      background: #111;
-      border: 1px solid rgba(255,255,255,0.08);
+      background: #111318;
+      border: 1px solid #111318;
       color: #fff;
       padding: 12px 18px;
       border-radius: 999px;
@@ -257,21 +229,20 @@
       font-weight: 500;
       z-index: 70;
       display: none;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      box-shadow: 0 12px 32px rgba(16,24,40,.18);
       max-width: min(90vw, 400px);
       text-align: center;
-      backdrop-filter: blur(20px);
     }
     
     input[type="file"] { display: none; }
-    .cover { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; margin: 12px auto 0; display: none; border: 1px solid rgba(255,255,255,0.08); }
+    .cover { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; margin: 12px auto 0; display: none; border: 1px solid #e6e8ec; }
     
-    .sound { display: none; padding: 14px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; margin-bottom: 14px; }
+    .sound { display: none; padding: 14px; background: #f8f9fb; border: 1px solid #e6e8ec; border-radius: 12px; margin-bottom: 14px; }
     .sound.show { display: block; }
     .sound-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-    .s-btn { padding: 8px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; color: #fff; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
-    .s-btn:hover { background: rgba(255,255,255,0.06); }
-    .s-btn.active { background: #fff; color: #000; border-color: #fff; }
+    .s-btn { padding: 8px 14px; background: #ffffff; border: 1px solid #e6e8ec; border-radius: 10px; color: #101418; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; font-family: inherit; }
+    .s-btn:hover { background: #f1f3f5; }
+    .s-btn.active { background: #111318; color: #ffffff; border-color: #111318; }
   </style>
 </head>
 <body class="grain">
@@ -287,7 +258,7 @@
       <a class="back" href="home.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       </a>
-      <div class="title">Noir Aurora • نشر خاص</div>
+      <div class="title">منشور جديد</div>
       <button class="publish" id="go" type="button"><span>نشر</span></button>
     </div>
     
@@ -318,7 +289,7 @@
           <button type="button" class="s-btn" id="add-sound">+ صوت</button>
           <button type="button" class="s-btn" id="mute-orig">كتم الأصلي</button>
         </div>
-        <div style="font-size:11px;color:#666" id="sound-name">الأصلي سيبقى</div>
+        <div style="font-size:11px;color:#8b95a1" id="sound-name">الأصلي سيبقى</div>
       </div>
       
       <div class="card" id="product-box" style="display:none">
@@ -331,8 +302,8 @@
       <div class="drop" id="drop">
         <div class="drop-content" id="drop-empty">
           <div class="drop-ic">◫</div>
-          <div style="font-size:13px;font-weight:600;color:#aaa">اسحب الملف أو اختر</div>
-          <div style="font-size:11px;color:#444">صور، فيديو، صوت</div>
+          <div style="font-size:13px;font-weight:600;color:#5b6470">اسحب الملف أو اختر</div>
+          <div style="font-size:11px;color:#8b95a1">صور، فيديو، صوت</div>
           <button class="pick" type="button" data-action="pick">اختيار</button>
         </div>
         <button class="x" id="clear-media" type="button" hidden>×</button>
@@ -350,15 +321,15 @@
       <div class="card" id="link-box" hidden>
         <h4>رابط</h4>
         <div class="field"><input id="link-url" type="url" placeholder="https://example.com" dir="ltr" /></div>
-        <div id="link-card" hidden style="padding:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;margin-top:10px">
+        <div id="link-card" hidden style="padding:12px;background:#f8f9fb;border:1px solid #e6e8ec;border-radius:12px;margin-top:10px">
           <div style="color:#e1306c;font-size:11px;font-weight:700" id="link-host"></div>
-          <div style="color:#aaa;font-size:12px;margin-top:4px;word-break:break-all" id="link-text"></div>
+          <div style="color:#5b6470;font-size:12px;margin-top:4px;word-break:break-all" id="link-text"></div>
         </div>
       </div>
       
       <div class="field"><label>العنوان *</label><input id="post-title" maxlength="80" placeholder="عنوان جذاب" /></div>
-      <div class="field"><label>الوصف *</label><textarea id="caption" maxlength="2000" placeholder="ماذا يحدث؟ شارك لحظتك بـ Noir Aurora..."></textarea><div class="count"><span id="n">0</span>/2000</div></div>
-      <div class="field"><label>هاشتاجات</label><input id="tags" placeholder="#NoirAurora #تصوير #القاهرة" /><div class="chips" id="chips"></div></div>
+      <div class="field"><label>الوصف *</label><textarea id="caption" maxlength="2000" placeholder="ماذا يحدث؟ شارك لحظتك مع أصدقائك..."></textarea><div class="count"><span id="n">0</span>/2000</div></div>
+      <div class="field"><label>هاشتاجات</label><input id="tags" placeholder="#تصوير #القاهرة #فن" /><div class="chips" id="chips"></div></div>
       <div class="dest" id="dest">سينشر في: <b>استكشاف</b></div>
       <div class="field"><label>المكان (اختياري)</label><input id="place" placeholder="القاهرة، الجيزة" /></div>
       
@@ -372,12 +343,12 @@
       
       <div class="dest" id="scan-box">فحص تلقائي...</div>
       
-      <label style="display:flex;align-items:center;gap:8px;padding:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;margin-bottom:14px;cursor:pointer;font-size:12px" id="promo-wrap" hidden>
+      <label style="display:flex;align-items:center;gap:8px;padding:12px;background:#f8f9fb;border:1px solid #e6e8ec;border-radius:12px;margin-bottom:14px;cursor:pointer;font-size:12px" id="promo-wrap" hidden>
         <input type="checkbox" id="promo" style="accent-color:#e1306c" />
         <span>✨ ترويج كإعلان (مميز فقط)</span>
       </label>
       
-      <p style="font-size:11px;color:#444;line-height:1.6;text-align:center;padding:14px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid rgba(255,255,255,0.03)">Noir Aurora • فحص ذكي • منتجات مزيفة لا تنشر • AI ينشر مع وسم</p>
+      <p style="font-size:11px;color:#8b95a1;line-height:1.6;text-align:center;padding:14px;background:#f8f9fb;border-radius:12px;border:1px solid #e6e8ec">فحص ذكي للمنشورات • المنتجات المزيفة لا تُنشر • الذكاء الاصطناعي ينشر مع وسم</p>
     </div>
   </div>
   
@@ -392,7 +363,7 @@
   <script src="js/creator.js?v=30"></script>
   <script src="js/shell.js?v=31"></script>
   <script>
-    const SUGGEST = ["NoirAurora", "تصوير", "سفر", "فن", "القاهرة", "موضة", "ليل", "إبداع", "منتج", "موسيقى"];
+    const SUGGEST = ["تصوير", "سفر", "فن", "القاهرة", "موضة", "ليل", "إبداع", "منتج", "موسيقى"];
     const me = ZIVV_CORE.author();
     document.getElementById("me").innerHTML = `<img src="${me.avatar}" alt=""><div><div class="name">${me.name}</div><div class="handle">@${me.user}</div></div>`;
     let kind = "photo", videoKind = "", imageData = "", videoFile = null, audioFile = null, soundFile = null, muteOriginal = false, objectUrl = "", aiChoice = "", visibility = "public";
@@ -446,10 +417,10 @@
         setTags(tags);
       }
       const dropEmpty = document.getElementById("drop-empty");
-      if (kind === "photo") { dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-ic">◐</div><div style="font-size:13px;font-weight:600;color:#aaa">صورة Noir</div><div style="font-size:11px;color:#444">JPG, PNG - حتى 10MB</div><button class="pick" type="button" data-action="pick">اختيار</button></div>`; fileEl.accept = "image/*"; }
-      else if (kind === "video") { dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-ic">▶</div><div style="font-size:13px;font-weight:600;color:#aaa">فيديو Aurora</div><div style="font-size:11px;color:#444">MP4 - حتى 100MB</div><button class="pick" type="button" data-action="pick">اختيار</button></div>`; fileEl.accept = "video/*"; }
-      else if (kind === "audio") { dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-ic">♫</div><div style="font-size:13px;font-weight:600;color:#aaa">صوت + غلاف</div><div style="font-size:11px;color:#444">MP3 مع غلاف مطلوب</div><button class="pick" type="button" data-action="pick">صوت</button><button class="pick" type="button" data-action="pick-cover" style="background:rgba(255,255,255,0.06);color:#fff;margin-top:8px">+ غلاف</button></div>`; fileEl.accept = "audio/*"; }
-      else if (kind === "product") { dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-ic">◫</div><div style="font-size:13px;font-weight:600;color:#aaa">صورة المنتج</div><div style="font-size:11px;color:#444">واضحة واحترافية</div><button class="pick" type="button" data-action="pick">اختيار</button></div>`; fileEl.accept = "image/*"; }
+      if (kind === "photo") { dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-ic">◐</div><div style="font-size:13px;font-weight:600;color:#5b6470">صورة</div><div style="font-size:11px;color:#8b95a1">JPG, PNG - حتى 10MB</div><button class="pick" type="button" data-action="pick">اختيار</button></div>`; fileEl.accept = "image/*"; }
+      else if (kind === "video") { dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-ic">▶</div><div style="font-size:13px;font-weight:600;color:#5b6470">فيديو</div><div style="font-size:11px;color:#8b95a1">MP4 - حتى 100MB</div><button class="pick" type="button" data-action="pick">اختيار</button></div>`; fileEl.accept = "video/*"; }
+      else if (kind === "audio") { dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-ic">♫</div><div style="font-size:13px;font-weight:600;color:#5b6470">صوت + غلاف</div><div style="font-size:11px;color:#8b95a1">MP3 مع غلاف مطلوب</div><button class="pick" type="button" data-action="pick">صوت</button><button class="pick" type="button" data-action="pick-cover" style="background:#f1f3f5;color:#101418;border:1px solid #e6e8ec;margin-top:8px">+ غلاف</button></div>`; fileEl.accept = "audio/*"; }
+      else if (kind === "product") { dropEmpty.innerHTML = `<div class="drop-content"><div class="drop-ic">◫</div><div style="font-size:13px;font-weight:600;color:#5b6470">صورة المنتج</div><div style="font-size:11px;color:#8b95a1">واضحة واحترافية</div><button class="pick" type="button" data-action="pick">اختيار</button></div>`; fileEl.accept = "image/*"; }
       paintDest();
     }
     
@@ -686,7 +657,7 @@
         }
         const made = ZIVV_CORE.addPost(partial);
         if (made && made.blocked) { ban.textContent = made.note || "محذوف"; ban.classList.add("show"); resetBtn(); return; }
-        toast("تم النشر • Noir Aurora 🎉");
+        toast("تم النشر بنجاح 🎉");
         const go = kind === "product" ? "store.html" : (made.dests || []).includes("reels") && !(made.dests || []).includes("home") ? "reels.html" : (made.dests || []).includes("music") && kind === "audio" ? "music.html" : "home.html";
         setTimeout(() => location.href = go, 600);
       } catch (err) { resetBtn(); toast("تعذر الحفظ - جرب ملف أصغر"); console.error(err); }

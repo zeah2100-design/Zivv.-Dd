@@ -1,4 +1,4 @@
-const CACHE = "zivv-pwa-25";
+const CACHE = "zivv-pwa-26";
 const PRECACHE = [
   "index.html",
   "home.html",

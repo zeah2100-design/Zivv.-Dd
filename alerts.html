@@ -8,45 +8,42 @@
     <link rel="stylesheet" href="css/shell.css" />
     <link rel="stylesheet" href="css/professional.css" />
     <style>
+
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: #000; color: #f5f5f5; min-height: 100dvh; }
+      body { font-family: 'Cairo', "Segoe UI", Tahoma, Arial, sans-serif; background: #f5f6f8; color: #101418; min-height: 100dvh; }
       .wrap { width: min(520px, 100%); margin: 0 auto; padding: 16px 14px 80px; }
-      h1 {
-        font-size: 24px; font-weight: 800; margin-bottom: 12px;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-        -webkit-background-clip: text; background-clip: text; color: transparent;
-      }
+      h1 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #101418; }
       .tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; }
       .tabs::-webkit-scrollbar { display: none; }
       .tabs button {
-        flex: 0 0 auto; border: 1px solid #262626; background: #111; color: #aaa;
-        border-radius: 999px; padding: 8px 12px; font-size: 12px; font-weight: 800;
+        flex: 0 0 auto; border: 1px solid #e6e8ec; background: #ffffff; color: #5b6470;
+        border-radius: 999px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
       }
-      .tabs button.on { color: #fff; border-color: #e1306c; background: #1a0b12; }
+      .tabs button.on { color: #fff; border-color: #111318; background: #111318; }
       .item {
         display: flex; gap: 10px; align-items: center;
-        padding: 10px 4px; border-bottom: 1px solid #1a1a1a;
-        color: #fff; text-decoration: none;
+        padding: 10px 4px; border-bottom: 1px solid #eef0f3;
+        color: #101418; text-decoration: none;
       }
       .item img.ava {
         width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex: 0 0 auto;
-        background: #151515;
+        background: #f1f3f5;
       }
       .dot {
         width: 48px; height: 48px; border-radius: 50%;
         display: grid; place-items: center;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        background: rgba(225,48,108,0.08); border: 1px solid rgba(225,48,108,0.18);
         font-size: 18px; flex: 0 0 auto;
       }
       .thumb {
-        width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex: 0 0 auto; background: #151515;
+        width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex: 0 0 auto; background: #f1f3f5;
       }
       .body { flex: 1; min-width: 0; }
-      .body p { color: #ccc; font-size: 13px; line-height: 1.45; }
-      .time { color: #777; font-size: 11px; margin-top: 3px; }
+      .body p { color: #384049; font-size: 13px; line-height: 1.5; }
+      .time { color: #8b95a1; font-size: 11px; margin-top: 3px; }
       .unread { width: 8px; height: 8px; border-radius: 50%; background: #e1306c; flex: 0 0 auto; }
-      .empty { color: #888; text-align: center; padding: 36px 12px; font-size: 14px; }
-    </style>
+      .empty { color: #8b95a1; text-align: center; padding: 36px 12px; font-size: 14px; }
+  </style>
   </head>
   <body>
     <main class="wrap">

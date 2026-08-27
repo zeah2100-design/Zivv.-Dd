@@ -596,59 +596,56 @@
       .cr-banner{
         margin: 0 16px 12px; padding: 14px;
         border-radius: 16px; position: relative; overflow: hidden;
-        background: linear-gradient(160deg, #14100a 0%, #0a0a0a 55%, #120814 100%);
-        border: 1px solid #3a2a14;
+        background: #fffaeb;
+        border: 1px solid #fedf89;
       }
       .cr-banner::before{
         content:""; position:absolute; inset:0; padding:1px; border-radius:16px;
-        background: linear-gradient(135deg,#fcaf45,#e1306c,#833ab4);
-        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-        -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none;
+        display:none;
       }
-      .cr-banner b{ display:block; font-size:15px; margin-bottom:6px; color:#fff; }
-      .cr-banner p{ color:#c9c9c9; font-size:13px; line-height:1.65; margin:0 0 10px; }
-      .cr-meta{ color:#fcaf45 !important; font-size:12px !important; margin:8px 0 10px !important; }
+      .cr-banner b{ display:block; font-size:15px; margin-bottom:6px; color:#101418; }
+      .cr-banner p{ color:#5b6470; font-size:13px; line-height:1.65; margin:0 0 10px; }
+      .cr-meta{ color:#b45309 !important; font-size:12px !important; margin:8px 0 10px !important; }
       .cr-acts{ display:flex; gap:8px; flex-wrap:wrap; }
       .cr-go{
         display:inline-flex; align-items:center; justify-content:center;
-        background: linear-gradient(135deg,#fcaf45,#e1306c,#833ab4);
+        background: #111318;
         color:#fff; font-weight:800; border-radius:999px; padding:8px 14px; font-size:13px;
         text-decoration:none; border:0; width:100%;
       }
-      .cr-more{ color:#fcaf45; font-size:13px; font-weight:700; align-self:center; text-decoration:none; background:none; border:0; }
+      .cr-more{ color:#b45309; font-size:13px; font-weight:700; align-self:center; text-decoration:none; background:none; border:0; }
       .cr-banner.slim{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
       .cr-banner.slim b{ margin:0; font-size:13px; }
-      .cr-bar{ flex:1; min-width:80px; height:6px; background:#1c1c1c; border-radius:99px; overflow:hidden; }
-      .cr-bar i{ display:block; height:100%; background:linear-gradient(90deg,#fcaf45,#e1306c); }
+      .cr-bar{ flex:1; min-width:80px; height:6px; background:#e9ecef; border-radius:99px; overflow:hidden; }
+      .cr-bar i{ display:block; height:100%; background:#e1306c; }
       .gold-tag{
         display:inline-block; margin-inline-start:6px; font-size:10px; font-weight:800;
-        background:linear-gradient(135deg,#fcaf45,#f77737); color:#1a0e00;
+        background:#f59e0b; color:#3d2500;
         border-radius:999px; padding:1px 6px;
       }
       .ava.gold, .ava-gold{
-        padding:2px; background:linear-gradient(135deg,#fcaf45,#f77737,#fcaf45);
+        padding:2px; background:#f59e0b;
       }
       .who.gold-name{
-        background:linear-gradient(135deg,#fcaf45,#f77737);
-        -webkit-background-clip:text; background-clip:text; color:transparent;
+        color:#b45309;
       }
       .cr-modal{
-        display:none; position:fixed; inset:0; background:rgba(0,0,0,.62);
+        display:none; position:fixed; inset:0; background:rgba(16,24,40,.4);
         z-index:80; place-items:center;
       }
       .cr-modal.open{ display:grid; }
       .cr-sheet{
-        width:min(360px,92vw); background:#0a0a0a; border:1px solid #3a2a14;
+        width:min(360px,92vw); background:#ffffff; border:1px solid #e6e8ec;
         border-radius:16px; padding:16px;
       }
       .cr-sheet h3{ margin-bottom:8px; }
-      .cr-sheet p{ color:#bbb; font-size:13px; line-height:1.65; margin-bottom:10px; }
+      .cr-sheet p{ color:#5b6470; font-size:13px; line-height:1.65; margin-bottom:10px; }
       .cr-cash{
-        width:100%; margin-top:8px; background:#161616; color:#fcaf45;
-        border:1px solid #3a2a14; border-radius:999px; padding:10px; font-weight:800;
+        width:100%; margin-top:8px; background:#111318; color:#fff;
+        border:1px solid #111318; border-radius:999px; padding:10px; font-weight:800;
       }
       .cr-x{
-        width:100%; margin-top:8px; background:none; border:0; color:#888; padding:8px;
+        width:100%; margin-top:8px; background:none; border:0; color:#8b95a1; padding:8px;
       }
       body.gold-me .zivv-ad-sticky{ display:none !important; }
       body.gold-me{ padding-bottom: 76px !important; }

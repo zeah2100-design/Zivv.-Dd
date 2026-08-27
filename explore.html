@@ -8,46 +8,38 @@
     <link rel="stylesheet" href="css/shell.css" />
     <link rel="stylesheet" href="css/professional.css" />
     <style>
+
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body {
-        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-        background:
-          radial-gradient(900px 420px at 10% -10%, rgba(252,175,69,.1), transparent 50%),
-          radial-gradient(800px 380px at 110% 110%, rgba(131,58,180,.16), transparent 46%),
-          #000;
-        color: #f5f5f5;
+        font-family: 'Cairo', "Segoe UI", Tahoma, Arial, sans-serif;
+        background: #f5f6f8;
+        color: #101418;
         min-height: 100dvh;
       }
       .wrap { width: min(560px, 100%); margin: 0 auto; padding: 16px 14px 80px; }
-      h1 {
-        font-size: 22px;
-        margin-bottom: 6px;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-      .lead { color: #a8a8a8; font-size: 13px; margin-bottom: 14px; line-height: 1.6; }
+      h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; color: #101418; }
+      .lead { color: #8b95a1; font-size: 13px; margin-bottom: 14px; line-height: 1.6; }
       .tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 14px; }
       .tabs::-webkit-scrollbar { display: none; }
       .tabs button {
         flex: 0 0 auto;
-        border: 1px solid #262626;
-        background: #111;
-        color: #ddd;
+        border: 1px solid #e6e8ec;
+        background: #ffffff;
+        color: #5b6470;
         border-radius: 999px;
         padding: 7px 12px;
         font-size: 13px;
+        cursor: pointer; font-family: inherit;
       }
-      .tabs button.on { border-color: #e1306c; color: #fff; }
+      .tabs button.on { border-color: #111318; background: #111318; color: #fff; }
       .mosaic { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; }
       .cell {
         position: relative;
         aspect-ratio: 1;
         overflow: hidden;
-        background: #151515;
+        background: #eef0f3;
         display: block;
-        color: #fff;
+        color: #101418;
         text-decoration: none;
       }
       .cell img { width: 100%; height: 100%; object-fit: cover; }
@@ -56,7 +48,8 @@
         top: 6px;
         inset-inline-start: 6px;
         font-size: 10px;
-        background: rgba(0,0,0,.55);
+        background: rgba(16,20,24,.6);
+        color: #fff;
         border-radius: 999px;
         padding: 2px 6px;
       }
@@ -69,18 +62,19 @@
         line-height: 1.5;
         display: flex;
         align-items: flex-end;
-        background: linear-gradient(160deg, #1a0b12, #000);
+        background: #ffffff;
+        border: 1px solid #e6e8ec;
       }
       .musiclist, .plist { display: grid; gap: 8px; }
       .row {
         display: flex;
         gap: 10px;
         align-items: center;
-        background: #0a0a0a;
-        border: 1px solid #262626;
+        background: #ffffff;
+        border: 1px solid #e6e8ec;
         border-radius: 12px;
         padding: 10px;
-        color: #fff;
+        color: #101418;
         text-decoration: none;
       }
       .row img, .note {
@@ -92,35 +86,37 @@
       .note {
         display: grid;
         place-items: center;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        background: #111318;
+        color: #fff;
       }
-      .price { color: #e1306c; font-weight: 800; font-size: 13px; }
-      .mute { color: #888; font-size: 12px; }
+      .price { color: #e1306c; font-weight: 800; font-size: 13px; width: auto; height: auto; background: none; box-shadow: none; display: inline; border-radius: 0; }
+      .mute { color: #8b95a1; font-size: 12px; }
       .hero img { width: 100%; max-height: 280px; object-fit: cover; border-radius: 14px; }
       .warn {
         margin: 12px 0;
         padding: 10px 12px;
-        border: 1px solid rgba(225,48,108,.4);
+        border: 1px solid #fda29b;
+        background: #fef3f2;
         border-radius: 10px;
-        color: #ffb3c8;
+        color: #b42318;
         font-size: 13px;
         line-height: 1.6;
       }
-      .specs { margin: 12px 0; padding-right: 18px; color: #ddd; font-size: 14px; line-height: 1.8; }
+      .specs { margin: 12px 0; padding-right: 18px; color: #384049; font-size: 14px; line-height: 1.8; }
       .phone {
         display: block;
         margin-top: 14px;
         text-align: center;
         text-decoration: none;
-        background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
+        background: #111318;
         color: #fff;
         font-weight: 800;
         border-radius: 12px;
         padding: 12px;
       }
-      .back { color: #c13584; font-size: 13px; text-decoration: none; }
-      .empty { color: #888; padding: 20px 0; }
-    </style>
+      .back { color: #e1306c; font-size: 13px; text-decoration: none; }
+      .empty { color: #8b95a1; padding: 20px 0; }
+  </style>
   </head>
   <body>
     <main class="wrap" id="root"></main>
@@ -154,7 +150,7 @@
           <b>رقم الناشر</b>
           <p class="mute" style="margin:6px 0 0">${p.phone}</p>
           <a class="phone" href="tel:${p.phone}">اتصال</a>
-          <a class="phone" href="chat.html?u=${encodeURIComponent(p.sellerUser)}&product=${encodeURIComponent(p.id)}" style="margin-top:8px;background:#161616;border:1px solid #333">تواصل</a>
+          <a class="phone" href="chat.html?u=${encodeURIComponent(p.sellerUser)}&product=${encodeURIComponent(p.id)}" style="margin-top:8px;background:#f1f3f5;border:1px solid #e6e8ec;color:#101418">تواصل</a>
         `;
       }
 

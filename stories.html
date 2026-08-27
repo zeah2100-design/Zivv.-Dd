@@ -8,44 +8,46 @@
     <link rel="stylesheet" href="css/shell.css" />
     <link rel="stylesheet" href="css/professional.css" />
     <style>
+
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: #000; color: #f5f5f5; min-height: 100dvh; }
-      .hint { color: #888; font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
+      body { font-family: 'Cairo', "Segoe UI", Tahoma, Arial, sans-serif; background: #f5f6f8; color: #101418; min-height: 100dvh; }
+      .hint { color: #8b95a1; font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
       .add, .pick {
-        border: 1px solid #262626; border-radius: 14px; padding: 14px;
-        background: #0a0a0a; margin: 12px 0;
+        border: 1px solid #e6e8ec; border-radius: 14px; padding: 14px;
+        background: #ffffff; margin: 12px 0;
       }
-      label { display: block; font-size: 13px; color: #a8a8a8; margin-bottom: 8px; }
+      label { display: block; font-size: 13px; color: #5b6470; margin-bottom: 8px; }
       input[type="text"] {
-        width: 100%; background: #121212; border: 1px solid #262626; color: #fff;
-        border-radius: 10px; padding: 10px 12px; margin: 8px 0 12px;
+        width: 100%; background: #ffffff; border: 1px solid #d9dde3; color: #101418;
+        border-radius: 10px; padding: 10px 12px; margin: 8px 0 12px; font-family: inherit; outline: none;
       }
       .btn {
-        border: 0; background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-        color: #fff; font-weight: 800; border-radius: 10px; padding: 10px 16px;
+        border: 0; background: #111318;
+        color: #fff; font-weight: 800; border-radius: 10px; padding: 10px 16px; cursor: pointer; font-family: inherit;
       }
       .ghost {
-        border: 1px solid #333; background: #161616; color: #fff;
-        border-radius: 10px; padding: 8px 12px; font-weight: 800; font-size: 13px;
+        border: 1px solid #e6e8ec; background: #f1f3f5; color: #101418;
+        border-radius: 10px; padding: 8px 12px; font-weight: 800; font-size: 13px; cursor: pointer; font-family: inherit;
       }
       .row { display: flex; gap: 12px; overflow-x: auto; padding: 6px 0 16px; }
       .row::-webkit-scrollbar { display: none; }
-      .card { flex: 0 0 118px; background: none; border: 0; color: #fff; text-align: start; }
+      .card { flex: 0 0 118px; background: none; border: 0; color: #101418; text-align: start; }
       .thumb {
         width: 118px; height: 200px; object-fit: cover; border-radius: 14px;
-        border: 2px solid #e1306c; background: #111; display: block;
+        border: 2px solid #e1306c; background: #eef0f3; display: block;
       }
-      .thumb.ph { display: grid; place-items: center; font-size: 28px; }
+      .thumb.ph { display: grid; place-items: center; font-size: 28px; color: #8b95a1; }
       .card b { display: block; font-size: 12px; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
-      .mini button { padding: 0; border: 0; background: #111; border-radius: 8px; overflow: hidden; position: relative; }
+      .mini button { padding: 0; border: 1px solid #e6e8ec; background: #ffffff; border-radius: 8px; overflow: hidden; position: relative; }
       .mini img, .mini video { width: 100%; height: 90px; object-fit: cover; display: block; }
       .mini .v { position: absolute; top: 4px; left: 4px; font-size: 11px; }
       .toast {
         position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
-        background: #161616; border: 1px solid #333; color: #fff;
+        background: #111318; border: 1px solid #111318; color: #fff;
         padding: 10px 14px; border-radius: 999px; font-size: 13px; z-index: 90; display: none;
       }
+      /* Fullscreen story viewer — stays dark like every story player */
       .view {
         display: none; position: fixed; inset: 0; z-index: 80; background: #000;
       }
@@ -62,7 +64,7 @@
       .bars i { flex: 1; height: 3px; background: rgba(255,255,255,.28); border-radius: 99px; overflow: hidden; }
       .bars i em { display: block; height: 100%; width: 0; background: #fff; }
       .who {
-        position: absolute; top: 18px; right: 16px; z-index: 5;
+        position: absolute; top: 18px; right: 16px; z-index: 5; color: #fff;
         display: flex; align-items: center; gap: 8px; font-weight: 800;
       }
       .who img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; }
@@ -70,8 +72,8 @@
       .view .zivv-cc-gear { top: 52px; z-index: 7; }
       .hit { position: absolute; inset: 0; z-index: 4; display: flex; }
       .hit .prev, .hit .next { flex: 1; }
-      .empty { color: #666; font-size: 13px; padding: 8px 0; }
-    </style>
+      .empty { color: #8b95a1; font-size: 13px; padding: 8px 0; }
+  </style>
   </head>
   <body>
     <main class="page-pad">
