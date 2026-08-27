@@ -1,35 +1,38 @@
-/* ZIVV Professional Theme v2.0 - Real DB */
+/* ZIVV Professional Theme v3.0 - Custom Palette */
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Brand — same colors as the Z+V logo */
-  --zivv-yellow: #fcaf45;
-  --zivv-orange: #f77737;
-  --zivv-pink: #e1306c;
-  --zivv-magenta: #c13584;
-  --zivv-purple: #833ab4;
-  --zivv-ig: linear-gradient(135deg, #fcaf45 0%, #f77737 22%, #e1306c 55%, #c13584 78%, #833ab4 100%);
-  --zivv-ig-hover: linear-gradient(135deg, #ffb84d 0%, #ff7f3f 22%, #e93d77 55%, #cc3d90 78%, #8d45c0 100%);
-  --zivv-black: #000000;
-  --zivv-ink: #f5f5f5;
-  --zivv-mute: #a8a8a8;
-  --zivv-line: #262626;
+  /* — Custom Palette — Unique colors, not copied from other platforms */
+  --zivv-accent: #f6ad55;      /* warm amber, rare in social media */
+  --zivv-accent-hover: #e5984d;
+  --zivv-bg-dark: #0d1321;
+  --zivv-bg-mid: #1e293b;
+  --zivv-bg-light: #334155;
+  --zivv-bg-card: #0f172a;
+  --zivv-border: #475569;
+  --zivv-border-subtle: #64748b;
+  --zivv-text: #f1f5f9;
+  --zivv-text-subtle: #94a3b8;
+  --zivv-text-muted: #cbd5e1;
   
   /* Professional System */
-  --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #141414;
-  --bg-card: #111111;
-  --border-primary: #1f1f1f;
-  --border-secondary: #2a2a2a;
-  --text-primary: #ffffff;
-  --text-secondary: #a8a8a8;
-  --text-tertiary: #737373;
+  --bg-primary: var(--zivv-bg-dark);
+  --bg-secondary: var(--zivv-bg-mid);
+  --bg-tertiary: var(--zivv-bg-light);
+  --bg-card: var(--zivv-bg-card);
+  --border-primary: var(--zivv-border);
+  --border-secondary: var(--zivv-border-subtle);
+  --text-primary: var(--zivv-text);
+  --text-secondary: var(--zivv-text-subtle);
+  --text-tertiary: var(--zivv-text-muted);
   
-  /* Legacy compat */
+  /* Accent gradient using our unique color */
+  --zivv-ig: linear-gradient(135deg, #f6ad55 0%, #f97316 22%, #ff6b35 55%, #ff8c4c 78%, #ffb84d 100%);
+  --zivv-ig-hover: linear-gradient(135deg, #ffb84d 0%, #ff8c4c 22%, #ff6b35 55%, #f97316 78%, #f6ad55 100%);
+  
+  /* Legacy compat (mapped to new palette) */
   --ig: var(--zivv-ig);
-  --pink: var(--zivv-pink);
-  --purple: var(--zivv-purple);
+  --accent: var(--zivv-accent);
   --line: var(--border-primary);
   --mute: var(--text-secondary);
 }

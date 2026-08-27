@@ -1,36 +1,40 @@
-/* ZIVV Professional Design System v2.0 - Real DB Edition */
+/* ZIVV Professional Design System v3.0 - Custom Palette */
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Brand - ZIVV Gradient */
-  --zivv-yellow: #fcaf45;
-  --zivv-orange: #f77737;
-  --zivv-pink: #e1306c;
-  --zivv-magenta: #c13584;
-  --zivv-purple: #833ab4;
-  --zivv-ig: linear-gradient(135deg, #fcaf45 0%, #f77737 22%, #e1306c 55%, #c13584 78%, #833ab4 100%);
-  --zivv-ig-hover: linear-gradient(135deg, #ffb84d 0%, #ff7f3f 22%, #e93d77 55%, #cc3d90 78%, #8d45c0 100%);
-  
-  /* Professional Dark Theme */
-  --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #141414;
-  --bg-card: #111111;
-  --bg-hover: #1a1a1a;
-  --bg-active: #222222;
-  
+  /* — Custom Palette — Unique colors, not copied from other platforms */
+  --zivv-accent: #f6ad55;
+  --zivv-accent-hover: #e5984d;
+  --zivv-bg-dark: #0d1321;
+  --zivv-bg-mid: #1e293b;
+  --zivv-bg-light: #334155;
+  --zivv-bg-card: #0f172a;
+  --zivv-border: #475569;
+  --zivv-border-subtle: #64748b;
+  --zivv-text: #f1f5f9;
+  --zivv-text-subtle: #94a3b8;
+  --zivv-text-muted: #cbd5e1;
+
+  /* Professional Dark Theme (using new palette) */
+  --bg-primary: var(--zivv-bg-dark);
+  --bg-secondary: var(--zivv-bg-mid);
+  --bg-tertiary: var(--zivv-bg-light);
+  --bg-card: var(--zivv-bg-card);
+  --bg-hover: #1e293b;
+  --bg-active: #334155;
+
   /* Borders */
-  --border-primary: #1f1f1f;
-  --border-secondary: #2a2a2a;
-  --border-hover: #333333;
-  --border-focus: var(--zivv-pink);
-  
+  --border-primary: var(--zivv-border);
+  --border-secondary: var(--zivv-border-subtle);
+  --border-hover: #94a3b8;
+  --border-focus: var(--zivv-accent);
+
   /* Text */
-  --text-primary: #ffffff;
-  --text-secondary: #a8a8a8;
-  --text-tertiary: #737373;
-  --text-inverse: #000000;
-  
+  --text-primary: var(--zivv-text);
+  --text-secondary: var(--zivv-text-subtle);
+  --text-tertiary: var(--zivv-text-muted);
+  --text-inverse: var(--zivv-bg-dark);
+
   /* Spacing - 4px base */
   --space-1: 4px;
   --space-2: 8px;
@@ -41,38 +45,42 @@
   --space-8: 32px;
   --space-10: 40px;
   --space-12: 48px;
-  
+
   /* Radius */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
   --radius-full: 9999px;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
-  --shadow-glow: 0 0 20px rgba(225,48,108,0.15);
-  
+  --shadow-glow: 0 0 20px rgba(246,173,85,0.15);
+
   /* Typography */
   --font-ar: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
   --font-en: 'Inter', 'Segoe UI', sans-serif;
   --font-mono: 'SF Mono', monospace;
-  
+
   /* Transitions */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 350ms;
-  
+
   /* Z-index */
   --z-nav: 40;
   --z-header: 50;
   --z-modal: 60;
   --z-toast: 70;
   --z-dropdown: 80;
+
+  /* Accent gradient using our unique color */
+  --zivv-ig: linear-gradient(135deg, #f6ad55 0%, #f97316 22%, #ff6b35 55%, #ff8c4c 78%, #ffb84d 100%);
+  --zivv-ig-hover: linear-gradient(135deg, #ffb84d 0%, #ff8c4c 22%, #ff6b35 55%, #f97316 78%, #f6ad55 100%);
 }
 
 /* Reset & Base */
