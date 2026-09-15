@@ -217,7 +217,44 @@ module.exports = async (req, res) => {
         const rows = await db.getAiMessages(chatId);
         return res.status(200).json(rows);
       }
+      if (p === "/views") {
+        const postId = (req.query && req.query.post_id) || "";
+        const rows = await db.getViews(postId || null);
+        const counts = {};
+        rows.forEach(r => { counts[r.post_id] = (counts[r.post_id] || 0) + (r.views || 0); });
+        if (postId) return res.status(200).json({ post_id: postId, views: counts[postId] || 0, real: true });
+        const total = Object.values(counts).reduce((s, n) => s + n, 0);
+        return res.status(200).json({ counts, total, real: true });
+      }
+      if (p === "/stats") {
+        const stats = await db.getStats();
+        return res.status(200).json({ ok: true, mode: db.mode, real: true, timestamp: new Date().toISOString(), stats });
+      }
+      if (p === "/ai-usage") {
+        const user = String((req.query && req.query.user) || "").toLowerCase();
+        if (!user) return res.status(400).json({ error: "user required" });
+        const today = new Date().toISOString().slice(0, 10);
+        const rows = await db.getAiUsage(user, today).catch(() => []);
+        const row = rows && rows[0] ? rows[0] : { user_key: user, day: today, chats_count: 0, images_count: 0, tokens_used: 0 };
+        return res.status(200).json({ ...row, real: true });
+      }
 
+      return res.status(404).json({ error: "not found", path: p });
+    }
+
+    // ==================== DELETE ====================
+    if (req.method === "DELETE") {
+      if (p === "/posts") {
+        const id = (req.query && req.query.id) || "";
+        const user = String((req.query && req.query.user) || "").toLowerCase();
+        if (!id) return res.status(400).json({ error: "id required" });
+        const post = await db.getPostById(id).catch(() => null);
+        if (!post) return res.status(404).json({ error: "not found" });
+        const owner = String(post.username || post.user || "").toLowerCase();
+        if (owner && owner !== user) return res.status(403).json({ error: "not owner" });
+        await db.deletePost(id);
+        return res.status(200).json({ ok: true });
+      }
       return res.status(404).json({ error: "not found", path: p });
     }
 
@@ -242,6 +279,16 @@ module.exports = async (req, res) => {
       const on = body.on !== false;
       await db.toggleLike(body.post_id, body.user_key, on);
       return res.status(200).json({ ok: true, on });
+    }
+
+    if (p === "/views") {
+      const out = await db.recordView(body.post_id, body.user_key || body.user || "guest");
+      return res.status(200).json({ ok: true, ...out, real: true });
+    }
+
+    if (p === "/notes-read") {
+      await db.markNotesRead(body.dest || "");
+      return res.status(200).json({ ok: true });
     }
 
     if (p === "/comments") {

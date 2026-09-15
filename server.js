@@ -38,6 +38,27 @@ function readBody(req) {
   });
 }
 
+// سجل استهلاك الذكاء الاصطناعي الحقيقي في قاعدة البيانات (عدد الشاتات + التوكنز)
+async function logAiUsage(db, userKey, promptChars, completionChars) {
+  try {
+    const uk = (String(userKey || "guest").toLowerCase() || "guest").slice(0, 120);
+    const day = new Date().toISOString().slice(0, 10);
+    const rows = await db.getAiUsage(uk, day).catch(() => []);
+    const prev = rows && rows[0] ? rows[0] : {};
+    const tokens = Math.max(1, Math.round(((promptChars || 0) + (completionChars || 0)) / 4));
+    await db.upsertAiUsage({
+      user_key: uk,
+      day,
+      chats_count: (prev.chats_count || 0) + 1,
+      images_count: prev.images_count || 0,
+      tokens_used: (prev.tokens_used || 0) + tokens,
+      created_at: Date.now(),
+      updated_at: Date.now(),
+    });
+    return { chats_count: (prev.chats_count || 0) + 1, tokens_used: (prev.tokens_used || 0) + tokens };
+  } catch { return null; }
+}
+
 function mime(file) {
   const ext = path.extname(file).toLowerCase();
   return ({
@@ -122,6 +143,22 @@ async function handleApi(req, res, url) {
       } catch (e) { return json(res, 502, { error: String(e.message || e) }); }
     }
 
+    // DELETE routes
+    if (req.method === "DELETE") {
+      if (p === "/api/posts") {
+        const id = url.searchParams.get("id") || "";
+        const user = String(url.searchParams.get("user") || "").toLowerCase();
+        if (!id) return json(res, 400, { error: "id required" });
+        const post = await db.getPostById(id).catch(() => null);
+        if (!post) return json(res, 404, { error: "not found" });
+        const owner = String(post.username || post.user || "").toLowerCase();
+        if (owner && owner !== user) return json(res, 403, { error: "not owner" });
+        await db.deletePost(id);
+        return json(res, 200, { ok: true });
+      }
+      return json(res, 404, { error: "not found", path: p });
+    }
+
     // GET routes
     if (req.method === "GET") {
       if (p === "/api/posts") {
@@ -178,6 +215,27 @@ async function handleApi(req, res, url) {
         const chatId = url.searchParams.get("chat_id") || "";
         if (!chatId) return json(res, 400, { error: "chat_id required" });
         return json(res, 200, await db.getAiMessages(chatId));
+      }
+      if (p === "/api/views") {
+        const postId = url.searchParams.get("post_id") || "";
+        const rows = await db.getViews(postId || null);
+        const counts = {};
+        rows.forEach(r => { counts[r.post_id] = (counts[r.post_id] || 0) + (r.views || 0); });
+        if (postId) return json(res, 200, { post_id: postId, views: counts[postId] || 0, real: true });
+        const total = Object.values(counts).reduce((s, n) => s + n, 0);
+        return json(res, 200, { counts, total, real: true });
+      }
+      if (p === "/api/stats") {
+        const stats = await db.getStats();
+        return json(res, 200, { ok: true, mode: db.mode, real: true, timestamp: new Date().toISOString(), stats });
+      }
+      if (p === "/api/ai-usage") {
+        const user = String(url.searchParams.get("user") || "").toLowerCase();
+        if (!user) return json(res, 400, { error: "user required" });
+        const today = new Date().toISOString().slice(0, 10);
+        const rows = await db.getAiUsage(user, today).catch(() => []);
+        const row = rows && rows[0] ? rows[0] : { user_key: user, day: today, chats_count: 0, images_count: 0, tokens_used: 0 };
+        return json(res, 200, { ...row, real: true });
       }
       return json(res, 404, { error: "not found", path: p });
     }
@@ -364,6 +422,16 @@ async function handleApi(req, res, url) {
         return json(res, 200, { ok: true, url, real: true });
       }
 
+      if (p === "/api/views") {
+        const out = await db.recordView(body.post_id, body.user_key || body.user || "guest");
+        return json(res, 200, { ok: true, ...out, real: true });
+      }
+
+      if (p === "/api/notes-read") {
+        await db.markNotesRead(body.dest || "");
+        return json(res, 200, { ok: true });
+      }
+
       if (p === "/api/ai-proxy" && req.method === "POST") {
         const out = await aiProxy(body);
         return json(res, out.status, out.json);
@@ -404,7 +472,11 @@ async function handleApi(req, res, url) {
             if (r.ok) {
               const parts = data?.candidates?.[0]?.content?.parts;
               const text = Array.isArray(parts) ? parts.map(p => p.text || "").join("") : "";
-              if (text.trim()) return json(res, 200, { text: text.trim(), choices: [{ message: { content: text.trim() } }] });
+              if (text.trim()) {
+                const promptChars = messages.reduce((s, m) => s + String(m.content || "").length, 0);
+                const usage = await logAiUsage(db, body.user || body.user_key, promptChars, text.trim().length);
+                return json(res, 200, { text: text.trim(), choices: [{ message: { content: text.trim() } }], usage, real: true });
+              }
             } else last = (data?.error?.message) || raw.slice(0, 200);
           } catch (e) { last = String(e.message || e); }
         }
@@ -414,7 +486,10 @@ async function handleApi(req, res, url) {
           if (r.ok) {
             let data = raw;
             try { data = JSON.parse(raw); } catch {}
-            return json(res, 200, typeof data === "string" ? { text: data } : data);
+            const txt = typeof data === "string" ? data : (data.text || data.choices?.[0]?.message?.content || "");
+            const promptChars = messages.reduce((s, m) => s + String(m.content || "").length, 0);
+            const usage = await logAiUsage(db, body.user || body.user_key, promptChars, String(txt).length);
+            return json(res, 200, typeof data === "string" ? { text: data, usage, real: true } : { ...data, usage, real: true });
           }
         } catch (e) { last = String(e.message || e); }
         return json(res, 502, { error: last });

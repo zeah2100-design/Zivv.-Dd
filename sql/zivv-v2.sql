@@ -259,6 +259,15 @@ create table if not exists public.ai_usage (
   primary key (user_key, day)
 );
 
+-- ==================== POST VIEWS (real) ====================
+create table if not exists public.post_views (
+  post_id text not null references public.posts(id) on delete cascade,
+  user_key text not null,
+  views int default 1,
+  updated_at timestamptz default now(),
+  primary key (post_id, user_key)
+);
+
 -- ==================== SESSIONS ====================
 create table if not exists public.sessions (
   id text primary key,
@@ -290,6 +299,7 @@ create index if not exists stories_expires_idx on public.stories (expires_at);
 create index if not exists ai_chats_user_idx on public.ai_chats (user_key, updated_at desc);
 create index if not exists ai_messages_chat_idx on public.ai_messages (chat_id, created_at);
 create index if not exists ai_usage_user_day_idx on public.ai_usage (user_key, day);
+create index if not exists post_views_post_idx on public.post_views (post_id);
 
 -- ==================== FUNCTIONS ====================
 create or replace function public.update_updated_at()
@@ -363,6 +373,7 @@ alter table public.gold_reqs enable row level security;
 alter table public.ai_chats enable row level security;
 alter table public.ai_messages enable row level security;
 alter table public.ai_usage enable row level security;
+alter table public.post_views enable row level security;
 alter table public.sessions enable row level security;
 
 -- For now, allow all for anon with service key - production should restrict
@@ -372,7 +383,7 @@ begin
   foreach t in array array[
     'accounts','profiles','posts','likes','comments','comment_likes',
     'follows','shares','messages','products','reports','stories',
-    'friend_reqs','notes','gold_reqs','ai_chats','ai_messages','ai_usage','sessions'
+    'friend_reqs','notes','gold_reqs','ai_chats','ai_messages','ai_usage','post_views','sessions'
   ]
   loop
     execute format('drop policy if exists zivv_read on public.%I', t);

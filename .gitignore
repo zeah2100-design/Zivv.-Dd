@@ -17,3 +17,4 @@ uploads/
 .idea/
 *.db-shm
 *.db-wal
+data/zivv.json.bak

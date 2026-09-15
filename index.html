@@ -3,951 +3,131 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZIVV — شكل خاص • Noir Aurora</title>
-  <meta name="description" content="ZIVV بتصميم خاص جديد كلياً - Noir Aurora - تجربة تواصل فاخرة بقاعدة بيانات حقيقية" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#050507" />
+  <title>ZIVV — تواصل اجتماعي ذكي</title>
+  <meta name="description" content="ZIVV — منصة تواصل اجتماعي عربية بذكاء اصطناعي وقاعدة بيانات حقيقية" />
   <link rel="icon" href="brand/icon-192.png" />
-  <link rel="stylesheet" href="css/theme.css" />
-  <link rel="stylesheet" href="css/zivv-special.css" />
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Space Grotesk', 'Cairo', sans-serif;
-      background: #050507;
-      color: #fff;
-      min-height: 100dvh;
-      overflow-x: hidden;
-    }
-    
-    .app {
-      position: relative;
-      min-height: 100dvh;
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      z-index: 1;
-    }
-    
-    /* Left - Special Brand */
-    .left {
-      position: relative;
-      padding: 48px 48px 32px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
-    }
-    
-    .watermark {
-      top: 20%;
-      left: -10%;
-      transform: rotate(-8deg);
-    }
-    
-    .top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: relative;
-      z-index: 2;
-    }
-    
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    
-    .logo-mark {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      background: #000;
-      padding: 2px;
-      position: relative;
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 8px 24px rgba(0,0,0,0.5);
-    }
-    
-    .logo-mark img {
-      width: 100%;
-      height: 100%;
-      border-radius: 12px;
-      object-fit: cover;
-    }
-    
-    .logo-mark::after {
-      content: "";
-      position: absolute;
-      inset: -1px;
-      border-radius: 14px;
-      padding: 1px;
-      background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      opacity: 0.6;
-      pointer-events: none;
-    }
-    
-    .logo-type {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 22px;
-      letter-spacing: 0.32em;
-      background: linear-gradient(135deg, #fcaf45 0%, #e1306c 50%, #833ab4 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-    
-    .edition {
-      padding: 6px 12px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 999px;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      color: #888;
-    }
-    
-    .hero {
-      position: relative;
-      z-index: 2;
-      margin-top: 64px;
-    }
-    
-    .hero-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      color: #aaa;
-      margin-bottom: 24px;
-    }
-    
-    .hero-kicker .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #10b981;
-      box-shadow: 0 0 10px #10b981;
-      animation: pulseDot 2s infinite;
-    }
-    
-    @keyframes pulseDot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(1.2); }
-    }
-    
-    .hero-title {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: clamp(40px, 6vw, 72px);
-      line-height: 0.9;
-      letter-spacing: -0.04em;
-      margin-bottom: 20px;
-    }
-    
-    .hero-title .line {
-      display: block;
-    }
-    
-    .hero-title .line.gradient {
-      background: linear-gradient(90deg, #fcaf45, #e1306c, #833ab4, #fcaf45);
-      background-size: 200% 100%;
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      animation: gradientShift 6s linear infinite;
-    }
-    
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 200% 50%; }
-    }
-    
-    .hero-desc {
-      font-size: 17px;
-      line-height: 1.6;
-      color: #8a8a9a;
-      max-width: 440px;
-      margin-bottom: 32px;
-    }
-    
-    .bento-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      max-width: 440px;
-    }
-    
-    .bento-item {
-      padding: 18px 16px;
-      min-height: 110px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    
-    .bento-item .icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      display: grid;
-      place-items: center;
-      font-size: 18px;
-      margin-bottom: 12px;
-    }
-    
-    .bento-item h4 {
-      font-size: 13px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 4px;
-    }
-    
-    .bento-item p {
-      font-size: 11px;
-      line-height: 1.4;
-      color: #6b6b80;
-    }
-    
-    .bento-item.wide {
-      grid-column: span 2;
-      flex-direction: row;
-      align-items: center;
-      min-height: 80px;
-      gap: 16px;
-    }
-    
-    .bento-item.wide .icon {
-      margin-bottom: 0;
-    }
-    
-    .bottom {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 32px;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      margin-top: 40px;
-    }
-    
-    .stats {
-      display: flex;
-      gap: 24px;
-    }
-    
-    .stat b {
-      display: block;
-      font-family: 'Syne', sans-serif;
-      font-size: 18px;
-      font-weight: 800;
-      color: #fff;
-      line-height: 1;
-    }
-    
-    .stat span {
-      font-size: 10px;
-      color: #555;
-      letter-spacing: 0.08em;
-      font-weight: 600;
-      margin-top: 4px;
-      display: block;
-    }
-    
-    .links {
-      display: flex;
-      gap: 16px;
-      font-size: 11px;
-    }
-    
-    .links a {
-      color: #444;
-      text-decoration: none;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      transition: color 0.2s ease;
-    }
-    
-    .links a:hover { color: #fff; }
-    
-    /* Right - Special Auth */
-    .right {
-      position: relative;
-      padding: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.2);
-      backdrop-filter: blur(20px);
-      border-inline-start: 1px solid rgba(255,255,255,0.06);
-    }
-    
-    .auth {
-      width: 100%;
-      max-width: 380px;
-      position: relative;
-    }
-    
-    .auth-card {
-      padding: 28px 24px;
-      position: relative;
-    }
-    
-    .db-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      background: rgba(16,185,129,0.08);
-      border: 1px solid rgba(16,185,129,0.15);
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 700;
-      color: #10b981;
-      margin-bottom: 20px;
-      letter-spacing: 0.02em;
-    }
-    
-    .db-pill.local {
-      background: rgba(245,158,11,0.08);
-      border-color: rgba(245,158,11,0.15);
-      color: #f59e0b;
-    }
-    
-    .db-pill .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: currentColor;
-      box-shadow: 0 0 8px currentColor;
-      animation: pulseDot 2s infinite;
-    }
-    
-    .auth-head {
-      margin-bottom: 24px;
-    }
-    
-    .auth-head h2 {
-      font-family: 'Syne', sans-serif;
-      font-size: 24px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      margin-bottom: 8px;
-    }
-    
-    .auth-head p {
-      font-size: 13px;
-      color: #6b6b80;
-      line-height: 1.5;
-    }
-    
-    .tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4px;
-      padding: 4px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 14px;
-      margin-bottom: 20px;
-    }
-    
-    .tab {
-      padding: 10px;
-      background: transparent;
-      border: none;
-      border-radius: 10px;
-      color: #666;
-      font-size: 13px;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .tab.on {
-      background: #fff;
-      color: #000;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-    }
-    
-    .field {
-      margin-bottom: 14px;
-    }
-    
-    .field label {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: #888;
-      margin-bottom: 8px;
-    }
-    
-    .field input {
-      width: 100%;
-      padding: 14px 16px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
-      color: #fff;
-      font-size: 14px;
-      font-family: inherit;
-      outline: none;
-      transition: all 0.25s ease;
-    }
-    
-    .field input::placeholder { color: #444; }
-    .field input:focus {
-      background: rgba(255,255,255,0.06);
-      border-color: rgba(225,48,108,0.4);
-      box-shadow: 0 0 0 4px rgba(225,48,108,0.08);
-    }
-    
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    
-    .btn {
-      width: 100%;
-      padding: 14px 20px;
-      border-radius: 999px;
-      border: none;
-      font-family: inherit;
-      font-weight: 700;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      position: relative;
-      overflow: hidden;
-      margin-top: 8px;
-    }
-    
-    .btn-primary {
-      background: #fff;
-      color: #000;
-    }
-    
-    .btn-primary::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, #fcaf45, #e1306c, #833ab4);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    
-    .btn-primary:hover::before { opacity: 1; }
-    .btn-primary:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 12px 24px rgba(225,48,108,0.2); }
-    .btn-primary span { position: relative; z-index: 1; }
-    
-    .msg {
-      padding: 12px 14px;
-      border-radius: 14px;
-      font-size: 12px;
-      line-height: 1.5;
-      margin-bottom: 14px;
-      display: flex;
-      gap: 8px;
-      animation: slideDown 0.3s ease;
-    }
-    
-    .msg.err { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.12); color: #fca5a5; }
-    .msg.ok { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.12); color: #6ee7b7; }
-    
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .hint {
-      font-size: 11px;
-      color: #555;
-      line-height: 1.5;
-      margin-top: 12px;
-      padding: 12px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.04);
-      border-radius: 12px;
-    }
-    
-    .quiz {
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 14px;
-      background: rgba(255,255,255,0.02);
-    }
-    
-    .quiz legend {
-      font-size: 12px;
-      font-weight: 700;
-      color: #fff;
-      padding: 0 8px;
-    }
-    
-    .quiz-opts {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    
-    .quiz-opt {
-      flex: 1;
-      padding: 10px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
-      color: #888;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      justify-content: center;
-    }
-    
-    .quiz-opt:has(input:checked) {
-      background: rgba(225,48,108,0.1);
-      border-color: rgba(225,48,108,0.3);
-      color: #fff;
-    }
-    
-    .quiz-opt input { accent-color: #e1306c; }
-    
-    .foot {
-      margin-top: 20px;
-      padding-top: 16px;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 10px;
-      color: #444;
-    }
-    
-    .lang {
-      display: flex;
-      gap: 4px;
-      background: rgba(255,255,255,0.04);
-      padding: 3px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.06);
-    }
-    
-    .lang button {
-      padding: 6px 10px;
-      background: transparent;
-      border: none;
-      border-radius: 6px;
-      color: #555;
-      font-size: 10px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
-    
-    .lang button.on { background: #fff; color: #000; }
-    
-    .hidden { display: none !important; }
-    
-    .done {
-      text-align: center;
-      padding: 24px 0;
-    }
-    
-    .done-ic {
-      width: 64px;
-      height: 64px;
-      margin: 0 auto 16px;
-      background: linear-gradient(135deg, #10b981, #059669);
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      font-size: 28px;
-      color: #fff;
-      box-shadow: 0 8px 24px rgba(16,185,129,0.25);
-    }
-    
-    /* Responsive */
-    @media (max-width: 1024px) {
-      .app { grid-template-columns: 1fr; }
-      .left { padding: 32px 24px; }
-      .hero { margin-top: 32px; }
-      .bento-grid { max-width: 100%; }
-      .right {
-        border-inline-start: none;
-        border-top: 1px solid rgba(255,255,255,0.06);
-        padding: 24px 16px 48px;
-        background: transparent;
-      }
-      .watermark { font-size: 160px; }
-    }
-    
-    @media (max-width: 640px) {
-      .left { padding: 24px 20px; }
-      .hero-title { font-size: 36px; }
-      .bento-grid { grid-template-columns: 1fr; }
-      .bento-item.wide { grid-column: span 1; }
-      .row { grid-template-columns: 1fr; }
-    }
-  </style>
-</head>
-<body class="grain">
-  <div class="aurora">
-    <div class="aurora-blob"></div>
-    <div class="aurora-blob"></div>
-    <div class="aurora-blob"></div>
-    <div class="aurora-blob"></div>
-  </div>
-  
-  <div class="app">
-    <div class="left">
-      <div class="watermark">ZIVV</div>
-      
-      <div class="top">
-        <div class="logo">
-          <div class="logo-mark"><img src="brand/logo-sm.png" alt="ZIVV" /></div>
-          <div class="logo-type">ZIVV</div>
-        </div>
-        <div class="edition">NOIR AURORA • V2.1</div>
-      </div>
-      
-      <div class="hero stagger">
-        <div class="hero-kicker"><span class="dot"></span> REAL DATABASE • 100% SECURE • LIVE</div>
-        
-        <h1 class="hero-title">
-          <span class="line">شكل خاص</span>
-          <span class="line gradient">وتجديد بنا</span>
-          <span class="line">بقاعدة حقيقية</span>
-        </h1>
-        
-        <p class="hero-desc">ZIVV بتصميم Noir Aurora الجديد كلياً - تجربة تواصل فاخرة، مظلمة، مع aurora متحركة، bento cards، وقاعدة بيانات حقيقية مشفرة.</p>
-        
-        <div class="bento-grid">
-          <div class="bento bento-item">
-            <div class="bento-glow"></div>
-            <div class="icon">◐</div>
-            <div>
-              <h4>Noir Aurora</h4>
-              <p>تصميم مظلم فاخر مع aurora متحركة و grain texture</p>
-            </div>
-          </div>
-          
-          <div class="bento bento-item">
-            <div class="bento-glow"></div>
-            <div class="icon">⬙</div>
-            <div>
-              <h4>Bento System</h4>
-              <p>كروت bento مع hover glow و magnetic effect</p>
-            </div>
-          </div>
-          
-          <div class="bento bento-item wide">
-            <div class="bento-glow"></div>
-            <div class="icon">⚡</div>
-            <div>
-              <h4>قاعدة بيانات حقيقية 100% - SQLite + Supabase + bcrypt</h4>
-              <p>مش localStorage - ملف حقيقي على القرص</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="bottom">
-        <div class="stats">
-          <div class="stat"><b id="s-posts">1.2K+</b><span>POSTS</span></div>
-          <div class="stat"><b>100%</b><span>REAL DB</span></div>
-          <div class="stat"><b>NOIR</b><span>EDITION</span></div>
-        </div>
-        <div class="links">
-          <a href="DOMAIN.md" target="_blank">DOMAIN</a>
-          <a href="home.html">HOME</a>
-          <a href="https://github.com/zeah2100-design/Zivv.-Dd/pull/1" target="_blank">PR #1</a>
-        </div>
-      </div>
-    </div>
-    
-    <div class="right">
-      <div class="auth">
-        <div class="bento auth-card">
-          <div class="bento-glow"></div>
-          
-          <div id="db-status" class="db-pill"><span class="dot"></span> CONNECTING TO REAL DB...</div>
-          
-          <div class="auth-head">
-            <h2>دخول فاخر</h2>
-            <p>قاعدة بيانات حقيقية مشفرة بـ bcrypt - آمن 100%</p>
-          </div>
-          
-          <div class="tabs" id="auth-tabs">
-            <button type="button" id="tab-login" class="tab on">دخول</button>
-            <button type="button" id="tab-signup" class="tab">حساب جديد</button>
-          </div>
-          
-          <div id="msg"></div>
-          
-          <form id="form-login">
-            <div class="field">
-              <label>البريد الإلكتروني</label>
-              <input id="login-email" type="email" required placeholder="you@zivv.app" autocomplete="email" />
-            </div>
-            <div class="field">
-              <label>كلمة المرور</label>
-              <input id="login-pass" type="password" required placeholder="••••••••" autocomplete="current-password" />
-            </div>
-            <details style="margin:10px 0">
-              <summary style="font-size:11px;color:#444;cursor:pointer">دخول قديم - توافق</summary>
-              <div style="display:grid;gap:8px;margin-top:10px">
-                <input id="login-first" type="text" placeholder="الاسم" />
-                <input id="login-last" type="text" placeholder="العائلة" />
-                <input id="login-age" type="number" min="18" max="120" placeholder="السن" />
-                <input id="login-mark" type="text" placeholder="العلامة" />
-              </div>
-            </details>
-            <button class="btn btn-primary" type="submit"><span>دخول آمن • Real DB</span></button>
-          </form>
-          
-          <form id="form-signup" class="hidden">
-            <div class="row">
-              <div class="field"><label>الاسم</label><input id="signup-first" type="text" required placeholder="محمد" /></div>
-              <div class="field"><label>العائلة</label><input id="signup-last" type="text" required placeholder="أحمد" /></div>
-            </div>
-            <div class="field"><label>السن</label><input id="signup-age" type="number" min="18" max="120" required placeholder="25" /></div>
-            <div class="field"><label>البريد</label><input id="signup-email" type="email" required placeholder="your@email.com" /></div>
-            <div class="field"><label>كلمة المرور</label><input id="signup-pass" type="password" required placeholder="6+ أحرف" /></div>
-            <div class="field"><label>تأكيد</label><input id="signup-pass2" type="password" required placeholder="أعد الكتابة" /></div>
-            <div class="field"><label>العلامة المميزة</label><input id="signup-mark" type="text" required placeholder="كلمة تميزك" /></div>
-            <div class="hint">🔐 مشفرة بـ bcrypt في قاعدة بيانات حقيقية - مش localStorage</div>
-            <button class="btn btn-primary" type="submit"><span>إنشاء حساب حقيقي</span></button>
-          </form>
-          
-          <form id="form-quiz" class="hidden">
-            <p style="font-size:12px;color:#666;margin-bottom:14px">خصص تجربتك • 3 أسئلة سريعة</p>
-            <fieldset class="quiz"><legend>صانع محتوى؟</legend><div class="quiz-opts"><label class="quiz-opt"><input type="radio" name="creator" value="yes" required /> نعم</label><label class="quiz-opt"><input type="radio" name="creator" value="no" /> لا</label></div></fieldset>
-            <fieldset class="quiz"><legend>بائع منتجات؟</legend><div class="quiz-opts"><label class="quiz-opt"><input type="radio" name="seller" value="yes" required /> نعم</label><label class="quiz-opt"><input type="radio" name="seller" value="no" /> لا</label></div></fieldset>
-            <fieldset class="quiz"><legend>فنان؟</legend><div class="quiz-opts"><label class="quiz-opt"><input type="radio" name="artist" value="yes" required /> نعم</label><label class="quiz-opt"><input type="radio" name="artist" value="no" /> لا</label></div></fieldset>
-            <div class="field"><label>سمعت عنا إزاي؟</label><select id="heard" required style="width:100%;padding:14px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;color:#fff"><option value="">اختار</option><option value="friend">صديق</option><option value="instagram">إنستجرام</option><option value="tiktok">تيك توك</option><option value="google">جوجل</option><option value="other">أخرى</option></select></div>
-            <input id="heard-other" class="hidden" type="text" placeholder="المصدر" style="width:100%;padding:14px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;color:#fff;margin-top:8px" />
-            <button class="btn btn-primary" type="submit"><span>ابدأ • Noir Aurora 🚀</span></button>
-          </form>
-          
-          <div id="done" class="hidden done">
-            <div class="done-ic">✓</div>
-            <div id="done-name" style="font-family:Syne;font-weight:800;font-size:18px;margin-bottom:8px"></div>
-            <p style="font-size:12px;color:#666;margin-bottom:16px">حساب حقيقي محفوظ ✅<br>تحويل للرئيسية...</p>
-            <a href="home.html" class="btn btn-primary" style="text-decoration:none"><span>الرئيسية</span></a>
-            <button id="out-btn" type="button" style="background:none;border:none;color:#c13584;font-size:11px;margin-top:12px;cursor:pointer;width:100%">خروج</button>
-          </div>
-          
-          <div class="foot">
-            <div class="lang">
-              <button id="btn-ar" class="on">عربي</button>
-              <button id="btn-en">EN</button>
-            </div>
-            <div id="foot-mode">noir-aurora • real-db</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <script src="js/supabase-config.js"></script>
-  <script src="js/db.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
   <script>
-    const T = {
-      ar: { login: "دخول", signup: "حساب جديد", go: "دخول آمن • Real DB", make: "إنشاء حساب حقيقي", start: "ابدأ • Noir Aurora 🚀", needAge: "لازم 18+", needName: "اكتب الاسم", needMark: "العلامة كلام بس", needPass: "كلمة المرور قصيرة", needAll: "جاوب على الكل", exists: "الحساب موجود", missing: "مفيش حساب" },
-      en: { login: "Login", signup: "Sign up", go: "Secure login", make: "Create real account", start: "Start • Noir Aurora 🚀", needAge: "Must be 18+", needName: "Enter name", needMark: "Mark words only", needPass: "Password short", needAll: "Answer all", exists: "Exists", missing: "No account" }
-    };
-    const $ = (id) => document.getElementById(id);
-    let lang = localStorage.getItem("zivv.lang") || "ar";
-    let pending = null;
-    
-    function users() { try { return JSON.parse(localStorage.getItem("zivv.users") || "{}"); } catch { return {}; } }
-    function saveUsers(u) { localStorage.setItem("zivv.users", JSON.stringify(u)); }
-    function t() { return T[lang]; }
-    function cleanName(s) { return String(s || "").replace(/\s+/g, " ").trim(); }
-    function fold(s) { return cleanName(s).toLowerCase().replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه"); }
-    function isWords(s) { return /^[\p{L} ]{3,40}$/u.test(cleanName(s)); }
-    function markOk(m, f, l) {
-      const mm = fold(m), ff = fold(f), ll = fold(l);
-      if (!isWords(m)) return false;
-      if (mm === ff || mm === ll) return false;
-      return true;
-    }
-    function uname(first, email) {
-      const fromMail = String(email || "").split("@")[0].replace(/[^a-zA-Z0-9_]/g, "");
-      if (fromMail.length >= 3) return fromMail.toLowerCase();
-      return ("u" + Date.now()).slice(0, 12);
-    }
-    
-    function show(id) {
-      ["form-login","form-signup","form-quiz","done","auth-tabs"].forEach((x) => {
-        const hide = x === "auth-tabs" ? (id === "form-quiz" || id === "done") : x !== id;
-        $(x).classList.toggle("hidden", hide);
-      });
-    }
-    function msg(text, kind) { $("msg").innerHTML = text ? `<div class="msg ${kind}">${text}</div>` : ""; }
-    function setTab(m) {
-      $("tab-login").classList.toggle("on", m === "login");
-      $("tab-signup").classList.toggle("on", m === "signup");
-      show(m === "login" ? "form-login" : "form-signup");
-      msg("", "");
-    }
-    
-    $("tab-login").onclick = () => setTab("login");
-    $("tab-signup").onclick = () => setTab("signup");
-    $("btn-ar").onclick = () => { lang = "ar"; localStorage.setItem("zivv.lang", lang); document.documentElement.lang = "ar"; document.documentElement.dir = "rtl"; $("btn-ar").classList.add("on"); $("btn-en").classList.remove("on"); };
-    $("btn-en").onclick = () => { lang = "en"; localStorage.setItem("zivv.lang", lang); document.documentElement.lang = "en"; document.documentElement.dir = "ltr"; $("btn-en").classList.add("on"); $("btn-ar").classList.remove("on"); };
-    
-    // DB status
-    function updateDbStatus() {
-      const el = $("db-status");
-      if (!window.ZIVV_DB) return;
-      ZIVV_DB.whenReady((mode) => {
-        const info = ZIVV_DB.info;
-        if (mode === "real") {
-          el.innerHTML = `<span class="dot"></span> REAL DB • ${info.mode} • ${info.posts || 0} POSTS • SECURE`;
-          el.className = "db-pill";
-          const sp = $("s-posts"); if (sp) sp.textContent = (info.posts || 0) + "+";
-          $("foot-mode").textContent = `noir-aurora • ${info.mode} • real`;
-        } else if (mode === "api") {
-          el.innerHTML = `<span class="dot"></span> API • REAL DB • ${info.posts || 0} POSTS`;
-          el.className = "db-pill";
-        } else if (mode === "supabase") {
-          el.innerHTML = `<span class="dot"></span> SUPABASE DIRECT • SECURE`;
-          el.className = "db-pill";
-        } else {
-          el.innerHTML = `<span class="dot"></span> LOCAL • RUN npm run dev`;
-          el.className = "db-pill local";
-        }
-      });
-    }
-    setTimeout(updateDbStatus, 500);
-    setInterval(updateDbStatus, 3000);
-    window.addEventListener("zivv-db", updateDbStatus);
-    
-    // Mouse glow for bento
-    document.querySelectorAll('.bento').forEach(card => {
-      card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        card.style.setProperty('--mouse-x', x + '%');
-        card.style.setProperty('--mouse-y', y + '%');
-      });
-    });
-    
-    $("form-login").onsubmit = async (e) => {
-      e.preventDefault();
-      const email = $("login-email").value.trim().toLowerCase();
-      const pass = $("login-pass").value;
-      if (email && pass) {
-        try {
-          const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password: pass }) });
-          const data = await r.json();
-          if (r.ok && data.user) {
-            const u = { email: data.user.email, username: data.user.username, first: data.user.first_name || "", last: data.user.last_name || "", name: data.user.name || data.user.username, age: data.user.age || 25, mark: data.user.mark || "", password: pass, onboarding: data.user.onboarding || null };
-            pending = u;
-            localStorage.setItem("zivv.session", JSON.stringify(u));
-            const db = users(); db[u.email] = u; saveUsers(db);
-            if (window.ZIVV_DB) ZIVV_DB.upsertProfile(u);
-            msg("تم الدخول • Real DB • مرحباً! 🎉", "ok");
-            if (u.onboarding) setTimeout(() => paint(u), 600); else show("form-quiz");
-            return;
-          } else { msg(data.error || t().missing, "err"); return; }
-        } catch (err) { msg("تعذر الاتصال - محاولة محلية...", "err"); }
-      }
-      msg("اكتب البريد وكلمة المرور", "err");
-    };
-    
-    $("form-signup").onsubmit = async (e) => {
-      e.preventDefault();
-      const first = cleanName($("signup-first").value);
-      const last = cleanName($("signup-last").value);
-      const age = Number($("signup-age").value);
-      const email = $("signup-email").value.trim().toLowerCase();
-      const pass = $("signup-pass").value;
-      const pass2 = $("signup-pass2").value;
-      const mark = cleanName($("signup-mark").value);
-      if (first.length < 2 || last.length < 2) { msg(t().needName, "err"); return; }
-      if (!age || age < 18) { msg(t().needAge, "err"); return; }
-      if (!markOk(mark, first, last)) { msg(t().needMark, "err"); return; }
-      if (pass.length < 6 || pass !== pass2) { msg(t().needPass, "err"); return; }
+    try {
+      const t = localStorage.getItem("zivv.theme");
+      if (t) document.documentElement.setAttribute("data-theme", t);
+      else if (matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.setAttribute("data-theme", "dark");
+    } catch {}
+  </script>
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <span class="mark">Z</span>
+        <b>ZIVV</b>
+      </div>
+      <p class="auth-sub">منصة تواصل اجتماعي عربية — منشورات، دردشة، وذكاء اصطناعي «زيفي».</p>
+      <span class="live-badge"><i></i> متصل بقاعدة بيانات حقيقية</span>
+
+      <div class="form-err" id="err"></div>
+
+      <!-- Login -->
+      <form id="login-form">
+        <div class="field">
+          <label>البريد الإلكتروني</label>
+          <input class="input" id="li-email" type="email" placeholder="you@mail.com" required autocomplete="email" />
+        </div>
+        <div class="field">
+          <label>كلمة المرور</label>
+          <input class="input" id="li-pass" type="password" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+        <button class="btn block" type="submit" id="li-btn">تسجيل الدخول</button>
+        <p class="auth-switch">معندكش حساب؟ <a href="#" id="go-register">إنشاء حساب جديد</a></p>
+      </form>
+
+      <!-- Register -->
+      <form id="register-form" style="display:none">
+        <div class="field">
+          <label>الاسم</label>
+          <input class="input" id="rg-name" placeholder="اسمك" required />
+        </div>
+        <div class="field">
+          <label>اسم المستخدم (إنجليزي بدون مسافات)</label>
+          <input class="input" id="rg-user" placeholder="username" required pattern="[A-Za-z0-9_.]{3,20}" />
+        </div>
+        <div class="field">
+          <label>البريد الإلكتروني</label>
+          <input class="input" id="rg-email" type="email" placeholder="you@mail.com" required autocomplete="email" />
+        </div>
+        <div class="field">
+          <label>كلمة المرور (6 أحرف على الأقل)</label>
+          <input class="input" id="rg-pass" type="password" placeholder="••••••••" required minlength="6" autocomplete="new-password" />
+        </div>
+        <button class="btn block" type="submit" id="rg-btn">إنشاء الحساب</button>
+        <p class="auth-switch">عندك حساب؟ <a href="#" id="go-login">تسجيل الدخول</a></p>
+      </form>
+
+      <div class="demo-hint">حساب تجريبي — البريد: <code>demo@zivv.app</code> وكلمة المرور: <code>demo123</code></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // لو مسجل دخول بالفعل روح للتطبيق
       try {
-        const r = await fetch("/api/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, username: uname(first, email), password: pass, first_name: first, last_name: last, name: first + " " + last, age, mark, onboarding: null }) });
-        const data = await r.json();
-        if (!r.ok) { msg(data.error || t().exists, "err"); return; }
-        const u = { email, first, last, name: first + " " + last, age, password: pass, mark, username: data.user.username };
-        const db = users(); db[email] = u; saveUsers(db);
-        pending = u;
-        localStorage.setItem("zivv.session", JSON.stringify(u));
-        msg("تم إنشاء حساب حقيقي • bcrypt 🔐", "ok");
-        show("form-quiz");
-        return;
-      } catch (err) {
-        const db = users();
-        if (db[email]) { msg(t().exists, "err"); return; }
-        const u = { email, first, last, name: first + " " + last, age, password: pass, mark, username: uname(first, email) };
-        db[email] = u; saveUsers(db);
-        pending = u;
-        localStorage.setItem("zivv.session", JSON.stringify(u));
-        show("form-quiz");
+        const s = JSON.parse(localStorage.getItem("zivv.session") || "null");
+        if (s && s.email) location.replace("app.html");
+      } catch {}
+
+      const err = document.getElementById("err");
+      const loginF = document.getElementById("login-form");
+      const regF = document.getElementById("register-form");
+      document.getElementById("go-register").onclick = (e) => { e.preventDefault(); showErr(""); loginF.style.display = "none"; regF.style.display = ""; };
+      document.getElementById("go-login").onclick = (e) => { e.preventDefault(); showErr(""); regF.style.display = "none"; loginF.style.display = ""; };
+
+      function showErr(m) { err.textContent = m || ""; err.classList.toggle("show", !!m); }
+
+      async function api(path, opts) {
+        const r = await fetch("/api" + path, {
+          headers: { "Content-Type": "application/json" },
+          ...opts,
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || ("خطأ " + r.status));
+        return data;
       }
-    };
-    
-    $("heard").onchange = () => $("heard-other").classList.toggle("hidden", $("heard").value !== "other");
-    $("form-quiz").onsubmit = async (e) => {
-      e.preventDefault();
-      const creator = document.querySelector("input[name=creator]:checked");
-      const seller = document.querySelector("input[name=seller]:checked");
-      const artist = document.querySelector("input[name=artist]:checked");
-      const heard = $("heard").value;
-      if (!creator || !seller || !artist || !heard) { msg(t().needAll, "err"); return; }
-      const onboarding = { creator: creator.value === "yes", seller: seller.value === "yes", artist: artist.value === "yes", heard, heardOther: $("heard-other").value.trim() };
-      const db = users();
-      if (db[pending.email]) { db[pending.email].onboarding = onboarding; saveUsers(db); }
-      pending.onboarding = onboarding;
-      localStorage.setItem("zivv.session", JSON.stringify(pending));
-      try { await fetch("/api/accounts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: pending.email, onboarding }) }); } catch {}
-      paint(pending);
-    };
-    
-    $("out-btn").onclick = () => { localStorage.removeItem("zivv.session"); setTab("login"); };
-    function paint(u) {
-      $("done-name").textContent = u.name || u.email;
-      show("done");
-      setTimeout(() => location.href = "home.html", 1200);
-    }
-    
-    const adding = new URLSearchParams(location.search).get("add") === "1";
-    if (adding) setTab("signup");
-    else {
-      const s = JSON.parse(localStorage.getItem("zivv.session") || "null");
-      if (s && s.email && s.password) { pending = s; if (s.onboarding) paint(s); else show("form-quiz"); }
-    }
+
+      loginF.onsubmit = async (e) => {
+        e.preventDefault();
+        showErr("");
+        const btn = document.getElementById("li-btn");
+        btn.disabled = true; btn.textContent = "جاري الدخول…";
+        try {
+          const email = document.getElementById("li-email").value.trim();
+          const password = document.getElementById("li-pass").value;
+          const out = await api("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+          localStorage.setItem("zivv.session", JSON.stringify(out.user));
+          location.replace("app.html");
+        } catch (ex) { showErr(ex.message === "invalid credentials - بيانات خاطئة" || ex.message === "invalid credentials - كلمة المرور خاطئة" || ex.message === "invalid credentials" ? "بيانات الدخول غير صحيحة" : "تعذر الدخول: " + ex.message); }
+        finally { btn.disabled = false; btn.textContent = "تسجيل الدخول"; }
+      };
+
+      regF.onsubmit = async (e) => {
+        e.preventDefault();
+        showErr("");
+        const btn = document.getElementById("rg-btn");
+        btn.disabled = true; btn.textContent = "جاري إنشاء الحساب…";
+        try {
+          const name = document.getElementById("rg-name").value.trim();
+          const username = document.getElementById("rg-user").value.trim().toLowerCase();
+          const email = document.getElementById("rg-email").value.trim();
+          const password = document.getElementById("rg-pass").value;
+          const out = await api("/auth/register", { method: "POST", body: JSON.stringify({ name, username, email, password }) });
+          localStorage.setItem("zivv.session", JSON.stringify(out.user));
+          location.replace("app.html");
+        } catch (ex) { showErr(ex.message.includes("exists") ? "هذا البريد مسجل بالفعل — سجل الدخول" : "تعذر إنشاء الحساب: " + ex.message); }
+        finally { btn.disabled = false; btn.textContent = "إنشاء الحساب"; }
+      };
+    })();
   </script>
 </body>
 </html>
