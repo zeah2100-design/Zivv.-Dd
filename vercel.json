@@ -19,9 +19,6 @@
     { "src": "sw.js", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/health", "dest": "/api/health.js" },
-    { "src": "/api/upload", "dest": "/api/upload.js" },
-    { "src": "/api/ai", "dest": "/api/ai.js" },
     { "src": "/api/(.*)", "dest": "/api/[...path].js" },
     { "src": "/(.*)", "dest": "/$1" }
   ]

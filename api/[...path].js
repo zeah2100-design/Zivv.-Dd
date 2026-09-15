@@ -1,6 +1,26 @@
 const { getDatabase } = require("../lib/database");
+const { getConfig } = require("../lib/config");
 const { hashPassword, verifyPassword, generateId, normalizeEmail } = require("../lib/auth");
 const aiProxy = require("../lib/ai-proxy");
+
+// سجل استهلاك الذكاء الاصطناعي الحقيقي (شاتات + توكنز يومياً)
+async function logAiUsage(db, userKey, promptChars, completionChars) {
+  try {
+    const uk = (String(userKey || "guest").toLowerCase() || "guest").slice(0, 120);
+    const day = new Date().toISOString().slice(0, 10);
+    const rows = await db.getAiUsage(uk, day).catch(() => []);
+    const prev = rows && rows[0] ? rows[0] : {};
+    const tokens = Math.max(1, Math.round(((promptChars || 0) + (completionChars || 0)) / 4));
+    await db.upsertAiUsage({
+      user_key: uk, day,
+      chats_count: (prev.chats_count || 0) + 1,
+      images_count: prev.images_count || 0,
+      tokens_used: (prev.tokens_used || 0) + tokens,
+      created_at: Date.now(), updated_at: Date.now(),
+    });
+    return { chats_count: (prev.chats_count || 0) + 1, tokens_used: (prev.tokens_used || 0) + tokens };
+  } catch { return null; }
+}
 
 function cors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -296,6 +316,77 @@ module.exports = async (req, res) => {
     if (p === "/notes-read") {
       await db.markNotesRead(body.dest || "");
       return res.status(200).json({ ok: true });
+    }
+
+    // رفع ملفات — نفس الدالة الواحدة لتوحيد مخزن /tmp على السيرفرلس
+    if (p === "/upload") {
+      let raw = String(body.data || "");
+      let mimeType = String(body.mime || "application/octet-stream");
+      const mu = raw.match(/^data:([^;]+);base64,(.+)$/);
+      if (mu) { mimeType = mu[1] || mimeType; raw = mu[2]; }
+      raw = raw.replace(/\s+/g, "");
+      if (!raw) return res.status(400).json({ error: "no data" });
+      const buf = Buffer.from(raw, "base64");
+      if (!buf.length) return res.status(400).json({ error: "bad data" });
+      if (buf.length > 10000000) return res.status(413).json({ error: "file too big (max 10MB)" });
+      if (db.mode === "supabase") {
+        const ext = /png/i.test(mimeType) ? "png" : /webp/i.test(mimeType) ? "webp" : /jpeg|jpg/i.test(mimeType) ? "jpg" : "bin";
+        const base = String(body.name || `f${Date.now()}`).replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 80);
+        const url = await db.uploadFile(`files/${base}-${Date.now().toString(36)}.${ext}`, buf, mimeType);
+        return res.status(200).json({ ok: true, url, mode: db.mode, real: true });
+      }
+      return res.status(200).json({ ok: true, url: `data:${mimeType};base64,${buf.toString("base64")}`, mode: db.mode, ephemeral: true, real: true });
+    }
+
+    // ذكاء اصطناعي — نفس الدالة الواحدة لتوحيد عدّاد الاستهلاك
+    if (p === "/ai") {
+      const cfg = getConfig();
+      const messages = Array.isArray(body.messages) ? body.messages.slice(-18) : [];
+      const key = String(
+        process.env.GEMINI_API_KEY || process.env.COMET_API_KEY || process.env.AI_API_KEY ||
+        cfg.ai.cometKey || cfg.ai.cometKeyLegacy || body.key || ""
+      ).trim();
+      if (!key) {
+        return res.status(503).json({ ok: false, error: "Missing GEMINI_API_KEY", hint: "أضف المفتاح في Vercel: Settings > Environment Variables > GEMINI_API_KEY" });
+      }
+      const promptChars = messages.reduce((s, m) => s + String((m && m.content) || "").length, 0);
+      let last = "ai unavailable";
+      try {
+        const sys = messages.find(m => m.role === "system");
+        const contents = messages.filter(m => m && m.role !== "system" && m.content).map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: String(m.content) }] }));
+        const payload = { contents: contents.length ? contents : [{ parts: [{ text: "مرحبا" }] }], tools: [{ google_search: {} }], generationConfig: { maxOutputTokens: 4096 } };
+        if (sys && sys.content) payload.systemInstruction = { parts: [{ text: String(sys.content) }] };
+        const r = await fetch(`https://api.cometapi.com/v1beta/models/${encodeURIComponent(body.model || cfg.ai.cometModel)}:generateContent`, {
+          method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify(payload), signal: AbortSignal.timeout(28000),
+        });
+        const rawT = await r.text();
+        let data = rawT;
+        try { data = JSON.parse(rawT); } catch {}
+        if (r.ok) {
+          const parts = data?.candidates?.[0]?.content?.parts;
+          const text = Array.isArray(parts) ? parts.map(x => x.text || "").join("") : "";
+          if (text.trim()) {
+            const usage = await logAiUsage(db, body.user || body.user_key, promptChars, text.trim().length);
+            return res.status(200).json({ text: text.trim(), choices: [{ message: { content: text.trim() } }], usage, real: true });
+          }
+        } else last = (data?.error?.message) || rawT.slice(0, 200);
+      } catch (e) { last = String(e.message || e); }
+      try {
+        const r = await fetch("https://text.pollinations.ai/openai", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "openai", messages, stream: false }), signal: AbortSignal.timeout(16000),
+        });
+        const rawT = await r.text();
+        if (r.ok) {
+          let data = rawT;
+          try { data = JSON.parse(rawT); } catch {}
+          const txt = typeof data === "string" ? data : (data.text || data.choices?.[0]?.message?.content || "");
+          const usage = await logAiUsage(db, body.user || body.user_key, promptChars, String(txt).length);
+          return res.status(200).json(typeof data === "string" ? { text: data, usage, real: true } : { ...data, usage, real: true });
+        }
+      } catch (e) { last = String(e.message || e); }
+      return res.status(502).json({ error: last });
     }
 
     if (p === "/comments") {
