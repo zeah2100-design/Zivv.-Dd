@@ -55,8 +55,12 @@ module.exports = async (req, res) => {
     const path = "files/" + base + "-" + Date.now().toString(36) + "." + ext;
 
     const db = getDatabase();
-    const url = await db.uploadFile(path, buf, mime);
-    return res.status(200).json({ ok: true, url, mode: db.mode });
+    if (db.mode === "supabase") {
+      const url = await db.uploadFile(path, buf, mime);
+      return res.status(200).json({ ok: true, url, mode: db.mode });
+    }
+    // بدون Supabase (وضع مؤقت): رجّع الصورة inline عشان الصور تفضل شغالة
+    return res.status(200).json({ ok: true, url: `data:${mime};base64,${buf.toString("base64")}`, mode: db.mode, ephemeral: true });
   } catch (e) {
     console.error("[UPLOAD ERROR]", e);
     return res.status(500).json({ error: String(e.message || e) });

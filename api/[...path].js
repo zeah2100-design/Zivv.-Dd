@@ -108,7 +108,13 @@ module.exports = async (req, res) => {
 
   const segs = parts(req);
   const p = "/" + segs.join("/");
-  const db = getDatabase();
+  let db;
+  try {
+    db = getDatabase();
+    await db.ensureSeeded().catch(() => {});
+  } catch (e) {
+    return res.status(503).json({ ok: false, error: "db unavailable", detail: String(e.message || e).slice(0, 200) });
+  }
 
   try {
     // Health
@@ -119,6 +125,7 @@ module.exports = async (req, res) => {
         ok: true,
         engine: "real-database",
         mode: db.mode,
+        ephemeral: db.isEphemeral(),
         real: true,
         posts: posts.length,
         accounts: accounts.length,

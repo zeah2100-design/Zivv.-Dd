@@ -68,6 +68,7 @@
   <div id="toasts"></div>
   <input type="file" id="global-file" accept="image/*" hidden />
 
+  <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});</script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -26,7 +26,7 @@
         <b>ZIVV</b>
       </div>
       <p class="auth-sub">منصة تواصل اجتماعي عربية — منشورات، دردشة، وذكاء اصطناعي «زيفي».</p>
-      <span class="live-badge"><i></i> متصل بقاعدة بيانات حقيقية</span>
+      <span class="live-badge" id="db-badge"><i></i> متصل بقاعدة بيانات حقيقية</span>
 
       <div class="form-err" id="err"></div>
 
@@ -71,12 +71,21 @@
   </div>
 
   <script>
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
     (function () {
       // لو مسجل دخول بالفعل روح للتطبيق
       try {
         const s = JSON.parse(localStorage.getItem("zivv.session") || "null");
         if (s && s.email) location.replace("app.html");
       } catch {}
+
+      // حالة قاعدة البيانات (دائمة أم سحابية مؤقتة)
+      fetch("/api/health").then((r) => r.json()).then((h) => {
+        if (h && h.ephemeral) {
+          const b = document.getElementById("db-badge");
+          if (b) b.innerHTML = "<i></i> وضع سحابي مؤقت — البيانات قد تُمسح";
+        }
+      }).catch(() => {});
 
       const err = document.getElementById("err");
       const loginF = document.getElementById("login-form");

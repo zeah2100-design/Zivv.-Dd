@@ -892,6 +892,16 @@ $("#btn-refresh").onclick = () => { S.viewed.clear(); render(); toast("تم ال
 window.addEventListener("hashchange", render);
 
 (async function init() {
+  // تنبيه الوضع السحابي المؤقت (بدون Supabase)
+  try {
+    const h = await apiGet("/health");
+    if (h && h.ephemeral) {
+      const bar = document.createElement("div");
+      bar.style.cssText = "background:var(--amber-soft);color:var(--amber);font-size:12.5px;font-weight:700;text-align:center;padding:8px 12px;border-bottom:1px solid var(--line)";
+      bar.textContent = "☁️ وضع سحابي مؤقت — البيانات قد تُمسح عند خمول السيرفر. اربط Supabase من لوحة Vercel للحفظ الدائم.";
+      document.querySelector(".main").prepend(bar);
+    }
+  } catch {}
   await loadPeople();
   const me = personOf(meKey());
   $("#side-me").innerHTML = `${avatarHTML({ ...me, name: meName() }, "sm")}

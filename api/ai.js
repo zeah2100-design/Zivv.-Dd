@@ -82,7 +82,8 @@ module.exports = async (req, res) => {
     const db = getDatabase();
 
     // Log usage if user provided
-    const userKey = String(body.user_key || body.key || "anonymous").toLowerCase();
+    await db.ensureSeeded().catch(() => {});
+    const userKey = String(body.user_key || body.user || body.key || "anonymous").toLowerCase();
     const day = new Date().toISOString().slice(0, 10);
 
     // المفتاح من متغيرات البيئة فقط — env only (لا يوجد أي مفتاح داخل الكود)
@@ -110,19 +111,23 @@ module.exports = async (req, res) => {
       try {
         const got = await callComet(cometKey, body.model || cfg.ai.cometModel || "gemini-3.6-flash", messages);
         // Log to DB
+        let usageOut = null;
         try {
           const usage = await db.getAiUsage(userKey, day).then(r => r[0] || { user_key: userKey, day, chats_count: 0, images_count: 0, tokens_used: 0 }).catch(() => ({ user_key: userKey, day, chats_count: 0 }));
+          const chats_count = (usage.chats_count || 0) + 1;
+          const tokens_used = (usage.tokens_used || 0) + Math.ceil((got.text || "").length / 4);
           await db.upsertAiUsage({
             user_key: userKey,
             day,
-            chats_count: (usage.chats_count || 0) + 1,
+            chats_count,
             images_count: usage.images_count || 0,
-            tokens_used: (usage.tokens_used || 0) + Math.ceil((got.text || "").length / 4),
+            tokens_used,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           });
+          usageOut = { chats_count, tokens_used };
         } catch {}
-        return res.status(200).json({ choices: [{ message: { content: got.text } }], text: got.text, model: body.model || cfg.ai.cometModel });
+        return res.status(200).json({ choices: [{ message: { content: got.text } }], text: got.text, model: body.model || cfg.ai.cometModel, usage: usageOut, real: true });
       } catch (e) {
         console.warn("[AI Comet failed]", e.message);
       }

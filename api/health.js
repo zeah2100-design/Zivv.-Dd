@@ -6,12 +6,14 @@ module.exports = async (req, res) => {
   if (req.method === "OPTIONS") return res.status(204).end();
   try {
     const db = getDatabase();
+    await db.ensureSeeded().catch(() => {});
     const posts = await db.getPosts(1).catch(() => []);
     const accounts = await db.getAccounts().catch(() => []);
     return res.status(200).json({
       ok: true,
       engine: "real-database",
       mode: db.mode,
+      ephemeral: db.isEphemeral(),
       real: true,
       posts: posts.length,
       accounts: accounts.length,

@@ -1,18 +1,13 @@
-const CACHE = "zivv-pwa-25";
+const CACHE = "zivv-pwa-30";
 const PRECACHE = [
   "index.html",
-  "home.html",
+  "app.html",
+  "css/app.css",
+  "js/app.js",
   "manifest.webmanifest",
   "brand/icon-192.png",
   "brand/icon-512.png",
-  "brand/logo-sm.png",
-  "css/theme.css",
-  "css/shell.css",
-  "js/core.js?v=25",
-  "js/i18n.js?v=25",
-  "js/shell.js?v=25",
-  "js/pwa.js?v=25",
-  "js/cc.js?v=25"
+  "brand/logo-sm.png"
 ];
 
 self.addEventListener("install", (e) => {
@@ -37,7 +32,7 @@ self.addEventListener("fetch", (e) => {
   if (url.pathname.indexOf("/api/") >= 0) return;
 
   const isDoc = req.mode === "navigate" || (req.headers.get("accept") || "").indexOf("text/html") >= 0;
-  if (isDoc || /\.js(\?|$)/.test(url.pathname + url.search) || /\.html$/.test(url.pathname)) {
+  if (isDoc || /\.js(\?|$)/.test(url.pathname + url.search) || /\.html$/.test(url.pathname) || /\.css(\?|$)/.test(url.pathname + url.search)) {
     e.respondWith(
       fetch(req)
         .then((res) => {
