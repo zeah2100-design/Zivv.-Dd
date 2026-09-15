@@ -587,11 +587,18 @@ module.exports = async (req, res) => {
     }
 
     if (p === "/gold") {
+      // تحديث حالة (قبول/رفض) — للملك فقط
+      if (body.id && (body.action === "approved" || body.action === "rejected" || body.action === "pending")) {
+        const by = String(body.by || "").toLowerCase();
+        if (!["demo", "admin"].includes(by)) return res.status(403).json({ error: "admin only" });
+        await db.updateGoldReq(body.id, body.action);
+        return res.status(200).json({ ok: true });
+      }
       const row = {
         id: body.id || "g_" + Date.now(),
         username: body.username || body.user || "",
         name: body.name || "",
-        status: body.status || "pending",
+        status: "pending",
         note: body.note || "",
         created_at: new Date().toISOString(),
       };

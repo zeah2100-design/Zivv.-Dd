@@ -3,70 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>ZIVV — الرئيسية</title>
+  <title>ZIVV</title>
   <link rel="icon" href="brand/icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/app.css" />
   <script>
     try {
-      const t = localStorage.getItem("zivv.theme");
-      if (t) document.documentElement.setAttribute("data-theme", t);
-      else if (matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.setAttribute("data-theme", "dark");
+      const t = localStorage.getItem("zivv.theme") || "light";
+      if (t === "dark") document.documentElement.setAttribute("data-theme", "dark");
     } catch {}
   </script>
 </head>
 <body>
-  <div class="app">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <a class="brand" href="#/home"><span class="mark">Z</span><b>ZIVV</b></a>
-      <nav id="side-nav">
-        <a class="nav-link" data-route="home" href="#/home"><span class="ico">🏠</span> الرئيسية</a>
-        <a class="nav-link" data-route="explore" href="#/explore"><span class="ico">🔍</span> استكشاف</a>
-        <a class="nav-link" data-route="chat" href="#/chat"><span class="ico">💬</span> الدردشة</a>
-        <a class="nav-link" data-route="ai" href="#/ai"><span class="ico">✨</span> زيفي AI</a>
-        <a class="nav-link" data-route="notes" href="#/notes"><span class="ico">🔔</span> الإشعارات <span class="count" id="notes-count" style="display:none">0</span></a>
-        <a class="nav-link" data-route="profile" href="#/profile"><span class="ico">👤</span> حسابي</a>
-        <a class="nav-link" data-route="stats" href="#/stats"><span class="ico">📊</span> الإحصائيات</a>
-      </nav>
-      <div class="side-me" id="side-me"></div>
-    </aside>
+  <div id="ig-app">
+    <!-- الشريط العلوي (كل الصفحات) -->
+    <header class="topbar"><div class="tb-inner" id="tb-inner"></div></header>
 
-    <!-- Main -->
-    <div class="main">
-      <header class="topbar">
-        <h1 id="page-title">الرئيسية</h1>
-        <span class="spacer"></span>
-        <button class="icon-btn" id="btn-refresh" title="تحديث">↻</button>
-        <button class="icon-btn" id="btn-theme" title="الوضع الليلي / النهاري">🌙</button>
-        <button class="icon-btn" id="btn-logout" title="تسجيل الخروج">⎋</button>
-      </header>
-      <div class="content">
-        <section class="view" id="view-home"></section>
-        <section class="view" id="view-explore"></section>
-        <section class="view" id="view-chat"></section>
-        <section class="view" id="view-ai"></section>
-        <section class="view" id="view-notes"></section>
-        <section class="view" id="view-profile"></section>
-        <section class="view" id="view-stats"></section>
-      </div>
-    </div>
+    <!-- القايمة الجانبية (جنب الشعار) -->
+    <div id="drawer-bg"></div>
+    <aside id="drawer"></aside>
+
+    <!-- المحتوى -->
+    <main id="content">
+      <section class="view" id="view-home"></section>
+      <section class="view" id="view-explore"></section>
+      <section class="view" id="view-reels"></section>
+      <section class="view" id="view-chat"></section>
+      <section class="view" id="view-ai"></section>
+      <section class="view" id="view-notes"></section>
+      <section class="view" id="view-profile"></section>
+      <section class="view" id="view-post"></section>
+      <section class="view" id="view-stats"></section>
+      <section class="view" id="view-gold"></section>
+      <section class="view" id="view-king"></section>
+    </main>
+
+    <!-- الشريط السفلي (الصفحات الرئيسية فقط) -->
+    <nav class="bottomnav" id="bottomnav">
+      <a data-route="home" href="#/home"><span class="ico">🏠</span>الرئيسية</a>
+      <a data-route="explore" href="#/explore"><span class="ico">🔍</span>استكشاف</a>
+      <a data-route="reels" href="#/reels"><span class="ico">🎬</span>ريلز</a>
+      <a data-route="chat" href="#/chat"><span class="ico">💬</span>الدردشة</a>
+      <a data-route="profile" href="#/profile" id="bn-profile"><span class="bn-avatar" id="bn-avatar">؟</span>حسابي</a>
+    </nav>
   </div>
 
-  <!-- Bottom nav (mobile) -->
-  <nav class="bottom-nav" id="bottom-nav">
-    <a data-route="home" href="#/home"><span class="ico">🏠</span>الرئيسية</a>
-    <a data-route="explore" href="#/explore"><span class="ico">🔍</span>استكشاف</a>
-    <a data-route="chat" href="#/chat"><span class="ico">💬</span>الدردشة</a>
-    <a data-route="ai" href="#/ai"><span class="ico">✨</span>زيفي</a>
-    <a data-route="notes" href="#/notes"><span class="ico">🔔</span>تنبيهات<span class="count" id="notes-count-m" style="display:none">0</span></a>
-    <a data-route="profile" href="#/profile"><span class="ico">👤</span>حسابي</a>
-  </nav>
-
   <div id="toasts"></div>
-  <input type="file" id="global-file" accept="image/*" hidden />
+  <div id="modal-root"></div>
 
   <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});</script>
   <script src="js/app.js"></script>

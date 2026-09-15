@@ -383,7 +383,14 @@ async function handleApi(req, res, url) {
       }
 
       if (p === "/api/gold") {
-        const row = { id: body.id || `g_${Date.now()}`, username: body.username || body.user || "", name: body.name || "", status: body.status || "pending", note: body.note || "", created_at: new Date().toISOString() };
+        // تحديث حالة (قبول/رفض) — للملك فقط
+        if (body.id && (body.action === "approved" || body.action === "rejected" || body.action === "pending")) {
+          const by = String(body.by || "").toLowerCase();
+          if (!["demo", "admin"].includes(by)) return json(res, 403, { error: "admin only" });
+          await db.updateGoldReq(body.id, body.action);
+          return json(res, 200, { ok: true });
+        }
+        const row = { id: body.id || `g_${Date.now()}`, username: body.username || body.user || "", name: body.name || "", status: "pending", note: body.note || "", created_at: new Date().toISOString() };
         await db.createGoldReq(row);
         return json(res, 200, row);
       }
