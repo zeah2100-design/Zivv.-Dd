@@ -1,5 +1,6 @@
 const { getDatabase } = require("../lib/database");
 const { hashPassword, verifyPassword, generateId, normalizeEmail } = require("../lib/auth");
+const aiProxy = require("../lib/ai-proxy");
 
 function cors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -224,6 +225,12 @@ module.exports = async (req, res) => {
     if (req.method !== "POST") return res.status(405).json({ error: "method not allowed" });
 
     const body = await readBody(req);
+
+    // AI proxy — المفتاح من env على السيرفر فقط، المتصفح لا يراه
+    if (p === "/ai-proxy") {
+      const out = await aiProxy(body);
+      return res.status(out.status).json(out.json);
+    }
 
     if (p === "/posts") {
       const row = toRemotePost({ id: "p" + Date.now(), created_at: new Date().toISOString(), status: "ok", ...body });

@@ -5,6 +5,7 @@ node_modules/
 *.log
 .env
 .env.*
+!.env.example
 data/ai-secret.json
 data/zivv.json
 data/zivv.db

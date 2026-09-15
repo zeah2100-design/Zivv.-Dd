@@ -85,8 +85,27 @@ module.exports = async (req, res) => {
     const userKey = String(body.user_key || body.key || "anonymous").toLowerCase();
     const day = new Date().toISOString().slice(0, 10);
 
-    // Try Comet first
-    const cometKey = String(body.key || cfg.ai.cometKey || "").trim();
+    // المفتاح من متغيرات البيئة فقط — env only (لا يوجد أي مفتاح داخل الكود)
+    // Vercel → Settings > Environment Variables > GEMINI_API_KEY
+    const apiKey = String(
+      process.env.GEMINI_API_KEY ||
+      process.env.COMET_API_KEY ||
+      process.env.AI_API_KEY ||
+      cfg.ai.cometKey ||
+      cfg.ai.cometKeyLegacy ||
+      ""
+    ).trim();
+
+    if (!apiKey) {
+      return res.status(503).json({
+        ok: false,
+        error: "Missing GEMINI_API_KEY",
+        hint: "أضف المفتاح في Vercel: Settings > Environment Variables > GEMINI_API_KEY، ثم أعد النشر. محلياً: انسخ .env.example إلى .env",
+      });
+    }
+
+    // Try Comet/Gemini first
+    const cometKey = apiKey;
     if (cometKey) {
       try {
         const got = await callComet(cometKey, body.model || cfg.ai.cometModel || "gemini-3.6-flash", messages);

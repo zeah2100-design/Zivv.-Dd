@@ -174,8 +174,13 @@
     ? `<a class="opt home-mark" href="home.html"><span class="price">${svg('home')}</span><span>${L("العودة للرئيسية", "Back to Home")}</span></a>`
     : "";
 
-  // Don't inject header if already professional layout (home.html new)
-  const hasProLayout = document.querySelector('.app-layout') || document.querySelector('.top-header') || file === 'home.html' || file === 'index.html' || file === 'publish.html';
+  // Don't inject header if already professional layout (Noir Aurora pages)
+  const hasProLayout =
+    document.querySelector('.app-layout') ||
+    document.querySelector('.top-header') ||
+    document.querySelector('.layout') ||
+    document.querySelector('.aurora') ||
+    ['home.html', 'index.html', 'publish.html', 'explore.html'].indexOf(file) >= 0;
   
   if (!hasProLayout) {
     const sideIcon = isAI ? svg('menu') : svg('menu');

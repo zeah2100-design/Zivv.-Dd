@@ -17,6 +17,37 @@ npm run db:seed   # حساب تجريبي demo@zivv.app / demo123
 npm run dev       # http://localhost:8787
 ```
 
+### مفتاح الذكاء الاصطناعي (GEMINI_API_KEY) — env فقط 🔐
+
+**لا يوجد أي مفتاح داخل الكود.** كل شيء يُقرأ من `process.env`.
+
+على Vercel:
+1. Settings › Environment Variables › Add New
+2. الاسم: `GEMINI_API_KEY` — القيمة: مفتاحك
+3. (اختياري) `GEMINI_MODEL=gemini-3.6-flash`
+4. أعد النشر (Redeploy)
+
+محلياً:
+```bash
+cp .env.example .env
+# ثم ضع المفتاح داخل .env — ملف .env متجاهل في git
+```
+
+كيف يُستخدم في الكود:
+```js
+// api/ai.js  و  lib/ai-proxy.js
+const apiKey = process.env.GEMINI_API_KEY || process.env.COMET_API_KEY || process.env.AI_API_KEY;
+if (!apiKey) return res.status(503).json({ error: "Missing GEMINI_API_KEY", hint: "..." });
+```
+
+المسارات المسموحة عبر `/api/ai-proxy` (whitelist):
+- `/v1/chat/completions`
+- `/v1/audio/speech`
+- `/v1/audio/transcriptions`
+- `/v1beta/models/{model}:generateContent`
+
+مثال الشكل: راجع `data/ai-secret.example.json` و `.env.example`.
+
 ### Supabase Production Setup
 
 1. افتح Supabase Dashboard > SQL Editor

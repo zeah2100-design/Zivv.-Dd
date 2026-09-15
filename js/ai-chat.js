@@ -1,6 +1,10 @@
 (function () {
   const KEY = "zivv.aiChats";
-  const COMET_KEY = "sk-vSJCr2yYYijxwTpLdBHf3sOprMRZoj7OOn4DUh9Blvz50hGG";
+  // لا يوجد أي مفتاح داخل الكود — env only.
+  // المفتاح يعيش على السيرفر فقط: process.env.GEMINI_API_KEY
+  // Vercel → Settings > Environment Variables > GEMINI_API_KEY
+  // محلياً  → .env (انسخ .env.example)
+  const COMET_KEY = "";
   const COMET_MODEL = "gemini-3.6-flash";
   const root = document.getElementById("root");
   const qs = new URLSearchParams(location.search);
@@ -981,17 +985,12 @@
   }
 
   async function complete(messages, userSignal) {
-    try {
-      const got = await callCometDirect(messages, userSignal);
-      if (got && got.text) return got;
-      if (typeof got === "string" && got.trim()) return { text: got.trim(), sources: [] };
-    } catch (e) {
-      if (e && e.name === "AbortError" && userSignal && userSignal.aborted) throw e;
-    }
+    // 1) السيرفر أولاً — المفتاح يُقرأ هناك من process.env.GEMINI_API_KEY
+    let missingKey = false;
     try {
       const data = await postJSON(
         "/api/ai",
-        { messages: toOpenAI(messages), provider: "cometapi", model: COMET_MODEL },
+        { messages: toOpenAI(messages), provider: "gemini", model: COMET_MODEL },
         40000,
         userSignal
       );
@@ -999,6 +998,22 @@
       if (t) return { text: t, sources: [] };
     } catch (e) {
       if (e && e.name === "AbortError" && userSignal && userSignal.aborted) throw e;
+      if (e && /Missing GEMINI_API_KEY/i.test(String(e.message || ""))) missingKey = true;
+    }
+    // 2) اتصال مباشر — يعمل فقط لو كان المفتاح متاحاً في بيئة التشغيل (مفيش مفتاح داخل الكود)
+    if (COMET_KEY) {
+      try {
+        const got = await callCometDirect(messages, userSignal);
+        if (got && got.text) return got;
+        if (typeof got === "string" && got.trim()) return { text: got.trim(), sources: [] };
+      } catch (e) {
+        if (e && e.name === "AbortError" && userSignal && userSignal.aborted) throw e;
+      }
+    }
+    if (missingKey) {
+      throw new Error(
+        "مفتاح الذكاء الاصطناعي مش مضبوط. أضف GEMINI_API_KEY في Vercel: Settings > Environment Variables، ثم أعد النشر."
+      );
     }
     throw new Error("no reply");
   }
