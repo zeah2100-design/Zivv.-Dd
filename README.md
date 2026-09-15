@@ -17,6 +17,42 @@ npm run db:seed   # حساب تجريبي demo@zivv.app / demo123
 npm run dev       # http://localhost:8787
 ```
 
+### مفتاح الذكاء الاصطناعي (GEMINI_API_KEY) 🔐
+
+الذكاء **يعمل فوراً بدون أي إعداد**. الترتيب:
+
+1. `process.env.GEMINI_API_KEY` (أو `COMET_API_KEY` / `AI_API_KEY`) — **الأولوية الأولى**
+2. وإلا: المفتاح الافتراضي الموجود في `lib/config.js` (`DEFAULT_AI_KEY`)
+
+> ✅ **المفتاح لا يصل للمتصفح أبداً.** ملفات الواجهة (`js/ai-chat.js`, `js/cc.js`, `js/zivvy.js`)
+> لا تحتوي أي مفتاح — كل طلباتها تمر عبر `/api/ai` و `/api/ai-proxy` حيث يُقرأ المفتاح على السيرفر.
+
+لو عايز تستخدم مفتاحك الخاص على Vercel:
+1. Settings › Environment Variables › Add New
+2. الاسم: `GEMINI_API_KEY` — القيمة: مفتاحك
+3. (اختياري) `GEMINI_MODEL=gemini-3.6-flash`
+4. أعد النشر — الـ env هياخد الأولوية تلقائياً
+
+محلياً:
+```bash
+cp .env.example .env   # ثم ضع المفتاح — ملف .env متجاهل في git
+```
+
+كيف يُستخدم في الكود:
+```js
+// api/ai.js  و  lib/ai-proxy.js
+const apiKey = process.env.GEMINI_API_KEY || process.env.COMET_API_KEY || process.env.AI_API_KEY || cfg.ai.cometKey;
+if (!apiKey) return res.status(503).json({ error: "Missing GEMINI_API_KEY", hint: "..." });
+```
+
+المسارات المسموحة عبر `/api/ai-proxy` (whitelist — لا يُسمح بأي مسار عشوائي):
+- `/v1/chat/completions`
+- `/v1/audio/speech`
+- `/v1/audio/transcriptions`
+- `/v1beta/models/{model}:generateContent`
+
+مثال الشكل: راجع `data/ai-secret.example.json` و `.env.example`.
+
 ### Supabase Production Setup
 
 1. افتح Supabase Dashboard > SQL Editor

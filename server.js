@@ -7,6 +7,7 @@ const { URL } = require("url");
 const { getConfig } = require("./lib/config");
 const { getDatabase } = require("./lib/database");
 const { hashPassword, verifyPassword, normalizeEmail } = require("./lib/auth");
+const aiProxy = require("./lib/ai-proxy");
 
 const cfg = getConfig();
 const ROOT = __dirname;
@@ -363,9 +364,30 @@ async function handleApi(req, res, url) {
         return json(res, 200, { ok: true, url, real: true });
       }
 
+      if (p === "/api/ai-proxy" && req.method === "POST") {
+        const out = await aiProxy(body);
+        return json(res, out.status, out.json);
+      }
+
       if (p === "/api/ai" && req.method === "POST") {
         const messages = Array.isArray(body.messages) ? body.messages.slice(-18) : [];
-        const key = String(body.key || cfg.ai.cometKey || "").trim();
+        // env only — لا يوجد أي مفتاح داخل الكود
+        const key = String(
+          process.env.GEMINI_API_KEY ||
+          process.env.COMET_API_KEY ||
+          process.env.AI_API_KEY ||
+          cfg.ai.cometKey ||
+          cfg.ai.cometKeyLegacy ||
+          body.key ||
+          ""
+        ).trim();
+        if (!key) {
+          return json(res, 503, {
+            ok: false,
+            error: "Missing GEMINI_API_KEY",
+            hint: "أضف المفتاح في Vercel: Settings > Environment Variables > GEMINI_API_KEY، ثم أعد النشر. محلياً: انسخ .env.example إلى .env",
+          });
+        }
         let last = "ai unavailable";
         if (key) {
           try {

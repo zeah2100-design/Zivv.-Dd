@@ -54,7 +54,8 @@
     }
     .zivv-tr-on { opacity: .95; }
   `;
-  const COMET_KEY = "sk-vSJCr2yYYijxwTpLdBHf3sOprMRZoj7OOn4DUh9Blvz50hGG";
+  // env only — لا يوجد مفتاح في الكود. الطلبات تمر عبر /api/ai-proxy (المفتاح على السيرفر)
+  const AI_PROXY = "/api/ai-proxy";
 
   function prefs() {
     try {
@@ -133,23 +134,27 @@
   }
   async function viaComet(src, dest) {
     const langName = dest === "en" ? "English" : "Egyptian Arabic";
-    const res = await fetch("https://api.cometapi.com/v1/chat/completions", {
+    const res = await fetch(AI_PROXY, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + COMET_KEY },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gemini-3.6-flash",
-        messages: [
-          {
-            role: "user",
-            content:
-              "Translate the following text to " +
-              langName +
-              ". Return only the translation, no quotes, no notes.\n\n" +
-              src.slice(0, 700)
-          }
-        ],
-        max_tokens: 400,
-        stream: false
+        path: "/v1/chat/completions",
+        kind: "json",
+        payload: {
+          model: "gemini-3.6-flash",
+          messages: [
+            {
+              role: "user",
+              content:
+                "Translate the following text to " +
+                langName +
+                ". Return only the translation, no quotes, no notes.\n\n" +
+                src.slice(0, 700)
+            }
+          ],
+          max_tokens: 400,
+          stream: false
+        }
       })
     });
     const data = await res.json();

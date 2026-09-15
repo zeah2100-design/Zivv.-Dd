@@ -5,7 +5,9 @@
   const LIVE = "zivv.live";
   const LIVE_ID = "zivv.liveChatId";
   const CHATS = "zivv.aiChats";
-  const COMET_KEY = "sk-vSJCr2yYYijxwTpLdBHf3sOprMRZoj7OOn4DUh9Blvz50hGG";
+  // env only — لا يوجد أي مفتاح في الكود.
+  // كل الطلبات تمر عبر /api/ai-proxy حيث يُقرأ المفتاح من process.env على السيرفر.
+  const AI_PROXY = "/api/ai-proxy";
   const COMET_MODEL = "gemini-3.6-flash";
 
   let ctx = null;
@@ -99,28 +101,37 @@
         ? "You are Zivvy, the ZIVV companion. Speak clear Egyptian Arabic. Warm young woman. Every word must be understandable. Not rushed."
         : "You are Zivvy, the ZIVV companion. Speak clear Egyptian Arabic. Calm adult man. Every word must be understandable. Not rushed.",
     };
-    let res = await fetch("https://api.cometapi.com/v1/audio/speech", {
+    let out = await fetch(AI_PROXY, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + COMET_KEY },
-      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: "/v1/audio/speech", kind: "speech", payload: body }),
       signal,
     });
-    if (!res.ok) {
-      res = await fetch("https://api.cometapi.com/v1/audio/speech", {
+    let j = await out.json().catch(() => null);
+    if (!out.ok || !j || !j.ok) {
+      out = await fetch(AI_PROXY, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer " + COMET_KEY },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "tts-1-hd",
-          input: text,
-          voice: female ? "nova" : "onyx",
-          response_format: "mp3",
-          speed: 0.96,
+          path: "/v1/audio/speech",
+          kind: "speech",
+          payload: {
+            model: "tts-1-hd",
+            input: text,
+            voice: female ? "nova" : "onyx",
+            response_format: "mp3",
+            speed: 0.96,
+          },
         }),
         signal,
       });
+      j = await out.json().catch(() => null);
     }
-    if (!res.ok) throw new Error("tts " + res.status);
-    return await res.blob();
+    if (!out.ok || !j || !j.ok || !j.data) throw new Error("tts " + ((j && j.error) || out.status));
+    const bin = atob(j.data);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: j.mime || "audio/mpeg" });
   }
 
   async function playBlob(blob) {
@@ -298,16 +309,31 @@
     if (said) ask(said);
   }
 
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(String(fr.result || "").split(",")[1] || "");
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  }
+
   async function transcribe(blob) {
     try {
-      const fd = new FormData();
-      fd.append("file", blob, "live.webm");
-      fd.append("model", "whisper-1");
-      fd.append("language", "ar");
-      const r = await fetch("https://api.cometapi.com/v1/audio/transcriptions", {
+      const b64 = await blobToBase64(blob);
+      if (!b64) return "";
+      const r = await fetch(AI_PROXY, {
         method: "POST",
-        headers: { Authorization: "Bearer " + COMET_KEY },
-        body: fd,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          path: "/v1/audio/transcriptions",
+          kind: "transcribe",
+          data: b64,
+          mime: blob.type || "audio/webm",
+          name: "live.webm",
+          model: "whisper-1",
+          language: "ar",
+        }),
       });
       const d = await r.json().catch(() => ({}));
       const t = String(d.text || "").trim();
@@ -559,18 +585,19 @@
         role: m.role === "assistant" ? "model" : "user",
         parts: [{ text: m.content }],
       }));
-    const res = await fetch(
-      "https://api.cometapi.com/v1beta/models/" + encodeURIComponent(COMET_MODEL) + ":generateContent",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": COMET_KEY },
-        body: JSON.stringify({
+    const res = await fetch(AI_PROXY, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        path: "/v1beta/models/" + encodeURIComponent(COMET_MODEL) + ":generateContent",
+        kind: "json",
+        payload: {
           contents: contents.length ? contents : [{ parts: [{ text: "مرحبا" }] }],
           systemInstruction: { parts: [{ text: packed[0].content }] },
           generationConfig: { maxOutputTokens: (window.ZIVV_CREATOR && ZIVV_CREATOR.isGoldUser && ZIVV_CREATOR.isGoldUser()) ? 1400 : 420 },
-        }),
-      }
-    );
+        },
+      }),
+    });
     const data = await res.json().catch(() => ({}));
     const parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
     const text = Array.isArray(parts) ? parts.map((p) => p.text || "").join("").trim() : "";
