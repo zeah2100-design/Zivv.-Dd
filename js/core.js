@@ -1,15 +1,19 @@
 (function () {
   (function wipeSite() {
-    const EPOCH = "wipe-20260825-final";
+    const EPOCH = "wipe-20260826-realdb";
     try {
       if (localStorage.getItem("zivv.epoch") === EPOCH) return;
       const keepLang = localStorage.getItem("zivv.lang");
       const keepSb = localStorage.getItem("zivv.supabase");
       const keepKing = localStorage.getItem("zivv.kingPass");
+      const keepSession = localStorage.getItem("zivv.session");
+      const keepUsers = localStorage.getItem("zivv.users");
       localStorage.clear();
       if (keepLang) localStorage.setItem("zivv.lang", keepLang);
       if (keepSb) localStorage.setItem("zivv.supabase", keepSb);
       if (keepKing) localStorage.setItem("zivv.kingPass", keepKing);
+      if (keepSession) localStorage.setItem("zivv.session", keepSession);
+      if (keepUsers) localStorage.setItem("zivv.users", keepUsers);
       localStorage.setItem("zivv.epoch", EPOCH);
       try { sessionStorage.clear(); } catch {}
     } catch {}
