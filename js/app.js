@@ -221,7 +221,7 @@ function renderTopbar(name, title, params) {
   if (isMainRoute(name, params)) {
     tb.innerHTML = `
       <button class="icon-btn" id="tb-menu" title="القائمة">☰</button>
-      <a class="tb-logo" href="#/home"><span class="mark">Z</span>ZIVV</a>
+      <a class="tb-logo" href="#/home"><img src="brand/logo-sm.png" alt="ZIVV" />ZIVV</a>
       <span class="tb-spacer"></span>
       <button class="icon-btn" id="tb-theme" title="ليلي / نهاري">${document.documentElement.getAttribute("data-theme") === "dark" ? "☀️" : "🌙"}</button>
       <a class="icon-btn" href="#/notes" title="الإشعارات">🤍<span class="bdg" id="tb-notes-bdg" style="display:none">0</span></a>
