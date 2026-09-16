@@ -357,18 +357,21 @@ function postCard(p, ctx) {
   const liked = !!ctx.liked;
   const tags = Array.isArray(p.tags) ? p.tags : [];
   const m = mediaOf(p);
-  const media = m
-    ? (m.kind === "video"
-      ? `<video class="post-media" src="${esc(m.src)}" controls playsinline preload="metadata"></video>`
-      : `<img class="post-media" src="${esc(m.src)}" alt="" loading="lazy" />`)
-    : "";
+  const poster = p.image || p.image_url || "";
+  const media = !m ? "" : m.kind === "video"
+    ? `<video class="post-media" src="${esc(m.src)}"${poster ? ` poster="${esc(poster)}"` : ""} controls playsinline preload="metadata"></video>`
+    : m.kind === "audio"
+    ? `<div class="audio-card">${m.cover ? `<img class="cover" src="${esc(m.cover)}" alt="" />` : `<span class="cover">🎵</span>`}
+        <div class="meta"><b>🎵 ${esc(p.title || "مقطع صوتي")}</b><small>${esc(p.name || "")}</small>
+        <audio src="${esc(m.src)}" controls preload="metadata"></audio></div></div>`
+    : `<img class="post-media" src="${esc(m.src)}" alt="" loading="lazy" />`;
   return `
-  <article class="card post" data-post="${esc(p.id)}">
+  <article class="card post fb" data-post="${esc(p.id)}">
     <div class="post-head">
       ${avatarHTML({ ...owner, name: p.name || owner.name }, "sm", isGold(uname))}
       <div class="who">
         <b><a href="#/profile?u=${encodeURIComponent(uname)}">${esc(p.name || owner.name || "")}</a> ${nameBadges(uname)}</b>
-        <span>@${esc(uname)} · ${esc(timeAgo(p.created_at))}</span>
+        <span class="post-privacy">${esc(timeAgo(p.created_at))} · 🌍 عامة</span>
       </div>
       <button class="post-dots" data-dots="${esc(p.id)}">•••</button>
     </div>
@@ -376,12 +379,19 @@ function postCard(p, ctx) {
     ${p.body || p.text ? `<p class="post-body">${esc(p.body || p.text || "")}</p>` : ""}
     ${media}
     ${tags.length ? `<div class="post-tags">${tags.map((t) => `<span class="tag" data-tag="${esc(t)}">#${esc(t)}</span>`).join("")}</div>` : ""}
+    <div class="post-counts">
+      <span class="c-likes">❤️<span data-likes-n2>${ctx.likes || 0}</span></span>
+      <span class="sp"></span>
+      <span data-comments-n2>${ctx.comments || 0} تعليق</span>
+      <span>👁️ ${ctx.views || 0}</span>
+    </div>
     <div class="post-actions">
-      <button class="act ${liked ? "liked" : ""}" data-like="${esc(p.id)}"><span class="ei">${liked ? "❤️" : "🤍"}</span><span class="n" data-likes-n>${ctx.likes || 0}</span></button>
-      <button class="act" data-comments="${esc(p.id)}"><span class="ei">💬</span><span class="n" data-comments-n>${ctx.comments || 0}</span></button>
-      <button class="act" data-share="${esc(p.id)}"><span class="ei">✈️</span></button>
-      <span style="flex:1"></span>
-      <span class="act static"><span class="ei" style="font-size:19px">👁️</span><span class="n" dataeated_at))}</div>
+      <button class="act ${liked ? "liked" : ""}" data-like="${esc(p.id)}"><span class="ei">${liked ? "❤️" : "👍"}</span><span class="n">أعجبني</span></button>
+      <button class="act" data-comments="${esc(p.id)}"><span class="ei">U</span><span class="n">تعليق</span></button>
+      <button class="act" data-share="${esc(p.id)}"><span class="ei">T</span><span class="n">مشاركة</span></button>
+    </div>
+    <div class="post-likes">❤️<span data-likes-n3>${ctx.likes || 0}</span></div>
+    <div class="post-time">${esc(timeAgo(p.created_at))}</div>
     <div class="comments" id="c-${esc(p.id)}"></div>
   </article>`;
 }
@@ -396,10 +406,11 @@ function bindFeed(root, posts) {
       btn.classList.remove("pop"); void btn.offsetWidth; btn.classList.add("pop");
       $(".ei", btn).textContent = on ? "❤️" : "👍";
       const card = btn.closest("[data-post]");
-      const cur = parseInt(($("[data-likes-n]", btn).textContent || "0"), 10) || 0;
+      const curEl = $("[data-likes-n2]", card);
+      const cur = parseInt(((curEl && curEl.textContent) || "0"), 10) || 0;
       const nv = String(Math.max(0, cur + (on ? 1 : -1)));
-      $("[data-likes-n]", btn).textContent = nv;
-      const l2 = $("[data-likes-n2]", card); if (l2) l2.textContent = nv;
+      if (curEl) curEl.textContent = nv;
+      const l3 = $("[data-likes-n3]", card); if (l3) l3.textContent = nv;
       try {
         await apiPost("/likes", { post_id: id, user_key: meKey(), on });
         if (on) { const p = (posts || []).find((x) => String(x.id) === String(id)); if (p) notifyOwner(p, "like"); }
@@ -523,7 +534,7 @@ function paintComments(box, postId, list, posts) {
       await apiPost("/comments", { post_id: postId, name: meName(), user_key: meKey(), body });
       const fresh = await apiGet("/comments?post_id=" + encodeURIComponent(postId));
       paintComments(box, postId, fresh || [], posts);
-      const card = document.querySelector(`[data-post="${CSS.escape(postId)}"] [data-comments-n]`);
+      const card = document.querySelector(`[data-post="${CSS.escape(postId)}"] [data-comments-n2]`);
       if (card) card.textContent = String((fresh || []).length);
       const p = (posts || []).find((x) => String(x.id) === String(postId));
       if (p) notifyOwner(p, "comment", body);
@@ -2478,7 +2489,7 @@ const ROUTES = {
   reels: ["ريلز", viewReels],
   videos: ["فيديو", viewVideos],
   music: ["موسيقى", viewMusic],
-  private: ["الخاصة \U0001F512", viewPrivate],
+  private: ["الخاصة 🔒", viewPrivate],
   friends: ["الأصدقاء", viewFriends],
   settings: ["الإعدادات", viewSettings],
   chat: ["الدردشة", viewChat],
