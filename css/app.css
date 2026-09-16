@@ -733,3 +733,218 @@ button { font-family: inherit; }
 .ntabs { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 10px; }
 .ntab { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 20px; padding: 7px 16px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: inherit; }
 .ntab.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* ============================================================
+   ZIVV World-class redesign — WhatsApp / Facebook / TikTok /
+   ChatGPT / YouTube Music styles in ZIVV brand colors
+   ============================================================ */
+
+/* ---------- واتساب: قائمة المحادثات ---------- */
+.threads-head.brand { display: flex; align-items: center; gap: 9px; }
+.threads-head.brand img { width: 30px; height: 30px; border-radius: 9px; }
+.thread-row { position: relative; }
+.thread-row .who { flex: 1; min-width: 0; }
+.thread-row .t-top { display: flex; align-items: baseline; gap: 6px; }
+.thread-row .t-top b { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
+.thread-row .t-time { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+.thread-row .t-sub { display: flex; align-items: center; gap: 6px; }
+.thread-row .t-sub span.prev { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: var(--muted); }
+.thread-row .t-unread {
+  background: var(--green); color: #fff; font-size: 11px; font-weight: 800;
+  min-width: 20px; height: 20px; border-radius: 12px;
+  display: grid; place-items: center; padding: 0 6px; flex-shrink: 0;
+}
+.thread-row .t-ticks { font-size: 12px; color: var(--muted); font-weight: 800; flex-shrink: 0; }
+.thread-row .t-ticks.read { color: var(--blue); }
+
+/* ---------- واتساب: المحادثة ---------- */
+.convo-body.wa {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(214, 41, 118, 0.05) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 60%, rgba(79, 91, 213, 0.06) 0 2px, transparent 3px),
+    radial-gradient(circle at 40% 85%, rgba(250, 126, 30, 0.05) 0 2px, transparent 3px),
+    radial-gradient(circle at 85% 15%, rgba(150, 47, 191, 0.05) 0 2px, transparent 3px);
+  background-size: 90px 90px, 120px 120px, 100px 100px, 110px 110px;
+}
+[data-theme="dark"] .convo-body.wa { background-color: #0b141a; }
+.msg .b { max-width: 78%; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+.msg.me .b { background: #d9fdd3; }
+[data-theme="dark"] .msg.me .b { background: #005c4b; color: #fff; }
+.msg.them .b { background: var(--card); }
+.msg.me .b::after, .msg.them .b::after {
+  content: ""; position: absolute; top: 0; width: 0; height: 0;
+  border: 7px solid transparent;
+}
+.msg.me .b::after { inset-inline-end: -7px; border-top-color: #d9fdd3; border-inline-end: none; }
+[data-theme="dark"] .msg.me .b::after { border-top-color: #005c4b; }
+.msg.them .b::after { inset-inline-start: -7px; border-top-color: var(--card); border-inline-start: none; }
+[data-theme="dark"] .msg.them .b { background: #1f2c34; color: #e9edef; }
+[data-theme="dark"] .msg.them .b::after { border-top-color: #1f2c34; }
+.date-chip {
+  align-self: center; background: var(--card); color: var(--muted);
+  font-size: 11.5px; font-weight: 700; padding: 5px 14px; border-radius: 10px;
+  margin: 8px 0; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.convo-form.wa { background: var(--card); border-top: 1px solid var(--line); padding: 8px 10px; gap: 8px; }
+.convo-form.wa .input { border-radius: 26px; border: none; background: var(--bg); padding: 11px 18px; }
+.convo-form.wa .btn { border-radius: 50%; width: 46px; height: 46px; padding: 0; font-size: 19px; flex-shrink: 0; background: var(--ig-grad); }
+.convo-head .presence { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+/* ---------- فيسبوك: المنشور ---------- */
+.post.fb { padding: 0; overflow: hidden; }
+.post.fb .post-head { padding: 12px 14px 8px; }
+.post.fb .post-head .who span { display: block; }
+.post.fb .post-privacy { font-size: 12px; color: var(--muted); }
+.post.fb .post-title { padding: 0 14px; font-weight: 700; font-size: 15px; }
+.post.fb .post-body { padding: 4px 14px 10px; font-size: 15px; line-height: 1.65; }
+.post.fb .post-media { border-radius: 0; margin: 0; max-height: 520px; }
+.post.fb .post-tags { padding: 8px 14px 0; }
+.post.fb .post-counts {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 14px; font-size: 13px; color: var(--muted);
+}
+.post.fb .post-counts .c-likes { display: flex; align-items: center; gap: 5px; }
+.post.fb .post-counts .sp { flex: 1; }
+.post.fb .post-actions {
+  display: flex; border-top: 1px solid var(--line); margin: 0 12px;
+  padding: 4px 0; gap: 4px;
+}
+.post.fb .post-actions .act {
+  flex: 1; justify-content: center; border-radius: 8px; padding: 9px 4px;
+  font-size: 14px; font-weight: 700; color: var(--muted);
+}
+.post.fb .post-actions .act:hover { background: var(--bg); }
+.post.fb .post-actions .act.liked { color: var(--red); }
+.post.fb .post-actions .act .n { font-size: 13px; }
+.post.fb .post-likes, .post.fb .post-time { display: none; }
+.post.fb .comments { padding: 0 14px 12px; }
+.fb-composer { display: flex; gap: 10px; align-items: center; }
+.fb-composer .fake-input {
+  flex: 1; background: var(--bg); border-radius: 26px; padding: 11px 18px;
+  color: var(--muted); font-size: 14px; cursor: text;
+}
+.fb-composer-actions { display: flex; border-top: 1px solid var(--line); margin-top: 12px; padding-top: 6px; }
+.fb-composer-actions button {
+  flex: 1; border: none; background: none; color: var(--text); font-family: inherit;
+  font-size: 13.5px; font-weight: 700; padding: 9px 4px; border-radius: 8px; cursor: pointer;
+}
+.fb-composer-actions button:hover { background: var(--bg); }
+
+/* ---------- تيك توك: بحث ---------- */
+.tt-search { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 10px 0; }
+.tt-search .box {
+  display: flex; align-items: center; gap: 8px; background: var(--card);
+  border: 1.5px solid var(--line); border-radius: 30px; padding: 4px 6px 4px 18px;
+}
+.tt-search .box:focus-within { border-color: var(--blue); }
+.tt-search input { flex: 1; border: none; background: none; outline: none; font-size: 15px; color: var(--text); font-family: inherit; padding: 9px 0; }
+.tt-search .go {
+  border: none; cursor: pointer; color: #fff; font-weight: 800; font-size: 14px;
+  background: var(--ig-grad); border-radius: 24px; padding: 9px 22px; font-family: inherit;
+}
+.tt-chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
+.tt-chips::-webkit-scrollbar { display: none; }
+.tt-chip {
+  flex-shrink: 0; border: 1px solid var(--line); background: var(--card); color: var(--text);
+  border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.tt-chip b { color: var(--red); margin-inline-end: 4px; }
+.tt-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 10px; overflow-x: auto; }
+.tt-tab {
+  border: none; background: none; color: var(--muted); font-family: inherit;
+  font-size: 14px; font-weight: 800; padding: 10px 14px; cursor: pointer; white-space: nowrap;
+  border-bottom: 2.5px solid transparent; margin-bottom: -1px;
+}
+.tt-tab.active { color: var(--text); border-bottom-color: var(--red); }
+.tt-videos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.tt-video { position: relative; aspect-ratio: 3/4; border-radius: 8px; overflow: hidden; cursor: pointer; background: #000; }
+.tt-video video, .tt-video img { width: 100%; height: 100%; object-fit: cover; }
+.tt-video .vc { position: absolute; bottom: 6px; inset-inline-start: 6px; color: #fff; font-size: 12px; font-weight: 800; text-shadow: 0 1px 4px rgba(0,0,0,.7); }
+.tt-tagrow {
+  display: flex; align-items: center; gap: 12px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer;
+}
+.tt-tagrow .h { width: 46px; height: 46px; border-radius: 12px; background: var(--ig-grad); display: grid; place-items: center; font-size: 22px; color: #fff; font-weight: 900; flex-shrink: 0; }
+.tt-songrow {
+  display: flex; align-items: center; gap: 12px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; margin-bottom: 8px;
+}
+.tt-songrow .cv { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: var(--ig-grad); display: grid; place-items: center; font-size: 22px; color: #fff; }
+.tt-songrow audio { height: 30px; width: 150px; }
+
+/* ---------- تيك توك: ريلز ---------- */
+.reels-feed.tt { scroll-snap-type: y mandatory; overflow-y: auto; max-height: calc(100dvh - 128px); border-radius: 18px; gap: 10px; }
+.reels-feed.tt .reel { scroll-snap-align: start; height: calc(100dvh - 128px); min-height: 420px; }
+.reel .tap-flash {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 84px; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,.5));
+}
+.reel .tap-flash.show { opacity: 0.95; }
+.reel-progress { position: absolute; bottom: 0; inset-inline: 0; height: 3.5px; background: rgba(255,255,255,.25); z-index: 6; }
+.reel-progress i { display: block; height: 100%; width: 0; background: #fff; }
+
+/* ---------- شات جي بي تي ---------- */
+.ai-gpt-head { text-align: center; padding: 18px 0 6px; }
+.ai-gpt-head .orb { width: 52px; height: 52px; border-radius: 50%; background: var(--ig-grad); display: inline-grid; place-items: center; font-size: 26px; box-shadow: 0 4px 18px rgba(214,41,118,.4); }
+.ai-gpt-head b { display: block; font-size: 19px; margin-top: 6px; }
+.ai-gpt-head .model-pill {
+  display: inline-block; font-size: 11.5px; font-weight: 800; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 20px; padding: 3px 12px; margin-top: 4px;
+}
+.ai-msgs.gpt { max-width: 780px; margin: 0 auto; }
+.ai-msg.bot.gpt-row { display: flex; gap: 10px; }
+.ai-mini-orb {
+  width: 30px; height: 30px; border-radius: 50%; background: var(--ig-grad);
+  display: grid; place-items: center; font-size: 15px; flex-shrink: 0; margin-top: 2px;
+}
+.ai-msg.bot .b.gpt-b { background: transparent; border: 1px solid var(--line); flex: 1; }
+.convo-form.gpt-form { max-width: 780px; margin: 0 auto 12px; background: var(--card); border: 1.5px solid var(--line); border-radius: 28px; padding: 6px 6px 6px 8px; }
+.convo-form.gpt-form:focus-within { border-color: var(--blue); }
+.convo-form.gpt-form .input { border: none; background: none; }
+.convo-form.gpt-form .btn { border-radius: 50%; width: 40px; height: 40px; padding: 0; }
+
+/* ---------- يوتيوب ميوزك ---------- */
+.ym-hero {
+  background: linear-gradient(135deg, #2b0a3d, #7b1e4f 55%, #fa7e1e);
+  border-radius: 20px; padding: 30px 22px; color: #fff; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 14px;
+}
+.ym-hero .disc {
+  width: 62px; height: 62px; border-radius: 50%; flex-shrink: 0;
+  background: conic-gradient(#fa7e1e, #d62976, #962fbf, #4f5bd5, #fa7e1e);
+  display: grid; place-items: center; font-size: 28px;
+  animation: spin 7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.ym-hero h2 { margin: 0; font-size: 21px; }
+.ym-hero p { margin: 2px 0 0; opacity: 0.85; font-size: 13px; }
+.ym-row {
+  display: flex; align-items: center; gap: 12px; padding: 9px 10px;
+  border-radius: 14px; cursor: pointer;
+}
+.ym-row:hover { background: var(--card); }
+.ym-row.playing { background: var(--card); }
+.ym-row .cv { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: var(--ig-grad); display: grid; place-items: center; font-size: 24px; color: #fff; }
+.ym-row .inf { flex: 1; min-width: 0; }
+.ym-row .inf b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ym-row .inf small { color: var(--muted); font-size: 12px; }
+.ym-row .pp { border: none; background: none; font-size: 22px; cursor: pointer; }
+.ym-player {
+  position: sticky; bottom: 0; z-index: 8; background: var(--card);
+  border: 1px solid var(--line); border-radius: 16px; padding: 10px 14px; margin-top: 12px;
+  box-shadow: 0 -4px 24px rgba(0,0,0,.12);
+}
+.ym-player .top { display: flex; align-items: center; gap: 10px; }
+.ym-player .cv { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; background: var(--ig-grad); display: grid; place-items: center; color: #fff; font-size: 20px; }
+.ym-player .inf { flex: 1; min-width: 0; }
+.ym-player .inf b { display: block; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ym-player .inf small { color: var(--muted); font-size: 12px; }
+.ym-player .ctl { border: none; background: var(--ig-grad); color: #fff; width: 42px; height: 42px; border-radius: 50%; font-size: 17px; cursor: pointer; }
+.ym-player .bar { height: 4px; background: var(--line); border-radius: 4px; margin-top: 8px; overflow: hidden; cursor: pointer; }
+.ym-player .bar i { display: block; height: 100%; width: 0; background: var(--ig-grad); }
+
+/* ---------- فيديوهات (FB Watch) ---------- */
+.watch-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.watch-head h2 { margin: 0; font-size: 19px; }
