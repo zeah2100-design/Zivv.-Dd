@@ -650,3 +650,86 @@ button { font-family: inherit; }
 .audio-card .meta b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .audio-card .meta small { opacity: 0.7; font-size: 12px; }
 .audio-card audio { width: 100%; margin-top: 6px; height: 32px; }
+
+/* ---------- دردشة متقدمة: رد + ريأكشن + قراءة ---------- */
+.msg .b { position: relative; }
+.msg .quote {
+  display: block; font-size: 12px; opacity: 0.75; border-inline-start: 3px solid var(--blue);
+  padding-inline-start: 8px; margin-bottom: 6px; border-radius: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;
+}
+.msg .react-row { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
+.react-chip {
+  background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+  font-size: 12px; padding: 1px 8px; cursor: pointer; line-height: 1.7;
+}
+.react-chip.mine { border-color: var(--blue); background: #e8f4fd; }
+[data-theme="dark"] .react-chip.mine { background: #0d2b45; }
+.msg .meta-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.msg .ticks { font-size: 11px; color: var(--muted); font-weight: 800; }
+.msg .ticks.read { color: var(--blue); }
+.msg .mini-actions { display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s; }
+.msg:hover .mini-actions { opacity: 1; }
+.mini-btn { border: none; background: transparent; cursor: pointer; font-size: 14px; padding: 2px 5px; border-radius: 8px; }
+.mini-btn:hover { background: rgba(0, 0, 0, 0.07); }
+.reply-bar {
+  display: none; align-items: center; gap: 8px;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 12px;
+  padding: 8px 12px; margin: 0 12px 8px; font-size: 13px;
+}
+.reply-bar.show { display: flex; }
+.reply-bar .q { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+.reply-bar button { border: none; background: none; cursor: pointer; font-size: 15px; }
+.emoji-pick { display: flex; gap: 6px; justify-content: center; padding: 6px 0 2px; flex-wrap: wrap; }
+.emoji-pick button { border: 1px solid var(--line); background: var(--card); font-size: 24px; width: 48px; height: 48px; border-radius: 14px; cursor: pointer; }
+.emoji-pick button:hover { transform: scale(1.12); border-color: var(--blue); }
+
+/* ---------- الدردشة الخاصة ---------- */
+.lock-screen { max-width: 380px; margin: 30px auto; text-align: center; }
+.lock-screen .big-lock { font-size: 64px; display: block; margin-bottom: 10px; }
+.priv-banner {
+  background: #1c1c28; color: #ffd76a; font-size: 12.5px; font-weight: 700;
+  text-align: center; padding: 8px; border-radius: 12px; margin-bottom: 10px;
+}
+
+/* ---------- الأصدقاء ---------- */
+.fr-section { font-size: 14px; font-weight: 800; margin: 14px 0 6px; color: var(--muted); }
+.fr-actions { display: flex; gap: 6px; }
+
+/* ---------- الإعدادات ---------- */
+.set-card { margin-bottom: 12px; }
+.set-card h3 { font-size: 15px; margin: 0 0 10px; }
+.set-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.set-row:first-of-type { border-top: none; }
+.set-row .grow { flex: 1; }
+.set-row small { display: block; color: var(--muted); font-size: 12px; }
+.switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; cursor: pointer; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch .sl { position: absolute; inset: 0; background: #ccc; border-radius: 20px; transition: 0.2s; }
+.switch .sl:before { content: ""; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: #fff; top: 3px; inset-inline-start: 3px; transition: 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+.switch input:checked + .sl { background: var(--blue); }
+.switch input:checked + .sl:before { transform: translateX(-20px); }
+[dir="ltr"] .switch input:checked + .sl:before { transform: translateX(20px); }
+.faq-item { border-top: 1px solid var(--line); padding: 10px 0; font-size: 14px; }
+.faq-item b { display: block; margin-bottom: 4px; }
+.faq-item p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
+
+/* ---------- وكيل AI ---------- */
+.agent-box { display: flex; gap: 8px; padding: 10px 12px; background: var(--card); border-bottom: 1px solid var(--line); }
+.agent-preview { background: var(--bg); border: 1px dashed var(--blue); border-radius: 12px; padding: 12px; margin: 10px 0; font-size: 14px; line-height: 1.8; }
+.ai-msg .b { position: relative; }
+.copy-btn { border: none; background: transparent; cursor: pointer; font-size: 13px; opacity: 0.5; padding: 2px 6px; }
+.copy-btn:hover { opacity: 1; }
+.ai-attached { display: flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 13px; color: var(--muted); }
+.ai-attached img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
+
+/* ---------- الملك ---------- */
+.king-login { max-width: 380px; margin: 30px auto; text-align: center; }
+.king-login .big-lock { font-size: 56px; }
+#app-ver { color: var(--muted); font-size: 11px; text-align: center; padding: 10px; user-select: none; -webkit-user-select: none; }
+.ban-tag { background: var(--red); color: #fff; font-size: 11px; font-weight: 800; padding: 2px 10px; border-radius: 20px; }
+
+/* ---------- تبويبات الإشعارات ---------- */
+.ntabs { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 10px; }
+.ntab { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 20px; padding: 7px 16px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: inherit; }
+.ntab.active { background: var(--text); color: var(--bg); border-color: var(--text); }

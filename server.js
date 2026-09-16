@@ -6,12 +6,34 @@ const http = require("http");
 const { URL } = require("url");
 const { getConfig } = require("./lib/config");
 const { getDatabase } = require("./lib/database");
-const { hashPassword, verifyPassword, normalizeEmail } = require("./lib/auth");
+const { hashPassword, verifyPassword, normalizeEmail, kingToken, verifyKingToken, verifyKingPassword } = require("./lib/auth");
 const aiProxy = require("./lib/ai-proxy");
 
 const cfg = getConfig();
 const ROOT = __dirname;
 const PORT = cfg.port;
+
+
+function isKingReq(b, q) {
+  b = b || {}; q = q || {};
+  const tok = b.king_token || q.token || q.king_token || "";
+  if (tok && verifyKingToken(tok)) return true;
+  const by = String(b.by || q.by || "").toLowerCase();
+  return by === "demo" || by === "admin";
+}
+async function isBannedUser(db, username) {
+  try {
+    const mods = await db.getModActions().catch(() => []);
+    const u = String(username || "").toLowerCase();
+    if (!u) return false;
+    const rel = (mods || []).filter(m => (m.action === "ban_user" || m.action === "unban") && String(m.target_user || "").toLowerCase() === u);
+    rel.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return rel.length > 0 && rel[0].action === "ban_user";
+  } catch { return false; }
+}
+async function audit(db, admin, action, target, result, note) {
+  try { await db.createAuditLog({ id: "al_" + Date.now() + Math.floor(Math.random() * 9999), admin: String(admin || "king"), action, target: target || "", result: result || "ok", note: note || "", created_at: Date.now() }); } catch {}
+}
 
 function json(res, code, body) {
   const data = JSON.stringify(body);
@@ -145,6 +167,17 @@ async function handleApi(req, res, url) {
 
     // DELETE routes
     if (req.method === "DELETE") {
+      if (p === "/api/messages") {
+        const id = url.searchParams.get("id") || "";
+        const user = String(url.searchParams.get("user") || "").toLowerCase();
+        if (!id) return json(res, 400, { error: "id required" });
+        const m = await db.getMessageById(id).catch(() => null);
+        if (!m) return json(res, 404, { error: "not found" });
+        const owner = String(m.from_user || m.from_key || "").toLowerCase();
+        if (owner && owner !== user && !verifyKingToken(url.searchParams.get("token") || "")) return json(res, 403, { error: "not owner" });
+        await db.deleteMessage(id);
+        return json(res, 200, { ok: true });
+      }
       if (p === "/api/posts") {
         const id = url.searchParams.get("id") || "";
         const user = String(url.searchParams.get("user") || "").toLowerCase();
@@ -152,7 +185,7 @@ async function handleApi(req, res, url) {
         const post = await db.getPostById(id).catch(() => null);
         if (!post) return json(res, 404, { error: "not found" });
         const owner = String(post.username || post.user || "").toLowerCase();
-        if (owner && owner !== user) return json(res, 403, { error: "not owner" });
+        if (owner && owner !== user && !verifyKingToken(url.searchParams.get("token") || "")) return json(res, 403, { error: "not owner" });
         await db.deletePost(id);
         return json(res, 200, { ok: true });
       }
@@ -187,6 +220,15 @@ async function handleApi(req, res, url) {
         return json(res, 200, list);
       }
       if (p === "/api/products") return json(res, 200, await db.getProducts());
+      if (p === "/api/reactions") return json(res, 200, await db.getReactions(url.searchParams.get("msg_id") || ""));
+      if (p === "/api/mod-actions") {
+        if (!isKingReq(null, { token: url.searchParams.get("token"), by: url.searchParams.get("by") })) return json(res, 403, { error: "admin only" });
+        return json(res, 200, await db.getModActions());
+      }
+      if (p === "/api/audit") {
+        if (!isKingReq(null, { token: url.searchParams.get("token"), by: url.searchParams.get("by") })) return json(res, 403, { error: "admin only" });
+        return json(res, 200, await db.getAuditLog());
+      }
       if (p === "/api/messages") {
         const user = url.searchParams.get("user") || "";
         return json(res, 200, await db.getMessages(user || null));
@@ -298,7 +340,7 @@ async function handleApi(req, res, url) {
       }
 
       if (p === "/api/messages") {
-        const row = { id: body.id || `m_${Date.now()}`, thread_user: body.thread_user, from_key: body.from_key || "", from_user: body.from_user || "", name: body.name || "", kind: body.kind || "text", body: body.body || body.text || "", post_id: body.post_id || null, image_url: body.image_url || body.image || "", created_at: new Date().toISOString() };
+        const row = { id: body.id || `m_${Date.now()}`, thread_user: body.thread_user, from_key: body.from_key || "", from_user: body.from_user || "", name: body.name || "", kind: body.kind || "text", body: body.body || body.text || "", post_id: body.post_id || null, reply_to: body.reply_to || null, read: false, image_url: body.image_url || body.image || "", created_at: new Date().toISOString() };
         await db.createMessage(row);
         return json(res, 200, row);
       }
@@ -355,13 +397,93 @@ async function handleApi(req, res, url) {
           if (!found) return json(res, 401, { error: "invalid credentials - بيانات خاطئة" });
           const ok = found.password_hash ? await verifyPassword(password, found.password_hash) : String(found.password) === String(password);
           if (!ok) return json(res, 401, { error: "invalid credentials" });
+          if (await isBannedUser(db, found.username || found.email)) return json(res, 403, { error: "account banned" });
           const { password: pw, password_hash, ...safe } = found;
           return json(res, 200, { ok: true, user: safe, real: true });
         }
         const ok = acc.password_hash ? await verifyPassword(password, acc.password_hash) : String(acc.password) === String(password);
         if (!ok) return json(res, 401, { error: "invalid credentials - كلمة المرور خاطئة" });
+        if (await isBannedUser(db, acc.username || acc.email)) return json(res, 403, { error: "account banned" });
         const { password: pw, password_hash, ...safe } = acc;
         return json(res, 200, { ok: true, user: safe, real: true, message: "دخول حقيقي من قاعدة البيانات" });
+      }
+
+      if (p === "/api/reactions") {
+        const allow = ["\u2764\uFE0F", "\u{1F602}", "\u{1F62E}", "\u{1F622}", "\u{1F44D}", "\u{1F525}"];
+        const emoji = String(body.emoji || "");
+        if (!body.msg_id || !body.user_key || !allow.includes(emoji)) return json(res, 400, { error: "msg_id, user_key and valid emoji required" });
+        const out = await db.toggleReaction(body.msg_id, body.user_key, emoji);
+        return json(res, 200, { ok: true, ...out });
+      }
+
+      if (p === "/api/messages-read") {
+        if (!body.thread_user || !body.peer) return json(res, 400, { error: "thread_user and peer required" });
+        await db.markMessagesRead(body.thread_user, body.peer);
+        return json(res, 200, { ok: true });
+      }
+
+      if (p === "/api/private-auth") {
+        const u = String(body.user || "").toLowerCase();
+        const action = body.action || "status";
+        if (action === "status") {
+          const r = await db.getPrivAuth(u).catch(() => null);
+          return json(res, 200, { configured: !!(r && r.hash) });
+        }
+        const pw = String(body.password || "");
+        if (action === "set") {
+          if (pw.length < 4) return json(res, 400, { error: "password too short (min 4)" });
+          const ex = await db.getPrivAuth(u).catch(() => null);
+          if (ex && ex.hash) return json(res, 400, { error: "already set" });
+          await db.setPrivAuth(u, { hash: await hashPassword(pw), fails: 0, locked_until: 0 });
+          return json(res, 200, { ok: true });
+        }
+        if (action === "verify") {
+          const r = await db.getPrivAuth(u).catch(() => null);
+          if (!r || !r.hash) return json(res, 400, { error: "not configured" });
+          if (r.locked_until && Date.now() < Number(r.locked_until)) return json(res, 429, { error: "locked - try later" });
+          const ok = await verifyPassword(pw, r.hash);
+          if (!ok) {
+            const fails = (Number(r.fails) || 0) + 1;
+            await db.setPrivAuth(u, { fails, locked_until: fails >= 5 ? Date.now() + 5 * 60 * 1000 : 0 });
+            return json(res, 401, { error: "wrong password" });
+          }
+          await db.setPrivAuth(u, { fails: 0, locked_until: 0 });
+          return json(res, 200, { ok: true });
+        }
+        return json(res, 400, { error: "bad action" });
+      }
+
+      if (p === "/api/king-login") {
+        const env = String(process.env.KING_PASSWORD || "");
+        if (!env) return json(res, 503, { error: "king not configured - set KING_PASSWORD env" });
+        const ok = await verifyKingPassword(body.password || "");
+        if (!ok) { await audit(db, "king", "king_login", "", "failed", ""); return json(res, 401, { error: "wrong password" }); }
+        await audit(db, "king", "king_login", "", "ok", "");
+        return json(res, 200, { ok: true, token: kingToken() });
+      }
+
+      if (p === "/api/mod-actions") {
+        if (!isKingReq(body)) return json(res, 403, { error: "admin only" });
+        const action = String(body.action || "");
+        if (!["ban_user", "unban", "remove_post", "dismiss"].includes(action)) return json(res, 400, { error: "bad action" });
+        const admin = String(body.admin || body.by || "king").toLowerCase();
+        const row = { id: `mod_${Date.now()}`, admin, action, target_type: body.target_type || "", target_id: body.target_id || "", target_user: String(body.target_user || "").toLowerCase(), reason: body.reason || "", created_at: Date.now() };
+        if (action === "remove_post" && row.target_id) await db.deletePost(row.target_id).catch(() => {});
+        await db.createModAction(row);
+        await audit(db, admin, action, row.target_user || row.target_id, "ok", row.reason);
+        return json(res, 200, { ok: true });
+      }
+
+      if (p === "/api/auth/change") {
+        const email = normalizeEmail(body.email);
+        const acc = await db.getAccountByEmail(email).catch(() => null);
+        const found = acc || (await db.getAccounts().catch(() => [])).find(a => normalizeEmail(a.email) === email);
+        if (!found) return json(res, 404, { error: "account not found" });
+        const ok = found.password_hash ? await verifyPassword(String(body.old_password || ""), found.password_hash) : String(found.password) === String(body.old_password || "");
+        if (!ok) return json(res, 401, { error: "wrong old password" });
+        if (String(body.new_password || "").length < 6) return json(res, 400, { error: "new password too short (min 6)" });
+        await db.updateAccountPassword(email, await hashPassword(String(body.new_password)));
+        return json(res, 200, { ok: true });
       }
 
       if (p === "/api/stories") {
@@ -371,6 +493,21 @@ async function handleApi(req, res, url) {
       }
 
       if (p === "/api/friends") {
+        if (body.id && body.action) {
+          const map = { accepted: "accepted", declined: "declined", cancelled: "cancelled", confirm: "accepted", delete: "declined", cancel: "cancelled" };
+          const st = map[String(body.action).toLowerCase()];
+          if (!st) return json(res, 400, { error: "bad action" });
+          await db.updateFriendReq(body.id, st);
+          if (st === "accepted") {
+            const all = await db.getFriendReqs().catch(() => []);
+            const fr = (all || []).find(x => String(x.id) === String(body.id));
+            if (fr && fr.from_user && fr.to_user) {
+              await db.toggleFollow(fr.from_user, fr.to_user, true).catch(() => {});
+              await db.toggleFollow(fr.to_user, fr.from_user, true).catch(() => {});
+            }
+          }
+          return json(res, 200, { ok: true });
+        }
         const row = { id: body.id || `fr_${Date.now()}`, from_user: body.from_user || body.from || "", from_name: body.from_name || body.fromName || "", to_user: body.to_user || body.to || "", to_name: body.to_name || body.toName || "", status: body.status || "pending", created_at: new Date().toISOString() };
         await db.createFriendReq(row);
         return json(res, 200, row);
@@ -385,9 +522,9 @@ async function handleApi(req, res, url) {
       if (p === "/api/gold") {
         // تحديث حالة (قبول/رفض) — للملك فقط
         if (body.id && (body.action === "approved" || body.action === "rejected" || body.action === "pending")) {
-          const by = String(body.by || "").toLowerCase();
-          if (!["demo", "admin"].includes(by)) return json(res, 403, { error: "admin only" });
+          if (!isKingReq(body)) return json(res, 403, { error: "admin only" });
           await db.updateGoldReq(body.id, body.action);
+          await audit(db, String(body.admin || body.by || "king"), "gold_" + body.action, body.id, "ok", "");
           return json(res, 200, { ok: true });
         }
         const row = { id: body.id || `g_${Date.now()}`, username: body.username || body.user || "", name: body.name || "", status: "pending", note: body.note || "", created_at: new Date().toISOString() };
@@ -471,7 +608,12 @@ async function handleApi(req, res, url) {
         if (key) {
           try {
             const sys = messages.find(m => m.role === "system");
-            const contents = messages.filter(m => m && m.role !== "system" && m.content).map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: String(m.content) }] }));
+            const contents = messages.filter(m => m && m.role !== "system" && (m.content || m.image)).map(m => {
+              const parts = [{ text: String(m.content || "صف هذه الصورة بالعربية") }];
+              const im = String(m.image || "").match(/^data:([^;]+);base64,(.+)$/);
+              if (im) { try { parts.push({ inline_data: { mime_type: im[1], data: im[2].replace(/\s+/g, "") } }); } catch {} }
+              return { role: m.role === "assistant" ? "model" : "user", parts };
+            });
             const payload = { contents: contents.length ? contents : [{ parts: [{ text: "مرحبا" }] }], tools: [{ google_search: {} }], generationConfig: { maxOutputTokens: 4096 } };
             if (sys && sys.content) payload.systemInstruction = { parts: [{ text: String(sys.content) }] };
             const r = await fetch(`https://api.cometapi.com/v1beta/models/${encodeURIComponent(body.model || cfg.ai.cometModel)}:generateContent`, {

@@ -423,3 +423,44 @@ create policy zivv_media_delete on storage.objects
 
 -- Seed admin check
 -- select * from public.accounts limit 5;
+
+-- ===== ZIVV all-phases additions =====
+alter table public.messages add column if not exists reply_to text null;
+alter table public.messages add column if not exists read boolean default false;
+
+create table if not exists public.msg_reactions (
+  id text primary key,
+  msg_id text not null,
+  user_key text not null,
+  emoji text not null,
+  created_at bigint default (extract(epoch from now()) * 1000)::bigint
+);
+
+create table if not exists public.priv_auth (
+  user_key text primary key,
+  hash text not null,
+  fails integer default 0,
+  locked_until bigint default 0,
+  created_at bigint default (extract(epoch from now()) * 1000)::bigint
+);
+
+create table if not exists public.mod_actions (
+  id text primary key,
+  admin text not null,
+  action text not null,
+  target_type text,
+  target_id text,
+  target_user text,
+  reason text,
+  created_at bigint default (extract(epoch from now()) * 1000)::bigint
+);
+
+create table if not exists public.audit_log (
+  id text primary key,
+  admin text not null,
+  action text not null,
+  target text,
+  result text,
+  note text,
+  created_at bigint default (extract(epoch from now()) * 1000)::bigint
+);

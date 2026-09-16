@@ -287,7 +287,10 @@ async function renderDrawer() {
       <a class="drawer-link" href="#/create"><span class="ico">➕</span> إنشاء جديد</a>
       <a class="drawer-link" href="#/store"><span class="ico">🛍️</span> السوق</a>
       <a class="drawer-link" href="#/chat"><span class="ico">💬</span> الدردشة</a>
+      <a class="drawer-link" href="#/private"><span class="ico">🔒</span> دردشة خاصة</a>
+      <a class="drawer-link" href="#/friends"><span class="ico">👥</span> الأصدقاء</a>
       <a class="drawer-link" href="#/ai"><span class="ico">✨</span> زيفي AI</a>
+      <a class="drawer-link" href="#/settings"><span class="ico">⚙️</span> الإعدادات</a>
       <a class="drawer-link" href="#/notes"><span class="ico">🤍</span> الإشعارات <span class="bdg" id="drawer-notes-bdg" style="display:none">0</span></a>
       <a class="drawer-link" href="#/profile"><span class="ico">👤</span> حسابي</a>
       <a class="drawer-link gold-link" href="#/gold"><span class="ico">👑</span> الاشتراك الذهبي</a>
@@ -305,6 +308,22 @@ async function renderDrawer() {
     localStorage.removeItem("zivv.session");
     location.replace("index.html");
   };
+  // الدخول المخفي للملك: ضغط مطوّل 60 ثانية على رقم النسخة
+  const avt = $("#app-ver");
+  let holdT = null;
+  const holdStart = (e) => {
+    if (e) e.preventDefault();
+    toast("استمر بالضغط 60 ثانية لفتح دخول الملك…");
+    holdT = setTimeout(() => { closeDrawer(); location.hash = "#/king"; }, 60000);
+  };
+  const holdEnd = () => { if (holdT) { clearTimeout(holdT); holdT = null; } };
+  if (avt) {
+    avt.addEventListener("mousedown", holdStart);
+    avt.addEventListener("touchstart", holdStart, { passive: false });
+    avt.addEventListener("mouseup", holdEnd);
+    avt.addEventListener("mouseleave", holdEnd);
+    avt.addEventListener("touchend", holdEnd);
+  }
   updateBadge();
 }
 function openDrawer() { renderDrawer(); $("#drawer").classList.add("open"); $("#drawer-bg").classList.add("open"); }
@@ -845,7 +864,7 @@ async function viewReels(el) {
         const v = $("video", en.target);
         const id = en.target.getAttribute("data-reel");
         if (en.isIntersecting && en.intersectionRatio >= 0.55) {
-          if (v) v.play().catch(() => {});
+          if (v && localStorage.getItem("zivv.autoplay") !== "0") v.play().catch(() => {});
           if (id && !S.viewed.has(id)) {
             S.viewed.add(id);
             apiPost("/views", { post_id: id, user_key: meKey() }).then((out) => {
@@ -877,9 +896,11 @@ async function viewChat(el, params) {
   </div></div>`;
 
   let all = [];
+  let reacts = [];
   async function refreshThreads() {
     try {
       all = await apiGet("/messages");
+      reacts = await apiGet("/reactions").catch(() => []);
       await loadPeople();
       const qEl = $("#chat-q");
       if (!qEl) return;
@@ -932,7 +953,7 @@ async function viewChat(el, params) {
     const convo = $("#chat-convo");
     if (!convo) return;
     const msgs = msgsWith(peer);
-    const sig = msgs.map((m) => m.id).join(",");
+    const sig = msgs.map((m) => m.id + (m.read ? "r" : "")).join(",") + "|" + reacts.length;
     const body = $("#convo-body");
     if (body && S.chatLast === sig && $("#convo-peer") && $("#convo-peer").dataset.u === peer) return;
     S.chatLast = sig;
@@ -957,6 +978,22 @@ async function viewChat(el, params) {
     const cb = $("#convo-body");
     cb.scrollTop = cb.scrollHeight;
     $("#convo-back").onclick = () => { S.chatPeer = null; $("#chat-layout").classList.remove("thread-open"); $("#chat-convo").innerHTML = `<div class="empty"><span class="big">💬</span>اختر محادثة.</div>`; refreshThreads(); };
+    const rx = $("#reply-x");
+    if (rx) rx.onclick = () => { S.chatReply = null; const rb = $("#reply-bar"); if (rb) rb.classList.remove("show"); };
+    $$("[data-reply]", convo).forEach((b) => (b.onclick = () => {
+      const m = msgs.find((x) => String(x.id) === b.getAttribute("data-reply"));
+      if (!m) return;
+      S.chatReply = { id: m.id, body: String(m.body || (m.image_url || m.image ? "📷 صورة" : "")).slice(0, 100) };
+      const rb = $("#reply-bar");
+      if (rb) { rb.classList.add("show"); $(".q", rb).textContent = S.chatReply.body; }
+      $("#convo-inp").focus();
+    }));
+    $$("[data-react]", convo).forEach((b) => (b.onclick = () => openReactPicker(b.getAttribute("data-react"))));
+    $$("[data-delmsg]", convo).forEach((b) => (b.onclick = async () => {
+      if (!confirm("حذف هذه الرسالة؟")) return;
+      try { await apiDel("/messages?id=" + encodeURIComponent(b.getAttribute("data-delmsg")) + "&user=" + encodeURIComponent(meKey())); await refreshThreads(); }
+      catch { toast("تعذر الحذف", "err"); }
+    }));
     $("#convo-form").onsubmit = async (e) => {
       e.preventDefault();
       const inp = $("#convo-inp");
@@ -964,7 +1001,8 @@ async function viewChat(el, params) {
       if (!v) return;
       inp.value = "";
       try {
-        await apiPost("/messages", { thread_user: peer, from_key: meKey(), from_user: meKey(), name: meName(), kind: "text", body: v });
+        await apiPost("/messages", { thread_user: peer, from_key: meKey(), from_user: meKey(), name: meName(), kind: "text", body: v, reply_to: (S.chatReply && S.chatReply.id) || null });
+        S.chatReply = null;
         await refreshThreads();
       } catch { toast("تعذر الإرسال", "err"); }
     };
@@ -1063,21 +1101,40 @@ async function viewAI(el) {
         `<div class="ai-msg ${m.role === "user" ? "user" : "bot"}"><div class="b">${esc(m.content || "")}</div></div>`
       ).join("") || `<div class="empty"><span class="big">✨</span>ابدأ الكلام مع زيفي.</div>`;
       box.scrollTop = box.scrollHeight;
+      bindAiCopy(box);
     } catch { box.innerHTML = `<p style="color:var(--red)">تعذر التحميل</p>`; }
   }
+  function bindAiCopy(box) {
+    $$(".ai-msg.bot .b", box).forEach((b) => {
+      if ($("[data-copied]", b)) return;
+      const btn = document.createElement("button");
+      btn.className = "copy-btn"; btn.type = "button";
+      btn.setAttribute("data-copied", "1"); btn.textContent = "📋 نسخ";
+      btn.onclick = async (e) => {
+        e.stopPropagation();
+        const t = b.cloneNode(true);
+        const c = $("[data-copied]", t); if (c) c.remove();
+        try { await navigator.clipboard.writeText(t.textContent.trim()); toast("تم النسخ", "ok"); } catch {}
+      };
+      b.appendChild(document.createElement("br"));
+      b.appendChild(btn);
+    });
+  }
   async function sendText(text) {
-    if (!text || !S.aiChat) return;
+    const img = S.aiImage || "";
+    if ((!text && !img) || !S.aiChat) return;
     const box = $("#ai-msgs");
     const inp = $("#ai-inp");
     inp.value = ""; inp.disabled = true;
-    box.insertAdjacentHTML("beforeend", `<div class="ai-msg user"><div class="b">${esc(text)}</div></div>`);
+    box.insertAdjacentHTML("beforeend", `<div class="ai-msg user"><div class="b">${img ? `<img src="${img}" style="max-width:180px;border-radius:10px;display:block;margin-bottom:6px" />` : ""}${esc(text || "ما هذا؟")}</div></div>`);
     box.insertAdjacentHTML("beforeend", `<div class="ai-msg bot" id="ai-typing"><div class="b typing"><span></span><span></span><span></span></div></div>`);
     box.scrollTop = box.scrollHeight;
     try {
-      await apiPost("/ai-messages", { chat_id: S.aiChat, role: "user", content: text });
+      await apiPost("/ai-messages", { chat_id: S.aiChat, role: "user", content: (img ? "📷 [صورة] " : "") + (text || "ما هذا؟") });
       const history = await apiGet("/ai-messages?chat_id=" + encodeURIComponent(S.aiChat));
       const msgs = [{ role: "system", content: AI_SYS }]
         .concat((history || []).filter((m) => m.role !== "system").slice(-12).map((m) => ({ role: m.role, content: m.content })));
+      if (img && msgs.length) msgs[msgs.length - 1].image = img;
       const out = await apiPost("/ai", { user: meKey(), messages: msgs });
       const reply = out.text || (out.choices && out.choices[0] && out.choices[0].message && out.choices[0].message.content) || "عذراً، لم أفهم.";
       await apiPost("/ai-messages", { chat_id: S.aiChat, role: "assistant", content: reply });
@@ -1104,6 +1161,74 @@ async function viewAI(el) {
   };
   $("#ai-form").onsubmit = (e) => { e.preventDefault(); sendText($("#ai-inp").value.trim()); };
   $$("#ai-chips [data-chip]").forEach((c) => (c.onclick = () => sendText(c.getAttribute("data-chip"))));
+  $("#ai-img").onclick = async () => {
+    const f = await pickFile("image/*");
+    if (!f) return;
+    toast("جاري تجهيز الصورة…");
+    try {
+      S.aiImage = await compressImage(f, 768, 0.7);
+      $("#ai-att-img").src = S.aiImage;
+      $("#ai-attached").style.display = "flex";
+      toast("تم — اكتب سؤالك عن الصورة", "ok");
+    } catch { toast("تعذر قراءة الصورة", "err"); }
+  };
+  $("#ai-att-x").onclick = () => { S.aiImage = null; $("#ai-attached").style.display = "none"; };
+  function agentConfirm(html, fn) {
+    openModal(`<h3>🤖 تأكيد الوكيل</h3><div style="font-size:14px;line-height:1.9">${html}</div>
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" id="ag-ok" style="flex:1">تأكيد وتنفيذ</button><button class="btn ghost" id="ag-no" style="flex:1">إلغاء</button></div>`);
+    $("#ag-ok").onclick = async () => { closeModal(); try { await fn(); } catch { toast("تعذر التنفيذ", "err"); } };
+    $("#ag-no").onclick = closeModal;
+  }
+  async function runAgent() {
+    const inp = $("#agent-inp");
+    const cmd = (inp.value || "").trim();
+    if (!cmd) return;
+    let m = cmd.match(/^(ابحث|دور|search)\s+(عن\s+)?(.+)/i);
+    if (m && m[3]) { inp.value = ""; location.hash = "#/explore?q=" + encodeURIComponent(m[3].trim()); return; }
+    m = cmd.match(/تابع\s+@?([a-z0-9_.-]+)/i);
+    if (m) {
+      const u = m[1].toLowerCase();
+      if (u === meKey()) { toast("لا يمكنك متابعة نفسك", "err"); return; }
+      agentConfirm(`متابعة <b>@${esc(u)}</b>؟`, async () => {
+        await apiPost("/follows", { from_user: meKey(), to_user: u, on: true });
+        toast("تمت المتابعة ✅", "ok"); inp.value = "";
+      });
+      return;
+    }
+    m = cmd.match(/^(انشر|نزل)(\s+بوست)?\s*[:\-]?\s*([\s\S]+)/i);
+    if (m && m[3] && m[3].trim().length > 1) {
+      const btxt = m[3].trim();
+      agentConfirm(`نشر هذا المنشور؟<div class="agent-preview">${esc(btxt)}</div>`, async () => {
+        await apiPost("/posts", { username: meKey(), name: meName(), avatar: (personOf(meKey()) || {}).avatar || "", title: "", body: btxt, type: "text", tags: [], dests: ["home", "explore"], status: "ok" });
+        toast("تم النشر ✅", "ok"); inp.value = ""; location.hash = "#/home";
+      });
+      return;
+    }
+    m = cmd.match(/(البايو|النبذة|السيرة).{0,12}(إلى|الى|:)\s*([\s\S]+)/i) || cmd.match(/^(بايو|نبذة)\s*[:\-]?\s*([\s\S]+)/i);
+    if (m) {
+      const bio = (m[3] || m[2] || "").trim();
+      if (bio) {
+        agentConfirm(`تغيير نبذتك إلى:<div class="agent-preview">${esc(bio)}</div>`, async () => {
+          const who = personOf(meKey());
+          await apiPost("/profiles", { email: ME.email, username: meKey(), name: who.name || meName(), avatar: who.avatar || "", bio, city: who.city || "" });
+          toast("تم تحديث النبذة ✅", "ok"); inp.value = "";
+        });
+        return;
+      }
+    }
+    m = cmd.match(/(ابعت|ابعت|ارسل|أرسل)(\s+رسالة)?\s+(لـ|ل|الى|إلى|@)?\s*([a-z0-9_.-]+)\s*[:\-]?\s*([\s\S]+)/i);
+    if (m && m[5] && m[5].trim()) {
+      const u = m[4].toLowerCase(), btxt = m[5].trim();
+      agentConfirm(`إرسال رسالة إلى <b>@${esc(u)}</b>:<div class="agent-preview">${esc(btxt)}</div>`, async () => {
+        await apiPost("/messages", { thread_user: u, from_key: meKey(), from_user: meKey(), name: meName(), kind: "text", body: btxt });
+        toast("تم الإرسال ✅", "ok"); inp.value = "";
+      });
+      return;
+    }
+    toast("لم أفهم 🤔 — جرّب: انشر … / تابع @user / ابحث عن … / ابعت لـ@user: …", "err");
+  }
+  $("#agent-go").onclick = runAgent;
+  $("#agent-inp").onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); runAgent(); } };
   await refreshUsage();
   await refreshChats();
   if (S.aiChat) { $("#ai-form").style.display = ""; $("#ai-chips").style.display = ""; openChat(); }
@@ -1114,25 +1239,44 @@ async function viewNotes(el) {
   el.innerHTML = `<div class="wrap-narrow"><div class="card">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><b style="font-size:16px">الإشعارات</b><span style="flex:1"></span>
     <button class="btn soft sm" id="notes-read">تعليم الكل كمقروء</button></div>
+    <div class="ntabs" id="notes-tabs">
+      <button class="ntab active" data-ntab="all">الكل</button>
+      <button class="ntab" data-ntab="social">اجتماعي</button>
+      <button class="ntab" data-ntab="messages">رسائل</button>
+      <button class="ntab" data-ntab="system">نظام</button>
+    </div>
     <div id="notes-list"><div class="skel"></div></div>
   </div></div>`;
   $("#notes-read").onclick = async () => {
     try { await apiPost("/notes-read", { dest: meKey() }); toast("تم", "ok"); viewNotes(el); updateBadge(); }
     catch { toast("تعذر التحديث", "err"); }
   };
-  try {
-    const notes = await apiGet("/notes?dest=" + encodeURIComponent(meKey()));
+  let all = [];
+  const cat = (n) => {
+    const t = String(n.type || "");
+    if (["like", "comment", "follow", "friend", "mention", "tag"].includes(t)) return "social";
+    if (["message", "call"].includes(t)) return "messages";
+    return "system";
+  };
+  function paint(tab) {
+    $$("#notes-tabs .ntab").forEach((t) => t.classList.toggle("active", t.getAttribute("data-ntab") === tab));
     const box = $("#notes-list");
     if (!box) return;
-    box.innerHTML = (notes || []).length ? notes.map((n) => {
+    const list = tab === "all" ? all : all.filter((n) => cat(n) === tab);
+    box.innerHTML = list.length ? list.map((n) => {
       const unread = n.unread === 1 || n.unread === true || n.unread === "true";
       const who = personOf(n.from_user);
-      const icon = n.type === "like" ? "❤️" : n.type === "comment" ? "💬" : "📢";
+      const icon = n.type === "like" ? "❤️" : n.type === "comment" ? "💬" : n.type === "friend" ? "🤝" : n.type === "message" ? "✉️" : "📢";
       return `<div class="note">${unread ? `<span class="dot"></span>` : `<span style="width:8px;flex-shrink:0"></span>`}
         ${avatarHTML({ ...who, name: n.from_name || who.name }, "sm")}
         <div style="flex:1"><p><b>${esc(n.from_name || who.name || "")}</b> ${esc(n.body || n.title || "")} ${icon}</p>
         <time>${esc(timeAgo(n.created_at))}</time></div></div>`;
-    }).join("") : `<div class="empty"><span class="big">🤍</span>لا توجد إشعارات بعد.</div>`;
+    }).join("") : `<div class="empty"><span class="big">🤍</span>لا توجد إشعارات هنا.</div>`;
+  }
+  $$("#notes-tabs .ntab").forEach((t) => (t.onclick = () => paint(t.getAttribute("data-ntab"))));
+  try {
+    all = await apiGet("/notes?dest=" + encodeURIComponent(meKey()));
+    paint("all");
   } catch {
     const b = $("#notes-list");
     if (b) b.innerHTML = `<div class="empty">تعذر التحميل</div>`;
@@ -1192,6 +1336,8 @@ async function viewProfile(el, params) {
       <div class="ptabs">
         <button class="ptab active" data-ptab="posts">▦ المنشورات</button>
         <button class="ptab" data-ptab="media">🎬 الوسائط</button>
+      </div>
+      <div id="prof-tab-body" style="margin-top:dia">🎬 الوسائط</button>
       </div>
       <div id="prof-tab-body" style="margin-top:10px"></div>
     </div>`;
@@ -1383,35 +1529,77 @@ async function viewGold(el) {
 }
 
 /* ---------- king (admin) ---------- */
+function kingQS() {
+  try {
+    const t = sessionStorage.getItem("zivv.king") || "";
+    if (t) return "token=" + encodeURIComponent(t);
+  } catch {}
+  return "by=" + encodeURIComponent(meKey());
+}
+function kingBody(extra) {
+  let t = "";
+  try { t = sessionStorage.getItem("zivv.king") || ""; } catch {}
+  return Object.assign({ by: meKey() }, t ? { king_token: t } : {}, extra || {});
+}
+function kingAuthed() {
+  if (isAdmin()) return true;
+  try { return !!(sessionStorage.getItem("zivv.king") || ""); } catch { return false; }
+}
 async function viewKing(el) {
-  if (!isAdmin()) {
-    el.innerHTML = `<div class="wrap-narrow"><div class="card empty"><span class="big">🛡️</span>صفحة خاصة بإدارة المنصة فقط.</div></div>`;
+  if (!kingAuthed()) {
+    el.innerHTML = `<div class="wrap-narrow"><div class="card king-login">
+      <span class="big-lock">🛡️</span>
+      <h3>دخول الملك</h3>
+      <p style="color:var(--muted);font-size:13px">منطقة إدارية محمية — أدخل كلمة سر الملك<br/>(تُضبط من متغير KING_PASSWORD على السيرفر)</p>
+      <div class="field"><input class="input" id="king-pass" type="password" placeholder="كلمة السر" /></div>
+      <button class="btn block" id="king-go">دخول 🛡️</button>
+    </div></div>`;
+    $("#king-go").onclick = async () => {
+      try {
+        const out = await apiPost("/king-login", { password: $("#king-pass").value });
+        try { sessionStorage.setItem("zivv.king", out.token); } catch {}
+        toast("مرحباً أيها الملك 👑", "ok");
+        viewKing(el);
+      } catch (e) { toast((e && e.message) || "تعذر الدخول", "err"); }
+    };
     return;
   }
   el.innerHTML = `<div class="wrap-wide"><div class="skel"></div><div class="skel"></div></div>`;
   try {
     await loadPeople();
-    const [stats, golds, reports, accounts, posts] = await Promise.all([
-      apiGet("/stats"), apiGet("/gold"), apiGet("/reports"), apiGet("/accounts"), apiGet("/posts?limit=500"),
+    const [stats, golds, reports, accounts, posts, mods, auditLog] = await Promise.all([
+      apiGet("/stats"), apiGet("/gold"), apiGet("/reports"), apiGet("/accounts"),
+      apiGet("/posts?limit=300"), apiGet("/mod-actions?" + kingQS()).catch(() => []), apiGet("/audit?" + kingQS()).catch(() => []),
     ]);
     const s = (stats && stats.stats) || {};
     const pend = (golds || []).filter((g) => g.status === "pending").length;
+    const banMap = {};
+    (mods || []).filter((m) => m.action === "ban_user" || m.action === "unban")
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      .forEach((m) => { banMap[String(m.target_user || "").toLowerCase()] = m.action === "ban_user"; });
+    const bans = Object.keys(banMap).filter((k) => banMap[k]).length;
     el.innerHTML = `<div class="wrap-wide">
-      <div class="card"><b style="font-size:17px">🛡️ صفحة الملك — لوحة الإدارة</b>
-        <div style="font-size:12px;color:var(--muted)">تحكم كامل حقيقي في المنصة</div></div>
+      <div class="card"><div style="display:flex;align-items:center;gap:10px"><b style="font-size:17px">🛡️ صفحة الملك — لوحة الإدارة</b><span style="flex:1"></span>
+        <button class="btn ghost sm" id="king-out">خروج الملك</button></div>
+        <div style="font-size:12px;color:var(--muted)">تحكم كامل حقيقي + سجل تدقيق لكل إجراء</div></div>
       <div class="stat-grid">
         <div class="stat-card"><div class="v">${s.accounts || 0}</div><div class="l">مستخدم</div></div>
         <div class="stat-card"><div class="v">${s.posts || 0}</div><div class="l">منشور</div></div>
-        <div class="stat-card"><div class="v">${pend}</div><div class="l">طلب جولد معلق</div></div>
+        <div class="stat-card"><div class="v">${pend}</div><div class="l">جولد معلق</div></div>
         <div class="stat-card"><div class="v">${(reports || []).length}</div><div class="l">بلاغ</div></div>
+        <div class="stat-card"><div class="v">${bans}</div><div class="l">محظور</div></div>
+        <div class="stat-card"><div class="v">${(auditLog || []).length}</div><div class="l">سجل تدقيق</div></div>
       </div>
-      <div class="ptabs" style="border:none;margin:0 0 10px">
-        <button class="ptab active" data-ktab="gold">👑 طلبات الجولد (${(golds || []).length})</button>
+      <div class="ptabs" style="border:none;margin:0 0 10px;flex-wrap:wrap">
+        <button class="ptab active" data-ktab="gold">👑 الجولد (${(golds || []).length})</button>
         <button class="ptab" data-ktab="reports">🚩 البلاغات (${(reports || []).length})</button>
         <button class="ptab" data-ktab="users">👥 المستخدمون (${(accounts || []).length})</button>
+        <button class="ptab" data-ktab="content">📝 المحتوى</button>
+        <button class="ptab" data-ktab="audit">📋 التدقيق (${(auditLog || []).length})</button>
       </div>
       <div class="card" id="king-body" style="padding:8px 14px"></div>
     </div>`;
+    $("#king-out").onclick = () => { try { sessionStorage.removeItem("zivv.king"); } catch {} location.hash = "#/home"; };
 
     function paintK(tab) {
       $$(".ptab", el).forEach((t) => t.classList.toggle("active", t.getAttribute("data-ktab") === tab));
@@ -1432,26 +1620,64 @@ async function viewKing(el) {
         $$("[data-gno]", box).forEach((b) => (b.onclick = () => goldAct(b.getAttribute("data-gno"), "rejected")));
       } else if (tab === "reports") {
         box.innerHTML = (reports || []).length ? `<div style="overflow-x:auto"><table class="table">
-          <tr><th>المُبلغ</th><th>المستهدف</th><th>السبب</th><th>المنشور</th></tr>
+          <tr><th>المُبلغ</th><th>المستهدف</th><th>النوع</th><th>السبب</th><th>رابط</th></tr>
           ${(reports || []).map((r) => `<tr>
             <td><b>${esc(r.reporter_name || "")}</b><br/><small style="color:var(--muted)">${esc(r.reporter_email || "")}</small></td>
-            <td>@${esc(r.target_user || "")}</td><td>${esc(r.note || "")}</td>
+            <td>@${esc(r.target_user || "")}</td><td>${esc(r.type || "")}</td><td>${esc(r.note || "")}</td>
             <td>${r.post_id ? `<a href="#/post/${esc(r.post_id)}">فتح</a>` : "—"}</td></tr>`).join("")}</table></div>`
           : `<div class="empty"><span class="big">✅</span>لا توجد بلاغات.</div>`;
-      } else {
+      } else if (tab === "users") {
         box.innerHTML = `<div style="overflow-x:auto"><table class="table">
-          <tr><th>المستخدم</th><th>البريد</th><th>منشورات</th></tr>
+          <tr><th>المستخدم</th><th>البريد</th><th>منشورات</th><th>الحالة</th><th>إجراء</th></tr>
           ${(accounts || []).map((a) => {
             const u = String(a.username || "").toLowerCase();
             const np = (posts || []).filter((p) => String(p.username || p.user || "").toLowerCase() === u).length;
+            const banned = !!banMap[u];
             return `<tr><td><a href="#/profile?u=${encodeURIComponent(u)}" style="text-decoration:none"><b>@${esc(u)}</b></a><br/><small style="color:var(--muted)">${esc(a.name || "")}</small></td>
-              <td><small>${esc(a.email || "")}</small></td><td><b>${np}</b></td></tr>`;
+              <td><small>${esc(a.email || "")}</small></td><td><b>${np}</b></td>
+              <td>${banned ? `<span class="ban-tag">محظور</span>` : `<span class="avail-tag">نشط</span>`}</td>
+              <td>${banned ? `<button class="btn soft sm" data-unban="${esc(u)}">فك الحظر</button>` : `<button class="btn danger sm" data-ban="${esc(u)}">حظر</button>`}</td></tr>`;
           }).join("")}</table></div>`;
+        $$("[data-ban]", box).forEach((b) => (b.onclick = () => {
+          const u = b.getAttribute("data-ban");
+          openModal(`<h3>⛔ حظر @${esc(u)}</h3>
+            <div class="field"><label>السبب</label><input class="input" id="ban-reason" placeholder="مثال: محتوى مسيء" /></div>
+            <button class="btn danger block" id="ban-go">تأكيد الحظر</button>`);
+          $("#ban-go").onclick = async () => {
+            try {
+              await apiPost("/mod-actions", kingBody({ action: "ban_user", target_user: u, target_type: "user", reason: $("#ban-reason").value.trim() }));
+              closeModal(); toast("تم الحظر ⛔", "ok"); viewKing(el);
+            } catch { toast("تعذر التنفيذ", "err"); }
+          };
+        }));
+        $$("[data-unban]", box).forEach((b) => (b.onclick = async () => {
+          try { await apiPost("/mod-actions", kingBody({ action: "unban", target_user: b.getAttribute("data-unban"), target_type: "user" })); toast("تم فك الحظر ✅", "ok"); viewKing(el); }
+          catch { toast("تعذر التنفيذ", "err"); }
+        }));
+      } else if (tab === "content") {
+        const latest = (posts || []).slice(0, 30);
+        box.innerHTML = `<div style="overflow-x:auto"><table class="table">
+          <tr><th>المنشور</th><th>الكاتب</th><th>النوع</th><th>إجراء</th></tr>
+          ${latest.map((p) => `<tr><td><a href="#/post/${esc(p.id)}" style="text-decoration:none">${esc((p.title || p.body || p.text || "").slice(0, 60))}</a></td>
+            <td>@${esc(p.username || p.user || "")}</td><td>${esc(p.type || "text")}</td>
+            <td><button class="btn danger sm" data-rmpost="${esc(p.id)}">إزالة</button></td></tr>`).join("") || `<tr><td colspan="4">لا يوجد محتوى</td></tr>`}
+        </table></div>`;
+        $$("[data-rmpost]", box).forEach((b) => (b.onclick = async () => {
+          if (!confirm("إزالة هذا المنشور نهائياً؟")) return;
+          try { await apiPost("/mod-actions", kingBody({ action: "remove_post", target_id: b.getAttribute("data-rmpost"), target_type: "post" })); toast("تمت الإزالة", "ok"); viewKing(el); }
+          catch { toast("تعذر التنفيذ", "err"); }
+        }));
+      } else {
+        box.innerHTML = (auditLog || []).length ? `<div style="overflow-x:auto"><table class="table">
+          <tr><th>الوقت</th><th>المدير</th><th>الإجراء</th><th>المستهدف</th><th>النتيجة</th><th>ملاحظة</th></tr>
+          ${(auditLog || []).map((a) => `<tr><td><small>${esc(timeAgo(a.created_at))}</small></td><td><b>${esc(a.admin || "")}</b></td>
+            <td>${esc(a.action || "")}</td><td>${esc(a.target || "")}</td><td>${esc(a.result || "")}</td><td><small>${esc(a.note || "")}</small></td></tr>`).join("")}</table></div>`
+          : `<div class="empty"><span class="big">📋</span>لا توجد سجلات بعد.</div>`;
       }
     }
     async function goldAct(id, action) {
       try {
-        await apiPost("/gold", { id, action, by: meKey() });
+        await apiPost("/gold", kingBody({ id, action }));
         toast(action === "approved" ? "تم القبول 👑" : "تم الرفض", "ok");
         viewKing(el);
       } catch { toast("تعذر التنفيذ", "err"); }
@@ -1460,7 +1686,6 @@ async function viewKing(el) {
     paintK("gold");
   } catch { el.innerHTML = `<div class="wrap-wide"><div class="card empty">تعذر التحميل</div></div>`; }
 }
-
 /* ---------- create hub ---------- */
 function videoDuration(file) {
   return new Promise((res, rej) => {
@@ -1722,6 +1947,340 @@ async function viewStore(el) {
   let deb = null;
   $("#st-q").oninput = (e) => { clearTimeout(deb); deb = setTimeout(() => paint(e.target.value), 300); };
   load();
+}
+
+/* ---------- private chat (locked) ---------- */
+async function viewPrivate(el, params) {
+  let st = { configured: false };
+  try { st = await apiPost("/private-auth", { action: "status", user: meKey() }); } catch {}
+  if (!(S.privUntil && Date.now() < S.privUntil)) {
+    el.innerHTML = `<div class="wrap-narrow"><div class="card lock-screen">
+      <span class="big-lock">🔒</span>
+      <h3>الدردشة الخاصة</h3>
+      <p style="color:var(--muted);font-size:13px">${st.configured ? "أدخل كلمة السر لفتح محادثاتك الخاصة" : "أنشئ كلمة سر لدردشتك الخاصة (تُحفظ مشفّرة على السيرفر ولا تُعرض أبداً)"}</p>
+      <div class="field"><input class="input" id="pv-pass" type="password" placeholder="كلمة السر (4 أحرف على الأقل)" /></div>
+      <button class="btn block" id="pv-go">${st.configured ? "فتح 🔓" : "إنشاء 🔐"}</button>
+      <p style="font-size:11.5px;color:var(--muted)">قفل تلقائي بعد 60 ثانية • 5 محاولات خاطئة = حظر مؤقت 5 دقائق</p>
+    </div></div>`;
+    $("#pv-go").onclick = async () => {
+      const pw = $("#pv-pass").value || "";
+      if (pw.length < 4) { toast("كلمة السر قصيرة", "err"); return; }
+      try {
+        await apiPost("/private-auth", { action: st.configured ? "verify" : "set", user: meKey(), password: pw });
+        S.privUntil = Date.now() + 60000;
+        toast(st.configured ? "تم الفتح 🔓" : "تم الإنشاء 🔐", "ok");
+        viewPrivate(el, params);
+      } catch (e) { toast((e && e.message) || "تعذر الدخول", "err"); }
+    };
+    return;
+  }
+
+  const peer0 = (params.get("u") || "").toLowerCase();
+  el.innerHTML = `<div class="wrap-wide">
+    <div class="priv-banner">🔒 منطقة خاصة — تُقفل تلقائياً بعد 60 ثانية <button class="btn sm" id="pv-lock" style="margin-inline-start:8px;padding:2px 12px">قفل الآن</button></div>
+    <div class="chat-layout" id="chat-layout">
+      <div class="threads">
+        <div class="threads-head">🔒 الخاصة <span style="flex:1"></span><button class="btn soft sm" id="pv-new">+ جديد</button></div>
+        <div style="padding:10px 12px 0"><input class="input" id="pv-q" placeholder="بحث…" /></div>
+        <div class="threads-list" id="pv-threads"></div>
+      </div>
+      <div class="convo" id="pv-convo"><div class="empty"><span class="big">🔒</span>اختر محادثة خاصة.</div></div>
+    </div></div>`;
+
+  let all = [];
+  const bump = () => { S.privUntil = Date.now() + 60000; };
+  $("#pv-lock").onclick = () => { S.privUntil = 0; viewPrivate(el, params); };
+
+  async function refresh() {
+    try {
+      all = await apiGet("/messages");
+      await loadPeople();
+      const qEl = $("#pv-q");
+      if (!qEl) return;
+      bump();
+      const q = (qEl.value || "").toLowerCase();
+      const mine = (all || []).filter((m) => String(m.thread_user || "").toLowerCase().startsWith("priv:") &&
+        (String(m.thread_user || "").toLowerCase() === "priv:" + meKey() || String(m.from_user || m.from_key || "").toLowerCase() === meKey()));
+      const groups = new Map();
+      mine.forEach((m) => {
+        const from = String(m.from_user || m.from_key || "").toLowerCase();
+        const th = String(m.thread_user || "").toLowerCase();
+        const peer = th === "priv:" + meKey() ? from : th.slice(5);
+        if (!peer || !peer.startsWith && false) return;
+        if (!peer) return;
+        if (!groups.has(peer)) groups.set(peer, []);
+        groups.get(peer).push(m);
+      });
+      let peers = Array.from(groups.entries()).map(([peer, msgs]) => {
+        msgs.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        return { peer, last: msgs[msgs.length - 1] };
+      }).sort((a, b) => new Date((b.last || {}).created_at || 0) - new Date((a.last || {}).created_at || 0));
+      if (q) {
+        const extra = Array.from(S.people.values()).filter((u) => u.username !== meKey() && (u.name + " " + u.username).toLowerCase().includes(q) && !groups.has(u.username));
+        extra.forEach((u) => peers.push({ peer: u.username, last: null }));
+      } else if (peer0 && !groups.has(peer0)) peers.unshift({ peer: peer0, last: null });
+      const box = $("#pv-threads");
+      if (!box) return;
+      box.innerHTML = peers.length ? peers.map(({ peer, last }) => {
+        const who = personOf(peer);
+        return `<div class="thread-row ${S.privPeer === peer ? "active" : ""}" data-peer="${esc(peer)}">
+          ${avatarHTML(who, "sm", isGold(peer))}<div class="who"><b>🔒 ${esc(who.name)}</b><span>${last ? esc(String(last.body || (last.image_url ? "📷 صورة" : "")).slice(0, 35)) : "ابدأ المحادثة"}</span></div></div>`;
+      }).join("") : `<div class="empty"><span class="big">📭</span>لا توجد محادثات خاصة.</div>`;
+      $$("#pv-threads [data-peer]").forEach((r) => (r.onclick = () => openThread(r.getAttribute("data-peer"))));
+      if (S.privPeer) paintConvo();
+    } catch {}
+  }
+  function msgsWith(peer) {
+    return (all || []).filter((m) => {
+      const from = String(m.from_user || m.from_key || "").toLowerCase();
+      const th = String(m.thread_user || "").toLowerCase();
+      return (th === "priv:" + peer && from === meKey()) || (th === "priv:" + meKey() && from === peer);
+    }).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  }
+  function paintConvo() {
+    const peer = S.privPeer;
+    if (!peer) return;
+    const who = personOf(peer);
+    const convo = $("#pv-convo");
+    if (!convo) return;
+    const msgs = msgsWith(peer);
+    const sig = msgs.map((m) => m.id).join(",");
+    if ($("#pv-body") && S.privLast === sig) return;
+    S.privLast = sig;
+    bump();
+    apiPost("/messages-read", { thread_user: "priv:" + meKey(), peer }).catch(() => {});
+    convo.innerHTML = `
+      <div class="convo-head"><button class="icon-btn back-btn" id="pv-back">→</button>
+        ${avatarHTML(who, "sm", isGold(peer))}
+        <div><b>🔒 ${esc(who.name)}</b><br/><span style="font-size:12px;color:var(--muted)">@${esc(peer)}</span></div>
+      </div>
+      <div class="convo-body" id="pv-body">
+        ${msgs.length ? msgs.map((m) => {
+          const mine = String(m.from_user || m.from_key || "").toLowerCase() === meKey();
+          const img = m.image_url || m.image ? `<img src="${esc(m.image_url || m.image)}" alt="" loading="lazy" />` : "";
+          const q = m.reply_to ? msgs.find((x) => String(x.id) === String(m.reply_to)) : null;
+          return `<div class="msg ${mine ? "me" : "them"}"><div class="b">${q ? `<span class="quote">↩️ ${esc(String(q.body || "📷").slice(0, 60))}</span>` : ""}${img}${esc(m.body || "")}
+          <span class="meta-row"><time>${esc(timeAgo(m.created_at))}</time>${mine ? `<span class="ticks ${m.read ? "read" : ""}">${m.read ? "✓✓" : "✓"}</span>` : ""}
+          <span class="mini-actions"><button type="button" class="mini-btn" data-preply="${esc(m.id)}">↩️</button>${mine ? `<button type="button" class="mini-btn" data-pdel="${esc(m.id)}">🗑️</button>` : ""}</span></span></div></div>`;
+        }).join("") : `<div class="empty"><span class="big">👋</span>ابدأ الكلام الخاص مع ${esc(who.name)}</div>`}
+      </div>
+      <div class="reply-bar ${S.privReply ? "show" : ""}" id="pv-replybar"><span>↩️</span><span class="q">${S.privReply ? esc(S.privReply.body) : ""}</span><button type="button" id="pv-rx">✕</button></div>
+      <form class="convo-form" id="pv-form">
+        <button class="icon-btn" type="button" id="pv-img">🖼️</button>
+        <input class="input" id="pv-inp" placeholder="رسالة خاصة…" autocomplete="off" maxlength="1000" />
+        <button class="btn" type="submit">إرسال</button>
+      </form>`;
+    $("#pv-body").scrollTop = $("#pv-body").scrollHeight;
+    $("#pv-back").onclick = () => { S.privPeer = null; $("#chat-layout").classList.remove("thread-open"); $("#pv-convo").innerHTML = `<div class="empty"><span class="big">🔒</span>اختر محادثة.</div>`; refresh(); };
+    $("#pv-rx").onclick = () => { S.privReply = null; $("#pv-replybar").classList.remove("show"); };
+    $$("[data-preply]", convo).forEach((b) => (b.onclick = () => {
+      const m = msgs.find((x) => String(x.id) === b.getAttribute("data-preply"));
+      if (!m) return;
+      S.privReply = { id: m.id, body: String(m.body || "📷 صورة").slice(0, 100) };
+      $("#pv-replybar").classList.add("show");
+      $("#pv-replybar .q").textContent = S.privReply.body;
+      $("#pv-inp").focus();
+    }));
+    $$("[data-pdel]", convo).forEach((b) => (b.onclick = async () => {
+      if (!confirm("حذف الرسالة؟")) return;
+      try { await apiDel("/messages?id=" + encodeURIComponent(b.getAttribute("data-pdel")) + "&user=" + encodeURIComponent(meKey())); S.privLast = ""; refresh(); }
+      catch { toast("تعذر الحذف", "err"); }
+    }));
+    $("#pv-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const v = $("#pv-inp").value.trim();
+      if (!v) return;
+      $("#pv-inp").value = "";
+      try {
+        await apiPost("/messages", { thread_user: "priv:" + peer, from_key: meKey(), from_user: meKey(), name: meName(), kind: "text", body: v, reply_to: (S.privReply && S.privReply.id) || null });
+        S.privReply = null; S.privLast = "";
+        refresh();
+      } catch { toast("تعذر الإرسال", "err"); }
+    };
+    $("#pv-img").onclick = async () => {
+      const f = await pickFile("image/*");
+      if (!f) return;
+      toast("جاري الرفع…");
+      try {
+        const url = await uploadImage(f);
+        await apiPost("/messages", { thread_user: "priv:" + peer, from_key: meKey(), from_user: meKey(), name: meName(), kind: "image", body: "", image_url: url });
+        S.privLast = "";
+        refresh();
+      } catch { toast("تعذر الإرسال", "err"); }
+    };
+  }
+  function openThread(peer) {
+    S.privPeer = String(peer).toLowerCase();
+    S.privLast = ""; S.privReply = null;
+    const lay = $("#chat-layout");
+    if (lay) lay.classList.add("thread-open");
+    paintConvo();
+    refresh();
+  }
+  $("#pv-new").onclick = () => { const q = $("#pv-q"); if (q) q.focus(); toast("ابحث عن شخص واختره"); };
+  $("#pv-q").oninput = refresh;
+  if (peer0) { S.privPeer = peer0; const lay = $("#chat-layout"); if (lay) lay.classList.add("thread-open"); }
+  await refresh();
+  later(() => { if (!(S.privUntil && Date.now() < S.privUntil)) { S.privUntil = 0; S.privPeer = null; viewPrivate(el, params); } }, 5000);
+  later(async () => {
+    try {
+      const fresh = await apiGet("/messages");
+      const sigAll = (fresh || []).length + "|" + ((fresh || []).slice(-1)[0] || {}).id;
+      if (sigAll !== S.privSig) { S.privSig = sigAll; all = fresh; refresh(); }
+    } catch {}
+  }, 3000);
+}
+
+/* ---------- friends ---------- */
+async function viewFriends(el) {
+  el.innerHTML = `<div class="wrap-narrow"><div class="skel"></div><div class="skel"></div></div>`;
+  try {
+    await loadPeople();
+    const [reqs, follows] = await Promise.all([apiGet("/friends"), apiGet("/follows")]);
+    const me = meKey();
+    const incoming = (reqs || []).filter((r) => String(r.to_user || "").toLowerCase() === me && r.status === "pending");
+    const outgoing = (reqs || []).filter((r) => String(r.from_user || "").toLowerCase() === me && r.status === "pending");
+    const friendSet = new Set();
+    (reqs || []).filter((r) => r.status === "accepted").forEach((r) => {
+      const a = String(r.from_user || "").toLowerCase(), b = String(r.to_user || "").toLowerCase();
+      if (a === me) friendSet.add(b);
+      if (b === me) friendSet.add(a);
+    });
+    const pendSet = new Set([
+      ...incoming.map((r) => String(r.from_user || "").toLowerCase()),
+      ...outgoing.map((r) => String(r.to_user || "").toLowerCase()),
+    ]);
+    const myFollowing = new Set((follows || []).filter((f) => String(f.follower || f.from_user || "").toLowerCase() === me).map((f) => String(f.following || f.to_user || "").toLowerCase()));
+    const cands = Array.from(S.people.values())
+      .filter((u) => u.username !== me && !friendSet.has(u.username) && !pendSet.has(u.username))
+      .map((u) => {
+        const uF = new Set((follows || []).filter((f) => String(f.following || f.to_user || "").toLowerCase() === u.username).map((f) => String(f.follower || f.from_user || "").toLowerCase()));
+        let mutual = 0;
+        myFollowing.forEach((x) => { if (uF.has(x)) mutual++; });
+        return { u, mutual };
+      })
+      .sort((a, b) => b.mutual - a.mutual)
+      .slice(0, 10);
+    const row = (u, extra, actions) => `<div class="user-row">${avatarHTML(u, "sm", isGold(u.username))}
+      <div class="who"><b><a href="#/profile?u=${encodeURIComponent(u.username)}">${esc(u.name)}</a> ${nameBadges(u.username)}</b><span>${extra}</span></div>
+      <div class="fr-actions">${actions}</div></div>`;
+
+    el.innerHTML = `<div class="wrap-narrow"><div class="card" style="padding:8px 14px">
+      <b style="font-size:16px">👥 الأصدقاء (${friendSet.size})</b>
+      ${friendSet.size ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${Array.from(friendSet).slice(0, 12).map((f) => {
+        const w = personOf(f);
+        return `<a href="#/profile?u=${encodeURIComponent(f)}" style="text-decoration:none;text-align:center">${avatarHTML(w, "sm")}<div style="font-size:11px;color:var(--text)">${esc((w.name || f).split(" ")[0])}</div></a>`;
+      }).join("")}</div>` : `<p style="color:var(--muted);font-size:13px">لا أصدقاء بعد — اقبل طلبات أو أضف أشخاصاً.</p>`}
+      <div class="fr-section">📥 طلبات واردة (${incoming.length})</div>
+      ${incoming.length ? incoming.map((r) => {
+        const w = personOf(r.from_user);
+        return row({ ...w, name: r.from_name || w.name }, `@${esc(r.from_user)} · ${esc(timeAgo(r.created_at))}`,
+          `<button class="btn sm" data-frok="${esc(r.id)}">تأكيد</button><button class="btn ghost sm" data-frno="${esc(r.id)}">حذف</button>`);
+      }).join("") : `<p style="color:var(--muted);font-size:13px">لا توجد طلبات واردة.</p>`}
+      <div class="fr-section">📤 طلبات مرسلة (${outgoing.length})</div>
+      ${outgoing.length ? outgoing.map((r) => {
+        const w = personOf(r.to_user);
+        return row({ ...w, name: r.to_name || w.name }, `@${esc(r.to_user)} · ${esc(timeAgo(r.created_at))}`,
+          `<button class="btn ghost sm" data-frcancel="${esc(r.id)}">إلغاء</button>`);
+      }).join("") : `<p style="color:var(--muted);font-size:13px">لا توجد طلبات مرسلة.</p>`}
+      <div class="fr-section">✨ مقترحون لك</div>
+      ${cands.length ? cands.map(({ u, mutual }) => row(u, `@${esc(u.username)}${mutual ? ` · 👥 ${mutual} مشترك` : ""}`,
+        `<button class="btn soft sm" data-frsend="${esc(u.username)}" data-name="${esc(u.name)}">+ إضافة</button>`)).join("") : `<p style="color:var(--muted);font-size:13px">لا اقتراحات حالياً.</p>`}
+    </div></div>`;
+
+    $$("[data-frok]", el).forEach((b) => (b.onclick = async () => {
+      try {
+        await apiPost("/friends", { id: b.getAttribute("data-frok"), action: "accepted" });
+        const r = (reqs || []).find((x) => String(x.id) === b.getAttribute("data-frok"));
+        if (r) await apiPost("/notes", { dest: String(r.from_user || "").toLowerCase(), type: "friend", title: "صداقة جديدة", body: `${meName()} قبل طلب صداقتك`, from_user: meKey(), from_name: meName(), unread: true }).catch(() => {});
+        toast("تمت الإضافة 🤝", "ok"); viewFriends(el);
+      } catch { toast("تعذر التنفيذ", "err"); }
+    }));
+    $$("[data-frno]", el).forEach((b) => (b.onclick = async () => {
+      try { await apiPost("/friends", { id: b.getAttribute("data-frno"), action: "declined" }); toast("تم الحذف", "ok"); viewFriends(el); }
+      catch { toast("تعذر التنفيذ", "err"); }
+    }));
+    $$("[data-frcancel]", el).forEach((b) => (b.onclick = async () => {
+      try { await apiPost("/friends", { id: b.getAttribute("data-frcancel"), action: "cancelled" }); toast("تم الإلغاء", "ok"); viewFriends(el); }
+      catch { toast("تعذر التنفيذ", "err"); }
+    }));
+    $$("[data-frsend]", el).forEach((b) => (b.onclick = async () => {
+      try {
+        await apiPost("/friends", { from_user: meKey(), from_name: meName(), to_user: b.getAttribute("data-frsend"), to_name: b.getAttribute("data-name") });
+        await apiPost("/notes", { dest: b.getAttribute("data-frsend"), type: "friend", title: "طلب صداقة", body: `${meName()} أرسل لك طلب صداقة`, from_user: meKey(), from_name: meName(), unread: true }).catch(() => {});
+        toast("تم إرسال الطلب", "ok"); viewFriends(el);
+      } catch { toast("تعذر الإرسال", "err"); }
+    }));
+  } catch { el.innerHTML = `<div class="wrap-narrow"><div class="card empty">تعذر التحميل</div></div>`; }
+}
+
+/* ---------- settings ---------- */
+async function viewSettings(el) {
+  const me = personOf(meKey());
+  const autoplay = localStorage.getItem("zivv.autoplay") !== "0";
+  const theme = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  el.innerHTML = `<div class="wrap-narrow">
+    <div class="card set-card"><h3>👤 الحساب</h3>
+      <div class="user-row" style="border:none">${avatarHTML({ ...me, name: meName() }, "", isGold(meKey()))}
+        <div class="who"><b>${esc(meName())} ${nameBadges(meKey())}</b><span>@${esc(meKey())} · ${esc(ME.email || "")}</span></div></div>
+      <div class="set-row"><div class="grow"><b>تغيير كلمة السر</b></div></div>
+      <div class="field"><input class="input" id="pw-old" type="password" placeholder="كلمة السر الحالية" /></div>
+      <div class="field"><input class="input" id="pw-new" type="password" placeholder="الجديدة (6 أحرف على الأقل)" /></div>
+      <button class="btn soft block" id="pw-save">حفظ كلمة السر</button>
+    </div>
+    <div class="card set-card"><h3>🎨 المظهر</h3>
+      <div class="set-row"><div class="grow"><b>الوضع الليلي</b><small>أسود إنستجرام / أبيض نهاري</small></div>
+        <label class="switch"><input type="checkbox" id="set-theme" ${theme === "dark" ? "checked" : ""} /><span class="sl"></span></label></div>
+      <div class="set-row"><div class="grow"><b>التشغيل التلقائي للريلز</b><small>تشغيل الفيديو عند ظهوره</small></div>
+        <label class="switch"><input type="checkbox" id="set-autoplay" ${autoplay ? "checked" : ""} /><span class="sl"></span></label></div>
+    </div>
+    <div class="card set-card"><h3>🔔 الإشعارات</h3>
+      <div class="set-row"><div class="grow"><b>مركز الإشعارات</b><small>كل تنبيهاتك في مكان واحد</small></div><a class="btn soft sm" href="#/notes">فتح</a></div>
+      <div class="set-row"><div class="grow"><b>تعليم الكل كمقروء</b></div><button class="btn ghost sm" id="set-readall">تنفيذ</button></div>
+    </div>
+    <div class="card set-card"><h3>🔒 الخصوصية والأمان</h3>
+      <div class="set-row"><div class="grow"><b>الدردشة الخاصة</b><small>محادثات مقفولة بكلمة سر</small></div><a class="btn soft sm" href="#/private">فتح</a></div>
+      <div class="set-row"><div class="grow"><b>جلسة الدخول</b><small>${esc(ME.email || "")} · هذا الجهاز</small></div><button class="btn ghost sm" id="set-logout">خروج</button></div>
+    </div>
+    <div class="card set-card"><h3>❓ المساعدة</h3>
+      <div class="faq-item"><b>كيف أنشر فيديو؟</b><p>من زر + في الأسفل اختر نوع الفيديو، ثم ارفع الملف (حتى 10MB) وانشر.</p></div>
+      <div class="faq-item"><b>كيف أحصل على شارة الجولد؟</b><p>من صفحة ZIVV Gold اطلب الاشتراك، وبعد موافقة الإدارة تظهر شارتك الذهبية.</p></div>
+      <div class="faq-item"><b>كيف أبيع في السوق؟</b><p>من زر + اختر "إعلان سوق"، أضف الصور والسعر ورقمك، وسيتواصل معك المشترون مباشرة.</p></div>
+      <div class="faq-item"><b>نسيت كلمة سر الدردشة الخاصة؟</b><p>تواصل مع الإدارة من زر "الإبلاغ عن مشكلة" وسيتم التحقق ومساعدتك.</p></div>
+      <button class="btn ghost block" id="set-report" style="margin-top:8px">🚩 الإبلاغ عن مشكلة</button>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:12px">ZIVV v3.0 • صُنع بحب في مصر 🇪🇬</p>
+  </div>`;
+
+  $("#pw-save").onclick = async () => {
+    const o = $("#pw-old").value, n = $("#pw-new").value;
+    if (!o || n.length < 6) { toast("تحقق من الحقول (الجديدة 6+ أحرف)", "err"); return; }
+    try { await apiPost("/auth/change", { email: ME.email, old_password: o, new_password: n }); toast("تم تغيير كلمة السر ✅", "ok"); $("#pw-old").value = ""; $("#pw-new").value = ""; }
+    catch (e) { toast((e && e.message) || "تعذر التغيير", "err"); }
+  };
+  $("#set-theme").onchange = (e) => toggleTheme();
+  $("#set-autoplay").onchange = (e) => { localStorage.setItem("zivv.autoplay", e.target.checked ? "1" : "0"); toast("تم الحفظ", "ok"); };
+  $("#set-readall").onclick = async () => {
+    try { await apiPost("/notes-read", { dest: meKey() }); updateBadge(); toast("تم", "ok"); } catch { toast("تعذر التنفيذ", "err"); }
+  };
+  $("#set-logout").onclick = () => {
+    if (!confirm("تسجيل الخروج من هذا الجهاز؟")) return;
+    localStorage.removeItem("zivv.session");
+    location.replace("index.html");
+  };
+  $("#set-report").onclick = () => {
+    openModal(`<h3>🚩 الإبلاغ عن مشكلة</h3>
+      <div class="field"><textarea class="textarea" id="fb-note" style="min-height:90px" placeholder="اشرح المشكلة بالتفصيل…"></textarea></div>
+      <button class="btn block" id="fb-send">إرسال للإدارة</button>`);
+    $("#fb-send").onclick = async () => {
+      const v = $("#fb-note").value.trim();
+      if (!v) { toast("اكتب المشكلة", "err"); return; }
+      try {
+        await apiPost("/reports", { post_id: "", target_user: "", type: "feedback", dest: "king", reporter_name: meName(), reporter_email: ME.email, note: v });
+        closeModal(); toast("تم الإرسال — شكراً لك", "ok");
+      } catch { toast("تعذر الإرسال", "err"); }
+    };
+  };
 }
 
 /* ---------- router ---------- */
