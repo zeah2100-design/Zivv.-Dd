@@ -210,7 +210,7 @@ async function notifyOwner(post, kind, previewText) {
 }
 
 /* ---------- topbar + drawer + bottomnav ---------- */
-const MAIN_ROUTES = ["home", "explore", "reels", "chat", "profile"];
+const MAIN_ROUTES = ["home", "explore", "create", "reels", "profile"];
 function isMainRoute(name, params) {
   if (!MAIN_ROUTES.includes(name)) return false;
   if (name === "profile" && params.get("u") && params.get("u").toLowerCase() !== meKey()) return false;
@@ -284,6 +284,8 @@ async function renderDrawer() {
       <a class="drawer-link" href="#/home"><span class="ico">🏠</span> الرئيسية</a>
       <a class="drawer-link" href="#/explore"><span class="ico">🔍</span> استكشاف</a>
       <a class="drawer-link" href="#/reels"><span class="ico">🎬</span> ريلز وفيديو</a>
+      <a class="drawer-link" href="#/create"><span class="ico">➕</span> إنشاء جديد</a>
+      <a class="drawer-link" href="#/store"><span class="ico">🛍️</span> السوق</a>
       <a class="drawer-link" href="#/chat"><span class="ico">💬</span> الدردشة</a>
       <a class="drawer-link" href="#/ai"><span class="ico">✨</span> زيفي AI</a>
       <a class="drawer-link" href="#/notes"><span class="ico">🤍</span> الإشعارات <span class="bdg" id="drawer-notes-bdg" style="display:none">0</span></a>
@@ -312,7 +314,9 @@ function closeDrawer() { $("#drawer").classList.remove("open"); $("#drawer-bg").
 function mediaOf(p) {
   const v = p.video_url || p.videoId || p.video || "";
   const img = p.image || p.image_url || "";
+  const a = p.audio_url || p.audioId || "";
   if (v) return { kind: "video", src: v };
+  if (a) return { kind: "audio", src: a, cover: img };
   if (img) return { kind: "image", src: img };
   return null;
 }
@@ -347,10 +351,7 @@ function postCard(p, ctx) {
       <button class="act" data-comments="${esc(p.id)}"><span class="ei">💬</span><span class="n" data-comments-n>${ctx.comments || 0}</span></button>
       <button class="act" data-share="${esc(p.id)}"><span class="ei">✈️</span></button>
       <span style="flex:1"></span>
-      <span class="act static"><span class="ei" style="font-size:19px">👁️</span><span class="n" data-views-n>${ctx.views || 0}</span></span>
-    </div>
-    <div class="post-likes">أعجب به <span data-likes-n2>${ctx.likes || 0}</span></div>
-    <div class="post-time">${esc(timeAgo(p.created_at))}</div>
+      <span class="act static"><span class="ei" style="font-size:19px">👁️</span><span class="n" dataeated_at))}</div>
     <div class="comments" id="c-${esc(p.id)}"></div>
   </article>`;
 }
@@ -1460,10 +1461,275 @@ async function viewKing(el) {
   } catch { el.innerHTML = `<div class="wrap-wide"><div class="card empty">تعذر التحميل</div></div>`; }
 }
 
+/* ---------- create hub ---------- */
+function videoDuration(file) {
+  return new Promise((res, rej) => {
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.onloadedmetadata = () => { const d = v.duration || 0; URL.revokeObjectURL(v.src); res(d); };
+    v.onerror = () => rej(new Error("تعذر قراءة الفيديو"));
+    v.src = URL.createObjectURL(file);
+  });
+}
+async function publishPost(payload, doneMsg, doneHash) {
+  await apiPost("/posts", Object.assign({
+    username: meKey(), name: meName(),
+    avatar: (personOf(meKey()) || {}).avatar || "",
+    tags: [], dests: ["home", "explore"], status: "ok",
+  }, payload));
+  toast(doneMsg || "تم النشر", "ok");
+  location.hash = doneHash || "#/home";
+}
+function parseTags(str) {
+  return String(str || "").split(/[,\n]/).map((t) => t.trim().replace(/^#+/, "")).filter(Boolean).slice(0, 10);
+}
+
+async function viewCreate(el, params) {
+  const tab0 = params.get("tab") || "";
+  const HUB = [
+    ["song", "🎵", "أغنية", "مقطع صوتي مع غلاف"],
+    ["longvideo", "🎞️", "فيديو طويل", "بصورة مصغرة وعنوان"],
+    ["textimage", "📝", "نص وصور", "منشور سريع"],
+    ["shortvideo", "⚡", "فيديو قصير", "ريلز عمودي"],
+    ["video5min", "🎬", "فيديو 5 دقائق", "5 دقائق كحد أقصى"],
+    ["market", "🏪", "إعلان سوق", "بِع منتجك"],
+  ];
+  const TITLES = { song: "🎵 نشر أغنية", longvideo: "🎞️ فيديو طويل", textimage: "📝 نص وصور", shortvideo: "⚡ فيديو قصير", video5min: "🎬 فيديو حتى 5 دقائق", market: "🏪 إعلان في السوق" };
+
+  function paintHub() {
+    el.innerHTML = `<div class="wrap-narrow">
+      <div class="card" style="text-align:center"><b style="font-size:17px">➕ مركز الإنشاء</b>
+      <div style="font-size:12.5px;color:var(--muted)">اختار نوع المحتوى اللي عايز تنشره</div></div>
+      <div class="create-grid">${HUB.map(([k, e, t, s]) =>
+        `<button class="create-card" data-ctab="${k}"><span class="e">${e}</span><b>${t}</b><small>${s}</small></button>`).join("")}
+      </div></div>`;
+    $$("[data-ctab]", el).forEach((b) => (b.onclick = () => paintForm(b.getAttribute("data-ctab"))));
+  }
+
+  function shell(inner) {
+    return `<div class="wrap-narrow"><div class="card create-form">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <button class="icon-btn" id="cf-back" style="width:36px;height:36px;font-size:19px">→</button>
+        <b style="font-size:16px" id="cf-title"></b></div>
+      <div id="cf-body">${inner}</div></div></div>`;
+  }
+  function dropHTML(id, label) {
+    return `<div class="upload-drop" id="${id}">${label}</div>`;
+  }
+  async function bindDrop(id, accept, maxMB, onFile) {
+    const d = document.getElementById(id);
+    if (!d) return;
+    d.onclick = async () => {
+      const f = await pickFile(accept);
+      if (!f) return;
+      if (maxMB && f.size > maxMB * 1024 * 1024) { toast(`الملف أكبر من ${maxMB}MB`, "err"); return; }
+      try { await onFile(f, d); } catch (e) { toast((e && e.message) || "تعذر الرفع", "err"); }
+    };
+  }
+  function filled(d, label) { d.classList.add("filled"); d.innerHTML = "✅ " + esc(label); }
+
+  function paintForm(kind) {
+    if (kind === "song") {
+      el.innerHTML = shell(`
+        ${dropHTML("f-audio", "🎵 اختار ملف الصوت (MP3 — حتى 10MB)")}
+        <div style="height:10px"></div>
+        ${dropHTML("f-cover", "🖼️ صورة الغلاف (اختياري)")}
+        <div style="height:10px"></div>
+        <div class="field"><label>اسم الأغنية *</label><input class="input" id="f-name" placeholder="مثال: أغنية الصباح" /></div>
+        <div class="field"><label>وصف (اختياري)</label><textarea class="textarea" id="f-desc" style="min-height:70px" placeholder="كلمات أو وصف…"></textarea></div>
+        <button class="btn block" id="f-pub">نشر الأغنية 🎵</button>`);
+      $("#cf-title").textContent = TITLES.song;
+      let audio = "", cover = "";
+      bindDrop("f-audio", "audio/*", 10, async (f, d) => { toast("جاري الرفع…"); audio = await uploadVideo(f); filled(d, f.name); });
+      bindDrop("f-cover", "image/*", 10, async (f, d) => { toast("جاري الرفع…"); cover = await uploadImage(f); filled(d, f.name); });
+      $("#f-pub").onclick = async () => {
+        const name = $("#f-name").value.trim();
+        if (!audio) { toast("اختار ملف الصوت أولاً", "err"); return; }
+        if (!name) { toast("اكتب اسم الأغنية", "err"); return; }
+        $("#f-pub").disabled = true;
+        try { await publishPost({ title: name, body: $("#f-desc").value.trim(), type: "music", audio_url: audio, image_url: cover }, "تم نشر الأغنية 🎵"); }
+        catch { toast("تعذر النشر", "err"); $("#f-pub").disabled = false; }
+      };
+    } else if (kind === "longvideo" || kind === "video5min") {
+      const is5 = kind === "video5min";
+      el.innerHTML = shell(`
+        ${dropHTML("f-video", `🎬 اختار الفيديو (حتى 10MB${is5 ? " — بحد أقصى 5 دقائق" : ""})`)}
+        <div style="height:10px"></div>
+        ${dropHTML("f-thumb", "🖼️ صورة مصغرة (اختياري)")}
+        <div style="height:10px"></div>
+        <div class="field"><label>العنوان *</label><input class="input" id="f-title" placeholder="عنوان جذاب…" /></div>
+        <div class="field"><label>الوصف</label><textarea class="textarea" id="f-desc" style="min-height:70px"></textarea></div>
+        <div class="field"><label>هاشتاجات (افصل بفاصلة)</label><input class="input" id="f-tags" placeholder="رياضة, تعليم" /></div>
+        <button class="btn block" id="f-pub">نشر الفيديو 🎬</button>`);
+      $("#cf-title").textContent = TITLES[kind];
+      let video = "", thumb = "";
+      bindDrop("f-video", "video/*", 10, async (f, d) => {
+        if (is5) { const dur = await videoDuration(f); if (dur > 305) { toast("الفيديو أطول من 5 دقائق", "err"); return; } }
+        toast("جاري الرفع…"); video = await uploadVideo(f); filled(d, f.name);
+      });
+      bindDrop("f-thumb", "image/*", 10, async (f, d) => { toast("جاري الرفع…"); thumb = await uploadImage(f); filled(d, f.name); });
+      $("#f-pub").onclick = async () => {
+        const title = $("#f-title").value.trim();
+        if (!video) { toast("اختار الفيديو أولاً", "err"); return; }
+        if (!title) { toast("اكتب العنوان", "err"); return; }
+        $("#f-pub").disabled = true;
+        try { await publishPost({ title, body: $("#f-desc").value.trim(), type: "video", video_url: video, image_url: thumb, tags: parseTags($("#f-tags").value) }, "تم نشر الفيديو 🎬"); }
+        catch { toast("تعذر النشر", "err"); $("#f-pub").disabled = false; }
+      };
+    } else if (kind === "textimage") {
+      el.innerHTML = shell(`
+        <div class="field"><label>اكتب منشورك *</label><textarea class="textarea" id="f-body" style="min-height:100px" placeholder="شارك فكرتك…"></textarea></div>
+        ${dropHTML("f-img", "🖼️ إرفاق صورة (اختياري)")}
+        <div style="height:10px"></div>
+        <div class="field"><label>هاشتاجات (افصل بفاصلة)</label><input class="input" id="f-tags" placeholder="يوميات, تصوير" /></div>
+        <button class="btn block" id="f-pub">نشر 📝</button>`);
+      $("#cf-title").textContent = TITLES.textimage;
+      let img = "";
+      bindDrop("f-img", "image/*", 10, async (f, d) => { toast("جاري الرفع…"); img = await uploadImage(f); filled(d, f.name); });
+      $("#f-pub").onclick = async () => {
+        const body = $("#f-body").value.trim();
+        if (!body && !img) { toast("اكتب شيئاً أو أرفق صورة", "err"); return; }
+        $("#f-pub").disabled = true;
+        try { await publishPost({ title: "", body, type: img ? "image" : "text", image_url: img, tags: parseTags($("#f-tags").value) }, "تم النشر 📝"); }
+        catch { toast("تعذر النشر", "err"); $("#f-pub").disabled = false; }
+      };
+    } else if (kind === "shortvideo") {
+      el.innerHTML = shell(`
+        ${dropHTML("f-video", "⚡ اختار فيديو عمودي قصير (حتى 10MB)")}
+        <div style="height:10px"></div>
+        <div class="field"><label>التعليق</label><textarea class="textarea" id="f-cap" style="min-height:70px" placeholder="وصف الريلز…"></textarea></div>
+        <div class="field"><label>هاشتاجات (افصل بفاصلة)</label><input class="input" id="f-tags" placeholder="ريلز, ترند" /></div>
+        <button class="btn block" id="f-pub">نشر الريلز ⚡</button>`);
+      $("#cf-title").textContent = TITLES.shortvideo;
+      let video = "";
+      bindDrop("f-video", "video/*", 10, async (f, d) => { toast("جاري الرفع…"); video = await uploadVideo(f); filled(d, f.name); });
+      $("#f-pub").onclick = async () => {
+        if (!video) { toast("اختار الفيديو أولاً", "err"); return; }
+        $("#f-pub").disabled = true;
+        try { await publishPost({ title: "", body: $("#f-cap").value.trim(), type: "video", video_url: video, tags: parseTags($("#f-tags").value) }, "تم نشر الريلز ⚡", "#/reels"); }
+        catch { toast("تعذر النشر", "err"); $("#f-pub").disabled = false; }
+      };
+    } else if (kind === "market") {
+      el.innerHTML = shell(`
+        ${dropHTML("f-img", "📷 صورة المنتج *")}
+        <div style="height:10px"></div>
+        <div class="field"><label>اسم المنتج *</label><input class="input" id="f-name" placeholder="مثال: آيفون 13" /></div>
+        <div class="create-form row2">
+          <div class="field"><label>السعر (ج.م) *</label><input class="input" id="f-price" type="number" min="0" placeholder="0" /></div>
+          <div class="field"><label>الحالة</label><select class="input" id="f-cond"><option>جديد</option><option>مستعمل — ممتاز</option><option>مستعمل — جيد</option></select></div>
+        </div>
+        <div class="create-form row2">
+          <div class="field"><label>التصنيف</label><select class="input" id="f-cat"><option>إلكترونيات</option><option>ملابس</option><option>سيارات</option><option>عقارات</option><option>أثاث</option><option>أخرى</option></select></div>
+          <div class="field"><label>رقم الهاتف</label><input class="input" id="f-phone" placeholder="01xxxxxxxxx" /></div>
+        </div>
+        <div class="field"><label>وصف المنتج</label><textarea class="textarea" id="f-desc" style="min-height:70px" placeholder="المواصفات وحالة المنتج…"></textarea></div>
+        <button class="btn block" id="f-pub">نشر الإعلان 🏪</button>
+        <p style="font-size:12px;color:var(--muted);text-align:center">السوق للإعلانات والتواصل فقط — البيع يتم مباشرة بينك وبين المشتري.</p>`);
+      $("#cf-title").textContent = TITLES.market;
+      let img = "";
+      bindDrop("f-img", "image/*", 10, async (f, d) => { toast("جاري الرفع…"); img = await uploadImage(f); filled(d, f.name); });
+      $("#f-pub").onclick = async () => {
+        const title = $("#f-name").value.trim();
+        const price = parseFloat($("#f-price").value) || 0;
+        if (!title) { toast("اكتب اسم المنتج", "err"); return; }
+        if (!img) { toast("أضف صورة المنتج", "err"); return; }
+        $("#f-pub").disabled = true;
+        try {
+          await apiPost("/products", {
+            title, price, cat: $("#f-cat").value,
+            seller: meName(), seller_user: meKey(),
+            phone: $("#f-phone").value.trim(),
+            image_url: img, description: $("#f-desc").value.trim(),
+            specs: [$("#f-cond").value],
+          });
+          toast("تم نشر إعلانك 🏪", "ok");
+          location.hash = "#/store";
+        } catch { toast("تعذر النشر", "err"); $("#f-pub").disabled = false; }
+      };
+    } else { paintHub(); return; }
+    $("#cf-back").onclick = paintHub;
+  }
+
+  if (tab0 && TITLES[tab0]) paintForm(tab0);
+  else paintHub();
+}
+
+/* ---------- store (marketplace) ---------- */
+async function viewStore(el) {
+  el.innerHTML = `<div class="wrap-wide">
+    <div class="market-notice">🛍️ <b>سوق ZIVV للإعلانات والتواصل فقط</b> — البيع والشراء والدفع والاستلام يتم مباشرة بين البائع والمشتري، والمنصة لا تضمن أي صفقة.</div>
+    <div class="search-bar">
+      <input class="input" id="st-q" placeholder="🔍 ابحث في السوق…" />
+      <a class="btn sm" href="#/create?tab=market" style="white-space:nowrap">+ بِع منتجك</a>
+    </div>
+    <div class="store-grid" id="st-grid"></div>
+  </div>`;
+  let all = [];
+  async function load() {
+    const g = $("#st-grid");
+    if (!g) return;
+    g.innerHTML = `<div class="skel"></div><div class="skel"></div>`;
+    try {
+      await loadPeople();
+      all = await apiGet("/products");
+      paint(($("#st-q") || {}).value || "");
+    } catch { g.innerHTML = `<div class="card empty">تعذر التحميل</div>`; }
+  }
+  function paint(q) {
+    const g = $("#st-grid");
+    if (!g) return;
+    const ql = String(q || "").trim().toLowerCase();
+    const list = ql ? all.filter((p) => ((p.title || "") + " " + (p.description || "") + " " + (p.cat || "")).toLowerCase().includes(ql)) : all;
+    g.innerHTML = list.length ? list.map((p) => {
+      const cond = Array.isArray(p.specs) ? p.specs[0] : p.specs;
+      const sold = /مباع|sold/i.test(String(cond || ""));
+      return `<div class="product-card" data-pr="${esc(p.id)}">
+        ${p.image_url ? `<img class="pimg" src="${esc(p.image_url)}" loading="lazy" />` : `<div class="pimg-ph">📦</div>`}
+        <div class="pbody"><b>${esc(p.title || "")}</b>
+        <span class="price">${esc(String(p.price == null ? 0 : p.price))} ج.م</span>
+        <div class="seller">${sold ? `<span class="sold-tag">مباع</span>` : `<span class="avail-tag">متاح</span>`} · ${esc(p.seller || p.seller_user || "")}</div></div></div>`;
+    }).join("") : `<div class="card empty"><span class="big">🛍️</span>لا توجد منتجات.<br/><br/><a class="btn sm" href="#/create?tab=market">+ أضف أول منتج</a></div>`;
+    $$("[data-pr]", g).forEach((c) => (c.onclick = () => openProduct(all.find((x) => String(x.id) === c.getAttribute("data-pr")))));
+  }
+  function openProduct(p) {
+    if (!p) return;
+    const cond = Array.isArray(p.specs) ? p.specs[0] : (p.specs || "—");
+    const su = String(p.seller_user || "").toLowerCase();
+    const who = su ? personOf(su) : null;
+    openModal(`
+      ${p.image_url ? `<img src="${esc(p.image_url)}" style="width:100%;border-radius:14px;max-height:300px;object-fit:cover" />` : ""}
+      <h3 style="margin:10px 0 2px">${esc(p.title || "")}</h3>
+      <div class="price" style="color:var(--green);font-weight:900;font-size:19px">${esc(String(p.price == null ? 0 : p.price))} ج.م</div>
+      <div style="font-size:13px;color:var(--muted);margin:6px 0">${esc(p.cat || "")} · الحالة: ${esc(String(cond))}</div>
+      ${p.description ? `<p style="font-size:14px;line-height:1.8">${esc(p.description)}</p>` : ""}
+      <div class="user-row" style="border:none;padding:8px 0">
+        ${avatarHTML(who || { username: su, name: p.seller }, "sm")}
+        <div class="who"><b>${esc((who && who.name) || p.seller || "")}</b><span>البائع${su ? " · @" + esc(su) : ""}</span></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${su ? `<a class="btn sm" href="#/chat?u=${encodeURIComponent(su)}" onclick="closeModal()">💬 مراسلة البائع</a>` : ""}
+        ${p.phone ? `<a class="btn soft sm" href="tel:${esc(p.phone)}">📞 ${esc(p.phone)}</a>` : ""}
+        <button class="btn ghost sm" id="pr-rep">🚩 إبلاغ</button>
+      </div>`);
+    const rb = $("#pr-rep");
+    if (rb) rb.onclick = async () => {
+      try {
+        await apiPost("/reports", { post_id: "", target_user: su || p.seller || "", type: "product", dest: "king", reporter_name: meName(), reporter_email: ME.email, note: "إبلاغ عن منتج: " + (p.title || p.id) });
+        closeModal(); toast("تم إرسال البلاغ للإدارة", "ok");
+      } catch { toast("تعذر الإرسال", "err"); }
+    };
+  }
+  let deb = null;
+  $("#st-q").oninput = (e) => { clearTimeout(deb); deb = setTimeout(() => paint(e.target.value), 300); };
+  load();
+}
+
 /* ---------- router ---------- */
 const ROUTES = {
   home: ["الرئيسية", viewHome],
   explore: ["استكشاف", viewExplore],
+  create: ["إنشاء", viewCreate],
+  store: ["السوق 🛍️", viewStore],
   reels: ["ريلز", viewReels],
   chat: ["الدردشة", viewChat],
   ai: ["زيفي AI", viewAI],
