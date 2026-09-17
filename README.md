@@ -1,5 +1,7 @@
 # ZIVV — Professional Social Network + AI-Native Platform
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/zeah2100-design/Zivv.-Dd)
+
 > Premium, mobile-first, AI-native social platform. Own visual identity (ZV monogram + signature gradient).
 
 ## Monorepo layout
