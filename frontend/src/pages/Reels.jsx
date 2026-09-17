@@ -1,20 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api, { fmt } from '../lib/api';
-import { useZivv } from '../lib/store';
 import { useLang } from '../lib/i18n';
 import { Avatar, ZImg } from '../components/ui';
 import PageLoader from '../components/PageLoader';
+import CommentsSheet from '../components/CommentsSheet';
 import { LikeButton } from './Feed';
 import { CommentIcon, ShareIcon, MusicIcon, PlusIcon, VerifyIcon, PlayIcon } from '../components/icons';
 
 function ReelItem({ reel, active }) {
-  const { user } = useZivv();
   const { t } = useLang();
   const nav = useNavigate();
   const [showC, setShowC] = useState(false);
-  const [local, setLocal] = useState([]);
-  const [cText, setCText] = useState('');
+  const [cc, setCc] = useState(reel.commentCount || 0);
+  const [lc, setLc] = useState(reel.likeCount || 0);
   const [shares, setShares] = useState(reel.shareCount || 0);
   const [progress, setProgress] = useState(8);
 
@@ -60,11 +59,11 @@ function ReelItem({ reel, active }) {
           <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-zivv-pink flex items-center justify-center"><PlusIcon size={13} /></span>
         </button>
         <div className="flex flex-col items-center -mb-1 [&_button]:!text-white [&_button]:!opacity-100">
-          <LikeButton targetType="reel" targetId={reel.id} count={0} />
-          <span className="text-[11px] font-bold -mt-1">{fmt.n(reel.likeCount || 0)}</span>
+          <LikeButton targetType="reel" targetId={reel.id} liked={reel.liked} count={0} hideCount onToggle={(v) => setLc((x) => Math.max(0, x + (v ? 1 : -1)))} />
+          <span className="text-[11px] font-bold -mt-1">{fmt.n(lc)}</span>
         </div>
-        <button onClick={() => setShowC(!showC)} className="flex flex-col items-center gap-0.5">
-          <CommentIcon size={29} /><span className="text-[11px] font-bold">{fmt.n((reel.commentCount || 0) + local.length)}</span>
+        <button onClick={() => setShowC(true)} className="flex flex-col items-center gap-0.5">
+          <CommentIcon size={29} /><span className="text-[11px] font-bold">{fmt.n(cc)}</span>
         </button>
         <button onClick={share} className="flex flex-col items-center gap-0.5">
           <ShareIcon size={29} /><span className="text-[11px] font-bold">{shares > 0 ? fmt.n(shares) : t('reels.share')}</span>
@@ -93,27 +92,7 @@ function ReelItem({ reel, active }) {
         )}
       </div>
 
-      {/* Comments sheet */}
-      {showC && (
-        <div className="absolute inset-x-0 bottom-0 top-1/4 bg-white dark:bg-neutral-950 rounded-t-2xl slide-up flex flex-col z-20" onClick={(e) => e.stopPropagation()}>
-          <div className="p-3 text-center font-bold text-sm border-b border-black/5 dark:border-white/10">{t('reels.comments', fmt.n((reel.commentCount || 0) + local.length))}</div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
-            {local.map((c) => (
-              <div key={c.id} className="flex gap-2 items-start">
-                <Avatar user={c.author} size={32} />
-                <div className="text-sm"><span className="font-bold text-[13px] block">{c.author?.name}</span>{c.text}</div>
-              </div>
-            ))}
-            {local.length === 0 && <div className="text-center text-sm opacity-50 py-6">{t('reels.noComments')}</div>}
-          </div>
-          <div className="p-3 border-t border-black/5 dark:border-white/10 flex items-center gap-2">
-            <input value={cText} onChange={(e) => setCText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && cText.trim() && (setLocal((l) => [...l, { id: Date.now(), text: cText.trim(), author: user }]), setCText(''))}
-              placeholder={t('reels.addComment')} className="input !py-2 text-sm" />
-            <button onClick={() => { if (cText.trim()) { setLocal((l) => [...l, { id: Date.now(), text: cText.trim(), author: user }]); setCText(''); } }}
-              className="text-zivv-pink font-bold text-sm px-2">{t('reels.send')}</button>
-          </div>
-        </div>
-      )}
+      {showC && <CommentsSheet targetType="reel" targetId={reel.id} count={cc} onCount={setCc} onClose={() => setShowC(false)} />}
     </div>
   );
 }

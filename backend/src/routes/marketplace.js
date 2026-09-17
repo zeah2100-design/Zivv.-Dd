@@ -21,13 +21,14 @@ router.get('/:id', requireAuth, (req, res) => {
 });
 
 router.post('/', requireAuth, (req, res) => {
-  const { title, description, priceCents, category, condition, phone, phonePublic, aiDeclared } = req.body || {};
+  const { title, description, priceCents, category, condition, phone, phonePublic, aiDeclared, image } = req.body || {};
+  if (image && image.length > 2.5e6) return res.status(413).json({ error: 'media_too_large' });
   if (!title || !priceCents) return res.status(400).json({ error: 'missing_fields' });
   // Policy: AI-fabricated "genuine product" listings are rejected.
   if (aiDeclared === 'fabricated') return res.status(422).json({ error: 'ai_fabricated_listing_blocked' });
   const l = { id: 'm' + Date.now(), sellerId: req.user.id, title, description: description || '',
     priceCents, currency: 'EGP', category: category || 'Other', condition: condition || 'used',
-    phone: phone || '', phonePublic: !!phonePublic, status: 'available', createdAt: new Date().toISOString() };
+    phone: phone || '', phonePublic: !!phonePublic, image: image || '', status: 'available', createdAt: new Date().toISOString() };
   S.listings.unshift(l);
   res.status(201).json(l);
 });

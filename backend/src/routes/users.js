@@ -22,7 +22,9 @@ router.post('/:id/follow', requireAuth, (req, res) => {
 router.patch('/me', requireAuth, (req, res) => {
   const u = S.users.find(x => x.id === req.user.id);
   if (!u) return res.status(404).json({ error: 'not_found' });
-  const { name, bio, website, language, theme } = req.body || {};
+  const { name, bio, website, language, theme, avatar } = req.body || {};
+  if (avatar && avatar.length > 2.5e6) return res.status(413).json({ error: 'media_too_large' });
+  if (avatar !== undefined) u.avatar = avatar;
   if (name) u.name = name; if (bio !== undefined) u.bio = bio;
   if (website !== undefined) u.website = website;
   if (language) u.language = language; if (theme) u.theme = theme;

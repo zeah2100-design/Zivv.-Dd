@@ -27,6 +27,7 @@ function createApp() {
     auth: require('./routes/auth'),
     feed: require('./routes/feed'),
     reels: require('./routes/reels'),
+    comments: require('./routes/comments'),
     search: require('./routes/search'),
     users: require('./routes/users'),
     friends: require('./routes/friends'),

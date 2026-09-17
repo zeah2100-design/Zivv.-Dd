@@ -5,9 +5,10 @@ import { useZivv } from '../lib/store';
 import { useLang } from '../lib/i18n';
 import { Avatar, ZImg, AiBadge, ImageModal } from '../components/ui';
 import PageLoader from '../components/PageLoader';
+import CommentsSheet from '../components/CommentsSheet';
 import { LikeIcon, CommentIcon, ShareIcon, BookmarkIcon, BookmarkFilledIcon, SendIcon, ImageIcon, SmileIcon, EarthIcon, XIcon, VerifyIcon, CrownIcon, PlayIcon, PauseIcon, MusicIcon, MoonIcon } from '../components/icons';
 
-export function LikeButton({ targetType = 'post', targetId, liked, count }) {
+export function LikeButton({ targetType = 'post', targetId, liked, count, hideCount = false, onToggle }) {
   const [isLiked, setIsLiked] = useState(!!liked);
   const [n, setN] = useState(count || 0);
   const [burst, setBurst] = useState(false);
@@ -17,8 +18,9 @@ export function LikeButton({ targetType = 'post', targetId, liked, count }) {
     const next = !isLiked;
     setIsLiked(next); setN((v) => v + (next ? 1 : -1));
     if (next) { setBurst(true); setTimeout(() => setBurst(false), 450); }
+    onToggle?.(next);
     try { await api.post(targetType === 'reel' ? `/reels/${targetId}/like` : `/feed/${targetId}/like`); }
-    catch { setIsLiked(!next); setN((v) => v + (next ? -1 : 1)); }
+    catch { setIsLiked(!next); setN((v) => v + (next ? -1 : 1)); onToggle?.(!next); }
   };
   return (
     <button onClick={toggle} aria-label="Like" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition active:scale-90 ${isLiked ? 'text-zivv-pink' : 'opacity-60 hover:bg-zivv-pink/10 hover:text-zivv-pink hover:opacity-100'}`}>
@@ -26,7 +28,7 @@ export function LikeButton({ targetType = 'post', targetId, liked, count }) {
         <LikeIcon size={22} filled={isLiked} />
         {burst && <span className="absolute -inset-2 heart-burst text-zivv-pink">♥</span>}
       </span>
-      {n > 0 && <span className="text-[13px] font-semibold">{fmt.n(n)}</span>}
+      {!hideCount && n > 0 && <span className="text-[13px] font-semibold">{fmt.n(n)}</span>}
     </button>
   );
 }
@@ -73,19 +75,6 @@ function Composer() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function CommentBox({ onSend }) {
-  const { t } = useLang();
-  const [text, setText] = useState('');
-  const send = () => { if (!text.trim()) return; onSend(text.trim()); setText(''); };
-  return (
-    <div className="flex items-center gap-2">
-      <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()}
-        placeholder={t('feed.cmtPh')} className="input !py-2 !rounded-full text-sm" />
-      <button onClick={send} disabled={!text.trim()} className="btn-primary !p-2.5 !rounded-full disabled:opacity-40 shrink-0 rtl:rotate-180" aria-label="Send"><SendIcon size={17} /></button>
     </div>
   );
 }
@@ -155,10 +144,9 @@ function PostMedia({ p }) {
 }
 
 export function PostCard({ post: p }) {
-  const { user } = useZivv();
   const { t } = useLang();
-  const [local, setLocal] = useState([]);
   const [showC, setShowC] = useState(false);
+  const [cc, setCc] = useState(p.commentCount || 0);
   const [shares, setShares] = useState(p.shareCount || 0);
   const nav = useNavigate();
   useEffect(() => {
@@ -201,10 +189,10 @@ export function PostCard({ post: p }) {
       )}
       <PostMedia p={p} />
       <div className="flex items-center px-2 pt-0.5 pb-1">
-        <LikeButton targetId={p.id} count={p.likeCount} />
-        <button onClick={() => setShowC(!showC)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full opacity-60 hover:bg-zivv-purple/10 hover:text-zivv-purple hover:opacity-100 transition">
+        <LikeButton targetId={p.id} liked={p.liked} count={p.likeCount} />
+        <button onClick={() => setShowC(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full opacity-60 hover:bg-zivv-purple/10 hover:text-zivv-purple hover:opacity-100 transition">
           <CommentIcon size={22} />
-          {((p.commentCount || 0) + local.length) > 0 && <span className="text-[13px] font-semibold">{fmt.n((p.commentCount || 0) + local.length)}</span>}
+          {cc > 0 && <span className="text-[13px] font-semibold">{fmt.n(cc)}</span>}
         </button>
         <button onClick={share} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full opacity-60 hover:bg-zivv-blue/10 hover:text-zivv-blue hover:opacity-100 transition">
           <ShareIcon size={22} />
@@ -213,19 +201,7 @@ export function PostCard({ post: p }) {
         <div className="flex-1" />
         <SaveButton postId={p.id} />
       </div>
-      {showC && (
-        <div className="px-4 pb-3 pt-1 space-y-2.5">
-          {local.map((c) => (
-            <div key={c.id} className="flex gap-2 items-start">
-              <Avatar user={c.author} size={30} />
-              <div className="bg-black/5 dark:bg-white/10 rounded-2xl rounded-ss-md px-3 py-1.5 text-sm flex-1">
-                <span className="font-bold text-[13px] block">{c.author?.name}</span>{c.text}
-              </div>
-            </div>
-          ))}
-          <CommentBox onSend={(text) => setLocal((l) => [...l, { id: Date.now(), text, author: user }])} />
-        </div>
-      )}
+      {showC && <CommentsSheet targetType="post" targetId={p.id} count={cc} onCount={setCc} onClose={() => setShowC(false)} />}
     </article>
   );
 }

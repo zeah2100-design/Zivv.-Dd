@@ -16,14 +16,14 @@ function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 
 export function Avatar({ user, size = 44, ring = false }) {
   const [err, setErr] = useState(false);
   const name = user?.name || user?.username || '?';
-  const n = (hashStr(user?.username || user?.id || '?') % 70) + 1;
-  const src = user?.avatar || `https://i.pravatar.cc/150?img=${n}`;
-  const inner = !err ? (
+  const src = user?.avatar || '';
+  const initials = name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
+  const inner = (src && !err) ? (
     <img src={src} onError={() => setErr(true)} alt={name} loading="lazy"
       className="w-full h-full object-cover rounded-full" />
   ) : (
-    <div className="w-full h-full rounded-full bg-neutral-200 dark:bg-white/15 text-neutral-600 dark:text-neutral-200 flex items-center justify-center font-bold" style={{ fontSize: size * 0.42 }}>
-      {name[0]?.toUpperCase()}
+    <div className="w-full h-full rounded-full bg-gradient-to-br from-zivv-purple to-zivv-pink text-white flex items-center justify-center font-bold" style={{ fontSize: size * 0.38 }}>
+      {initials}
     </div>
   );
   if (ring) return <div className="p-[2.5px] rounded-full zivv-ring shrink-0" style={{ width: size + 5, height: size + 5 }}><div className="w-full h-full rounded-full bg-white dark:bg-ink-900 p-[2px] overflow-hidden">{inner}</div></div>;

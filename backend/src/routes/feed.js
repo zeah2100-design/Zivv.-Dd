@@ -23,20 +23,30 @@ function visible(p) {
 router.get('/', requireAuth, (req, res) => {
   const page = parseInt(req.query.page || '1', 10);
   const items = S.posts.filter(visible)
-    .map(p => ({ ...p, author: S.users.find(u => u.id === p.authorId), _s: score(p) }))
+    .map(p => ({ ...p, liked: (p.likedBy || []).includes(req.user.id), author: S.users.find(u => u.id === p.authorId), _s: score(p) }))
     .sort((a, b) => b._s - a._s);
-  res.json({ items: items.map(({ _s, ...r }) => r), nextPage: page < 5 ? page + 1 : null });
+  res.json({ items: items.map(({ _s, likedBy, _pointsTo, ...r }) => r), nextPage: page < 5 ? page + 1 : null });
 });
 
 router.post('/:id/like', requireAuth, (req, res) => {
   const p = S.posts.find(x => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'not_found' });
-  p.likeCount++;
-  if (p.authorId !== req.user.id) {
-    const a = S.users.find(u => u.id === p.authorId);
-    if (a) a.points = (a.points || 0) + 2;
+  p.likedBy = p.likedBy || [];
+  const i = p.likedBy.indexOf(req.user.id);
+  let liked;
+  if (i >= 0) { p.likedBy.splice(i, 1); p.likeCount = Math.max(0, p.likeCount - 1); liked = false; }
+  else {
+    p.likedBy.push(req.user.id); p.likeCount++; liked = true;
+    if (p.authorId !== req.user.id) {
+      p._pointsTo = p._pointsTo || [];
+      if (!p._pointsTo.includes(req.user.id)) {
+        p._pointsTo.push(req.user.id);
+        const a = S.users.find(u => u.id === p.authorId);
+        if (a) a.points = (a.points || 0) + 2;
+      }
+    }
   }
-  res.json({ likeCount: p.likeCount, liked: true });
+  res.json({ likeCount: p.likeCount, liked });
 });
 
 router.post('/:id/save', requireAuth, (req, res) => {
@@ -72,7 +82,7 @@ router.post('/', requireAuth, (req, res) => {
   if (mediaUrl && mediaUrl.length > 2.5e6) return res.status(413).json({ error: 'media_too_large' });
   const kind = type === 'IMAGE' ? 'IMAGE' : type === 'VIDEO' ? 'VIDEO' : type === 'MUSIC' ? 'AUDIO' : 'TEXT';
   const post = { id: 'p-' + S.uuid().slice(0, 6), authorId: req.user.id, type, text: text || '', hashtags, mentions: [],
-    likeCount: 0, commentCount: 0, shareCount: 0, saveCount: 0, viewCount: 0,
+    likeCount: 0, likedBy: [], commentCount: 0, shareCount: 0, saveCount: 0, viewCount: 0,
     aiGenerated, createdAt: new Date().toISOString(),
     media: mediaUrl ? [{ kind, cdnUrl: mediaUrl, durationSec: durationSec || 0 }] : [] };
   S.posts.unshift(post);

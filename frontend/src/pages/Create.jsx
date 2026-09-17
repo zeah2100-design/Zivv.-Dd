@@ -35,6 +35,8 @@ export default function Create() {
   const [desc, setDesc] = useState('');
   const [cat, setCat] = useState('Phones');
   const [cond, setCond] = useState('used-like-new');
+  const [limg, setLimg] = useState('');
+  const limgRef = useRef(null);
 
   const max = user?.gold ? 5000 : 2000;
 
@@ -45,6 +47,16 @@ export default function Create() {
     setErr('');
     const rd = new FileReader();
     rd.onload = () => { setMediaUrl(rd.result); setPreview(rd.result); };
+    rd.readAsDataURL(f);
+  };
+
+  const pickListingImg = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 2 * 1024 * 1024) { setErr(t('create.tooBig')); return; }
+    setErr('');
+    const rd = new FileReader();
+    rd.onload = () => setLimg(rd.result);
     rd.readAsDataURL(f);
   };
 
@@ -95,7 +107,8 @@ export default function Create() {
     if (!title.trim() || !price || busy) return;
     setBusy(true); setErr('');
     try {
-      await api.post('/marketplace', { title, description: desc, priceCents: Math.round(parseFloat(price) * 100), category: cat, condition: cond });
+      await api.post('/marketplace', { title, description: desc, priceCents: Math.round(parseFloat(price) * 100), category: cat, condition: cond, image: limg || undefined });
+      setTitle(''); setPrice(''); setDesc(''); setLimg('');
       setDone(t('create.listed'));
       setTimeout(() => nav('/market'), 900);
     } catch { setErr(t('create.failed')); } finally { setBusy(false); }
@@ -192,6 +205,17 @@ export default function Create() {
             {['Phones', 'Sports', 'Fashion', 'Home', 'Cars', 'Other'].map((c) => <option key={c}>{c}</option>)}
           </select>
           <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} placeholder={t('create.descPh')} className="input resize-none" />
+          {limg ? (
+            <div className="relative rounded-xl overflow-hidden">
+              <img src={limg} alt="" className="w-full max-h-56 object-cover" />
+              <button onClick={() => setLimg('')} className="absolute top-2 end-2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center" aria-label="Remove"><XIcon size={16} /></button>
+            </div>
+          ) : (
+            <button onClick={() => limgRef.current?.click()} className="w-full py-4 rounded-xl border-2 border-dashed border-black/15 dark:border-white/15 text-sm font-bold opacity-70 hover:opacity-100 flex items-center justify-center gap-2">
+              <ImageIcon size={19} />{t('create.listingImage')}
+            </button>
+          )}
+          <input ref={limgRef} type="file" accept="image/*" className="hidden" onChange={pickListingImg} />
           {!!err && <div className="text-red-500 text-sm font-bold">{err}</div>}
           <button onClick={publishListing} disabled={!title.trim() || !price || busy} className="btn-primary w-full disabled:opacity-40">{t('create.publishListing')}</button>
         </div>
