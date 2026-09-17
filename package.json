@@ -1,0 +1,11 @@
+{
+  "name": "zivv",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": "20.x" },
+  "scripts": {
+    "dev:api": "npm --prefix backend run dev",
+    "dev:app": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build"
+  }
+}

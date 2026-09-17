@@ -1,12 +1,15 @@
 // ZIVV AI: chat + vision + image-gen + agent tool layer with permission tiers.
+// Real providers (OpenAI/Gemini) when keys are set; graceful demo fallback otherwise.
 const router = require('express').Router();
 const S = require('../lib/store');
+const AI = require('../lib/ai');
 const { requireAuth } = require('../middleware/auth');
 
 const LOW = new Set(['search', 'navigate', 'draft', 'summarize']);
 const MEDIUM = new Set(['send_message', 'publish', 'follow', 'edit_profile', 'delete_content']);
 const HIGH = new Set(['delete_account', 'purchase', 'security_change', 'grant_permission']);
 
+router.get('/status', requireAuth, (req, res) => res.json(AI.status()));
 router.get('/chats', requireAuth, (req, res) => res.json({ items: S.aiChats }));
 
 router.post('/chats', requireAuth, (req, res) => {
@@ -14,13 +17,25 @@ router.post('/chats', requireAuth, (req, res) => {
   S.aiChats.unshift(c); res.status(201).json(c);
 });
 
-// Text chat (production: stream from provider server-side; never expose keys).
+// Text chat — real provider when live, demo brain otherwise.
 router.post('/chats/:id/messages', requireAuth, async (req, res) => {
   const chat = S.aiChats.find(c => c.id === req.params.id);
   if (!chat) return res.status(404).json({ error: 'not_found' });
   const { text } = req.body || {};
+  if (!text?.trim()) return res.status(400).json({ error: 'empty' });
   chat.messages.push({ id: 'm' + Date.now(), role: 'user', text });
-  const reply = smartReply(text);
+
+  let reply;
+  if (AI.status().live) {
+    try {
+      reply = await AI.chat(chat.messages);
+    } catch (e) {
+      console.error('[ai] provider error:', e.message);
+      reply = smartReply(text) + '\n\n_(⚠️ تعذّر الوصول لخدمة الذكاء الاصطناعي — رد تجريبي)_';
+    }
+  } else {
+    reply = smartReply(text);
+  }
   const a = { id: 'a' + Date.now(), role: 'assistant', text: reply };
   chat.messages.push(a);
   if (chat.title === 'New chat') chat.title = (text || 'Chat').slice(0, 40);
@@ -36,10 +51,35 @@ function smartReply(t = '') {
   return `Got it! I can help with that ⚡\n• Draft posts, captions, replies\n• Find accounts, sounds, products\n• Act as your agent (with your confirmation for important actions)\nTell me what to do first.`;
 }
 
-// Image generation (production: provider call + store to S3 + label provenance).
-router.post('/image', requireAuth, (req, res) => {
+// Image understanding — real vision when live.
+router.post('/vision', requireAuth, async (req, res) => {
+  const { imageDataUrl, question } = req.body || {};
+  if (!imageDataUrl) return res.status(400).json({ error: 'missing_image' });
+  if (imageDataUrl.length > 5.5e6) return res.status(413).json({ error: 'image_too_large' });
+  if (!AI.status().live) return res.status(503).json({ error: 'ai_offline', message: 'Set OPENAI_API_KEY or GEMINI_API_KEY to enable vision.' });
+  try {
+    const answer = await AI.vision(imageDataUrl, question || 'Describe this image in detail.');
+    res.json({ answer });
+  } catch (e) {
+    console.error('[ai] vision error:', e.message);
+    res.status(502).json({ error: 'ai_error' });
+  }
+});
+
+// Image generation — real when live, labeled provenance always.
+router.post('/image', requireAuth, async (req, res) => {
   const { prompt } = req.body || {};
-  res.json({ imageUrl: '', prompt, aiGenerated: true, label: 'AI-generated with ZIVV ✦', note: 'Connect AI_MODEL_IMAGE key server-side for real generation.' });
+  if (!prompt?.trim()) return res.status(400).json({ error: 'missing_prompt' });
+  if (!AI.status().live) {
+    return res.json({ imageUrl: '', prompt, aiGenerated: true, label: 'AI-generated with ZIVV ✦', note: 'Set OPENAI_API_KEY or GEMINI_API_KEY server-side for real generation.' });
+  }
+  try {
+    const out = await AI.generateImage(prompt);
+    res.json({ ...out, prompt, aiGenerated: true, label: 'AI-generated with ZIVV ✦' });
+  } catch (e) {
+    console.error('[ai] image error:', e.message);
+    res.status(502).json({ error: 'ai_error' });
+  }
 });
 
 // Agent: plan → preview → confirm → execute → audit.
@@ -59,7 +99,6 @@ router.post('/agent/execute', requireAuth, (req, res) => {
   const { tool, input, confirmed } = req.body || {};
   const risk = LOW.has(tool) ? 'LOW' : MEDIUM.has(tool) ? 'MEDIUM' : 'HIGH';
   if (risk !== 'LOW' && !confirmed) return res.status(428).json({ error: 'confirmation_required', risk });
-  // Execute via internal APIs only (never raw DB). Demo: apply safe effects.
   let result = { ok: true };
   if (tool === 'follow') { const u = S.users[0]; u.followers++; result = { followed: u.username }; }
   if (tool === 'edit_profile' && input?.bio) { S.users.find(u => u.id === req.user.id).bio = input.bio; result = { bio: input.bio }; }

@@ -29,6 +29,20 @@ cd ../frontend && npm install && npm run dev
 - API: http://localhost:4000
 - MinIO console: http://localhost:9001
 
+## Deploy to Vercel (frontend + API)
+
+`vercel.json` is ready at the repo root — just import the repo in Vercel.
+Set env vars: `AI_PROVIDER`, `OPENAI_API_KEY` or `GEMINI_API_KEY`,
+`JWT_SECRET`, `REFRESH_SECRET`, `FRONTEND_URL`, `NODE_ENV=production`.
+Full guide: `docs/VERCEL.md`.
+
+## Real AI (OpenAI / Gemini)
+
+Keys live **server-side only**. Set `AI_PROVIDER=openai|gemini` + the matching key
+and restart — the ZIVV AI header flips from `Demo mode` to `● Live`.
+Without keys, the app runs on a built-in demo brain. Chat, vision
+(image understanding), and image generation all switch automatically.
+
 ## Core principles (enforced)
 
 1. **No large binaries in relational DB** — Postgres holds metadata; MinIO/S3 holds media; CDN delivers.
