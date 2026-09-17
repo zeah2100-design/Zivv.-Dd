@@ -4,7 +4,7 @@ import api from '../lib/api';
 import { useLang } from '../lib/i18n';
 import { Avatar, Empty } from '../components/ui';
 import PageLoader from '../components/PageLoader';
-import { CrownIcon, LockIcon, UserIcon, ShieldIcon, UsersIcon, NewspaperIcon, MegaphoneIcon, SendIcon, CheckIcon, XIcon, TrashIcon, BanIcon, EyeIcon } from '../components/icons';
+import { CrownIcon, LockIcon, UserIcon, ShieldIcon, UsersIcon, NewspaperIcon, MegaphoneIcon, SendIcon, CheckIcon, XIcon, TrashIcon, BanIcon, EyeIcon, ZapIcon } from '../components/icons';
 
 const TABS = [['stats', 'king.t_stats'], ['users', 'king.t_users'], ['posts', 'king.t_posts'], ['gold', 'king.t_gold'], ['ads', 'king.t_ads'], ['notify', 'king.t_notify'], ['audit', 'king.t_audit']];
 
@@ -157,11 +157,18 @@ export default function King() {
         posts.length === 0 ? <Empty icon={<NewspaperIcon size={40} />} title={t('king.empty')} sub="" /> : (
           <div className="space-y-2">
             {posts.map((x) => (
-              <div key={x.id} className="card p-3 flex items-start gap-3">
+              <div key={x.id} className={`card p-3 flex items-start gap-3 ${x.boosted ? 'border-amber-500/40' : ''}`}>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs opacity-50">@{x.author?.username} · {x.type}</div>
-                  <div className="text-sm line-clamp-2">{x.text}</div>
+                  <div className="text-xs opacity-50 flex items-center gap-1.5 flex-wrap">
+                    <span>@{x.author?.username} · {x.type}</span>
+                    <span className="inline-flex items-center gap-1"><EyeIcon size={12} />{x.viewCount || 0}</span>
+                    <span>♥ {x.likeCount || 0}</span>
+                    {x.boosted && <span className="font-bold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600">{t('king.boostedTag')}</span>}
+                  </div>
+                  <div className="text-sm line-clamp-2 mt-0.5">{x.text}</div>
                 </div>
+                <button onClick={() => act(() => api.post(`/admin/posts/${x.id}/boost`, {}, H(token)))} title={x.boosted ? t('king.unboost') : t('king.boost')}
+                  className={`p-2.5 rounded-xl shrink-0 ${x.boosted ? 'bg-amber-500 text-white' : 'bg-amber-500/10 text-amber-600'}`}><ZapIcon size={17} /></button>
                 <button onClick={() => { if (confirm(t('king.confirmDel'))) act(() => api.delete(`/admin/posts/${x.id}`, H(token))); }}
                   className="p-2.5 rounded-xl bg-red-500/10 text-red-500 shrink-0"><TrashIcon size={17} /></button>
               </div>

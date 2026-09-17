@@ -69,6 +69,20 @@ router.delete('/posts/:id', gate, (req, res) => {
   S.auditLog(req.user.username, 'delete_post', req.params.id);
   res.json({ ok: true });
 });
+router.post('/posts/:id/boost', gate, (req, res) => {
+  const p = S.posts.find(x => x.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'not_found' });
+  p.boosted = !p.boosted;
+  p.boostedAt = p.boosted ? new Date().toISOString() : null;
+  const a = S.users.find(u => u.id === p.authorId);
+  if (a) {
+    S.notify(a.id, p.boosted
+      ? { category: 'admin', title: 'إدارة الموقع: تم دعم منشورك', body: 'منشورك عجب الإدارة واتدعم — هيوصل لناس أكتر.' }
+      : { category: 'admin', title: 'إدارة الموقع: انتهى الدعم', body: 'اتشال الدعم من منشورك ورجع للترتيب الطبيعي.' });
+  }
+  S.auditLog(req.user.username, p.boosted ? 'boost_post' : 'unboost_post', req.params.id);
+  res.json({ id: p.id, boosted: p.boosted });
+});
 router.delete('/reels/:id', gate, (req, res) => {
   const i = S.reels.findIndex(x => x.id === req.params.id);
   if (i < 0) return res.status(404).json({ error: 'not_found' });

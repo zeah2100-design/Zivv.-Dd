@@ -11,7 +11,8 @@ function score(p) {
   const eng = p.likeCount + p.commentCount * 4 + p.shareCount * 6 + (p.saveCount || 0) * 5 + (p.viewCount || 0) / 50;
   const freshness = 1 / Math.log10(ageH + 10);
   const aiPenalty = p.aiGenerated ? 0.85 : 1.0;
-  return (Math.log10(eng + 10) * 2 + freshness * 3) * aiPenalty;
+  const boost = p.boosted ? 5 : 1; // King boost: 5x reach
+  return (Math.log10(eng + 10) * 2 + freshness * 3) * aiPenalty * boost;
 }
 
 function visible(p) {

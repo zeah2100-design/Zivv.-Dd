@@ -191,6 +191,7 @@ export function PostCard({ post: p }) {
           <div className="text-xs opacity-50">@{p.author?.username} · {fmt.time(p.createdAt)}{(p.viewCount || 0) > 0 && <> · {fmt.n(p.viewCount)} {t('feed.views')}</>}</div>
         </div>
         {p.aiGenerated && <AiBadge />}
+        {p.boosted && <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 shrink-0">{t('feed.boosted')}</span>}
       </div>
       {p.text && <p className="px-4 py-1 text-[15px] leading-relaxed whitespace-pre-wrap">{p.text}</p>}
       {!!p.hashtags?.length && (
