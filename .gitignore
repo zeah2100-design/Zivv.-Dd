@@ -1,0 +1,47 @@
+# Dependencies & builds (never commit)
+node_modules/
+dist/
+build/
+out/
+.next/
+coverage/
+*.log
+
+# Env & secrets (NEVER commit real secrets)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+service-account*.json
+
+# GitHub / credentials
+.git-credentials
+.netrc
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Mobile builds
+*.apk
+*.aab
+*.ipa
+mobile/android/.gradle/
+mobile/ios/Pods/
+
+# Media / uploads (local dev only)
+uploads/
+tmp/
+*.mp4
+*.mov
+!scripts/**
+
+# Prisma
+prisma/migrations/dev/

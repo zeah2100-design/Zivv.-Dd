@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "flow": ["permission", "validation", "confirmation_if_required", "execution", "result", "audit"],
+  "tools": [
+    { "name": "search", "risk": "LOW", "params": ["query", "tab"] },
+    { "name": "navigate", "risk": "LOW", "params": ["route"] },
+    { "name": "draft", "risk": "LOW", "params": ["kind", "brief", "tone", "lang"] },
+    { "name": "summarize", "risk": "LOW", "params": ["text"] },
+    { "name": "send_message", "risk": "MEDIUM", "params": ["conversationId", "text"], "confirm": "when_new_recipient_or_first_time" },
+    { "name": "publish", "risk": "MEDIUM", "params": ["kind", "text", "mediaKeys", "hashtags"], "confirm": "always_preview" },
+    { "name": "follow", "risk": "MEDIUM", "params": ["userId"], "confirm": "inline" },
+    { "name": "edit_profile", "risk": "MEDIUM", "params": ["bio", "name", "website"], "confirm": "always_preview" },
+    { "name": "delete_content", "risk": "MEDIUM", "params": ["refType", "refId"], "confirm": "always" },
+    { "name": "delete_account", "risk": "HIGH", "params": ["confirmText"], "confirm": "always_explicit" },
+    { "name": "purchase", "risk": "HIGH", "params": ["refType", "refId", "amountCents"], "confirm": "always_explicit" },
+    { "name": "security_change", "risk": "HIGH", "params": ["change"], "confirm": "always_explicit_plus_2fa" }
+  ]
+}

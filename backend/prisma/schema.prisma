@@ -1,0 +1,228 @@
+// ZIVV relational schema — metadata ONLY. Media binaries live in S3/MinIO + CDN.
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql"; url = env("DATABASE_URL") }
+
+enum Role { USER MODERATOR ADMIN SUPERADMIN }
+enum Visibility { PUBLIC FOLLOWERS PRIVATE }
+enum MediaKind { IMAGE VIDEO AUDIO FILE }
+enum PostType { TEXT IMAGE MIXED MUSIC VIDEO REEL LONG_VIDEO }
+enum RequestStatus { PENDING ACCEPTED DECLINED CANCELLED }
+enum FriendVisibility { EVERYONE FRIENDS_OF_FRIENDS NOBODY }
+enum CampaignStatus { DRAFT PENDING_REVIEW APPROVED REJECTED PENDING_PAYMENT ACTIVE PAUSED COMPLETED EXPIRED }
+enum GoldStatus { NONE PENDING_REVIEW PENDING_PAYMENT ACTIVE EXPIRED REJECTED }
+enum PaymentStatus { UNPAID PENDING VERIFIED FAILED REFUNDED }
+enum ReportStatus { OPEN REVIEWING ACTIONED DISMISSED }
+enum AiToolRisk { LOW MEDIUM HIGH }
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  username      String   @unique
+  email         String?  @unique
+  phone         String?  @unique
+  passwordHash  String
+  birthday      DateTime?
+  bio           String?  @db.VarChar(500)
+  website       String?
+  avatarKey     String?  // S3 object key
+  coverKey      String?
+  role          Role     @default(USER)
+  verified      Boolean  @default(false)
+  goldBadge     Boolean  @default(false)
+  isPrivate     Boolean  @default(false)
+  language      String   @default("en")
+  theme         String   @default("system")
+  aiMixAi       Int      @default(30)
+  aiMixFollow   Int      @default(50)
+  aiMixNormal   Int      @default(20)
+  friendReqFrom FriendVisibility @default(EVERYONE)
+  allowMsgFrom  String   @default("everyone")
+  showActivity  Boolean  @default(true)
+  showLastSeen  Boolean  @default(true)
+  discoverable  Boolean  @default(true)
+  contactSync   Boolean  @default(false)
+  totpSecret    String?
+  privateVaultHash String?
+  privateVaultSalt String?
+  privateLockoutUntil DateTime?
+  privateAttempts Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  posts Post[]
+  reels Reel[]
+  songs Song[]
+  videos Video[]
+  listings Listing[]
+  sentRequests FriendRequest[] @relation("sentReq")
+  receivedRequests FriendRequest[] @relation("recvReq")
+  followers Follow[] @relation("following")
+  following Follow[] @relation("follower")
+  sessions Session[]
+  notifications Notification[]
+  aiChats AiChat[]
+  goldSubs GoldSubscription[]
+  campaigns AdCampaign[]
+  reportsMade Report[] @relation("reporter")
+  auditLogs AuditLog[]
+  blocksMade Block[] @relation("blocker")
+  blocksGot Block[] @relation("blocked")
+  devices Device[]
+}
+
+model Follow { id String @id @default(uuid()); followerId String; followingId String;
+  follower User @relation("follower", fields:[followerId], references:[id], onDelete:Cascade)
+  following User @relation("following", fields:[followingId], references:[id], onDelete:Cascade)
+  createdAt DateTime @default(now()); @@unique([followerId, followingId]) }
+
+model FriendRequest { id String @id @default(uuid()); fromId String; toId String;
+  status RequestStatus @default(PENDING); createdAt DateTime @default(now()); decidedAt DateTime?
+  from User @relation("sentReq", fields:[fromId], references:[id], onDelete:Cascade)
+  to User @relation("recvReq", fields:[toId], references:[id], onDelete:Cascade)
+  @@unique([fromId, toId]) }
+
+model Block { id String @id @default(uuid()); blockerId String; blockedId String; createdAt DateTime @default(now());
+  blocker User @relation("blocker", fields:[blockerId], references:[id], onDelete:Cascade)
+  blocked User @relation("blocked", fields:[blockedId], references:[id], onDelete:Cascade)
+  @@unique([blockerId, blockedId]) }
+
+model Post {
+  id String @id @default(uuid()); authorId String; type PostType @default(TEXT);
+  text String? @db.VarChar(5000); visibility Visibility @default(PUBLIC);
+  aiGenerated Boolean @default(false); aiLabel String?
+  hashtags String[]; mentions String[];
+  likeCount Int @default(0); commentCount Int @default(0); shareCount Int @default(0); saveCount Int @default(0);
+  qualityScore Float @default(0.5); safetyScore Float @default(1.0);
+  createdAt DateTime @default(now()); updatedAt DateTime @updatedAt
+  author User @relation(fields:[authorId], references:[id], onDelete:Cascade)
+  media PostMedia[]; comments Comment[]; likes Like[]; saves Save[]
+}
+
+model PostMedia { id String @id @default(uuid()); postId String; kind MediaKind;
+  objectKey String; cdnUrl String?; thumbKey String?; width Int?; height Int?;
+  durationSec Float?; mime String; bytes BigInt; alt String?
+  post Post @relation(fields:[postId], references:[id], onDelete:Cascade) }
+
+model Reel {
+  id String @id @default(uuid()); authorId String;
+  objectKey String; cdnUrl String?; thumbKey String?; previewKey String?;
+  caption String? @db.VarChar(2200); hashtags String[]; mentions String[];
+  soundId String?; durationSec Float; width Int?; height Int?;
+  aiGenerated Boolean @default(false); subtitlesKey String?;
+  likeCount Int @default(0); commentCount Int @default(0); shareCount Int @default(0);
+  playCount Int @default(0); watchTimeSec BigInt @default(0);
+  visibility Visibility @default(PUBLIC); createdAt DateTime @default(now())
+  author User @relation(fields:[authorId], references:[id], onDelete:Cascade)
+  sound Sound? @relation(fields:[soundId], references:[id])
+  comments Comment[]; likes Like[]
+}
+
+model Sound { id String @id @default(uuid()); title String; artist String; coverKey String?;
+  objectKey String; useCount Int @default(0); createdAt DateTime @default(now()); reels Reel[] }
+
+model Video {
+  id String @id @default(uuid()); authorId String; title String; description String? @db.VarChar(5000);
+  objectKey String; cdnUrl String?; thumbKey String?; durationSec Float;
+  qualities String[]; hashtags String[]; visibility Visibility @default(PUBLIC);
+  aiGenerated Boolean @default(false); likeCount Int @default(0); playCount Int @default(0);
+  createdAt DateTime @default(now()); author User @relation(fields:[authorId], references:[id], onDelete:Cascade) }
+
+model Song {
+  id String @id @default(uuid()); authorId String; title String; description String? @db.VarChar(2000);
+  objectKey String; coverKey String?; durationSec Float; aiGenerated Boolean @default(false);
+  playCount Int @default(0); useCount Int @default(0); createdAt DateTime @default(now())
+  author User @relation(fields:[authorId], references:[id], onDelete:Cascade) }
+
+model Comment { id String @id @default(uuid()); authorId String; postId String?; reelId String?;
+  text String @db.VarChar(2000); createdAt DateTime @default(now());
+  post Post? @relation(fields:[postId], references:[id], onDelete:Cascade)
+  reel Reel? @relation(fields:[reelId], references:[id], onDelete:Cascade) }
+
+model Like { id String @id @default(uuid()); userId String; postId String?; reelId String?; createdAt DateTime @default(now());
+  post Post? @relation(fields:[postId], references:[id], onDelete:Cascade)
+  reel Reel? @relation(fields:[reelId], references:[id], onDelete:Cascade)
+  @@unique([userId, postId]); @@unique([userId, reelId]) }
+
+model Save { id String @id @default(uuid()); userId String; postId String; createdAt DateTime @default(now());
+  post Post @relation(fields:[postId], references:[id], onDelete:Cascade); @@unique([userId, postId]) }
+
+model Conversation { id String @id @default(uuid()); isGroup Boolean @default(false); title String?;
+  isPrivate Boolean @default(false); createdAt DateTime @default(now()); updatedAt DateTime @updatedAt
+  members ConversationMember[]; messages Message[] }
+
+model ConversationMember { id String @id @default(uuid()); conversationId String; userId String;
+  muted Boolean @default(false); pinned Boolean @default(false); archived Boolean @default(false);
+  lastReadAt DateTime?; conversation Conversation @relation(fields:[conversationId], references:[id], onDelete:Cascade) }
+
+model Message { id String @id @default(uuid()); conversationId String; senderId String;
+  kind String @default("text"); text String? @db.VarChar(8000); objectKey String?; mime String?;
+  replyToId String?; forwardedFrom String?; reactions Json?; editedAt DateTime?;
+  deliveredAt DateTime?; readAt DateTime?; createdAt DateTime @default(now());
+  conversation Conversation @relation(fields:[conversationId], references:[id], onDelete:Cascade) }
+
+model Call { id String @id @default(uuid()); conversationId String; callerId String; calleeId String;
+  kind String; startedAt DateTime @default(now()); endedAt DateTime?; status String @default("initiated") }
+
+model Notification { id String @id @default(uuid()); userId String; category String;
+  title String; body String?; data Json?; read Boolean @default(false); createdAt DateTime @default(now());
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade) }
+
+model Listing {
+  id String @id @default(uuid()); sellerId String; title String; description String @db.VarChar(5000);
+  priceCents Int; currency String @default("EGP"); condition String @default("new");
+  category String; phonePublic Boolean @default(false); phone String?;
+  status String @default("available"); aiDeclared Boolean @default(false);
+  createdAt DateTime @default(now()); updatedAt DateTime @updatedAt
+  seller User @relation(fields:[sellerId], references:[id], onDelete:Cascade)
+  media ListingMedia[] }
+
+model ListingMedia { id String @id @default(uuid()); listingId String; kind MediaKind;
+  objectKey String; cdnUrl String?; listing Listing @relation(fields:[listingId], references:[id], onDelete:Cascade) }
+
+model AdCampaign {
+  id String @id @default(uuid()); ownerId String; contentRef String; title String;
+  budgetCents Int; durationDays Int; audience Json?; status CampaignStatus @default(DRAFT);
+  paymentStatus PaymentStatus @default(UNPAID); impressions Int @default(0); clicks Int @default(0);
+  createdAt DateTime @default(now()); updatedAt DateTime @updatedAt
+  owner User @relation(fields:[ownerId], references:[id], onDelete:Cascade) }
+
+model GoldPackage { id String @id @default(uuid()); name String; priceCents Int; currency String @default("EGP");
+  durationDays Int; perks Json?; active Boolean @default(true) }
+
+model GoldSubscription { id String @id @default(uuid()); userId String; packageId String;
+  status GoldStatus @default(PENDING_REVIEW); paymentStatus PaymentStatus @default(UNPAID);
+  startsAt DateTime?; endsAt DateTime?; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade) }
+
+model Payment { id String @id @default(uuid()); userId String; refType String; refId String;
+  amountCents Int; currency String @default("EGP"); provider String; providerRef String?;
+  status PaymentStatus @default(PENDING); verifiedAt DateTime?; createdAt DateTime @default(now()) }
+
+model Report { id String @id @default(uuid()); reporterId String; targetType String; targetId String;
+  reason String; details String?; status ReportStatus @default(OPEN); createdAt DateTime @default(now());
+  reporter User @relation("reporter", fields:[reporterId], references:[id], onDelete:Cascade) }
+
+model AuditLog { id String @id @default(uuid()); actorId String?; action String; target String?;
+  meta Json?; ip String?; createdAt DateTime @default(now());
+  actor User? @relation(fields:[actorId], references:[id]) }
+
+model AiChat { id String @id @default(uuid()); userId String; title String @default("New chat");
+  createdAt DateTime @default(now()); updatedAt DateTime @updatedAt
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade); messages AiMessage[] }
+
+model AiMessage { id String @id @default(uuid()); chatId String; role String; text String @db.VarChar(16000);
+  attachments Json?; createdAt DateTime @default(now());
+  chat AiChat @relation(fields:[chatId], references:[id], onDelete:Cascade) }
+
+model AiToolRun { id String @id @default(uuid()); userId String; tool String; risk AiToolRisk;
+  input Json; preview Json?; confirmed Boolean @default(false); result Json?;
+  createdAt DateTime @default(now()) }
+
+model Session { id String @id @default(uuid()); userId String; refreshHash String;
+  deviceLabel String?; ip String?; createdAt DateTime @default(now()); revokedAt DateTime?;
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade) }
+
+model Device { id String @id @default(uuid()); userId String; label String; pushToken String?;
+  lastSeen DateTime @default(now()); user User @relation(fields:[userId], references:[id], onDelete:Cascade) }
+
+model SearchHistory { id String @id @default(uuid()); userId String; query String; kind String @default("text");
+  createdAt DateTime @default(now()) }

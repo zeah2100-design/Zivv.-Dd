@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light dark; }
+html, body, #root { height: 100%; }
+body { @apply bg-neutral-100 text-neutral-900 dark:bg-ink-950 dark:text-neutral-100 antialiased; }
+
+.zivv-gradient { background: linear-gradient(135deg, #FF9A3D 0%, #FFD23D 18%, #FF4D8D 42%, #C724B1 62%, #7B2FF7 80%, #2FB7FF 100%); }
+.zivv-gradient-text { background: linear-gradient(135deg, #FF9A3D, #FF4D8D 40%, #7B2FF7 70%, #2FB7FF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.zivv-ring { background: conic-gradient(from 210deg, #FF9A3D, #FFD23D, #FF4D8D, #C724B1, #7B2FF7, #2FB7FF, #FF9A3D); }
+
+.card { @apply bg-white dark:bg-ink-900 rounded-3xl shadow-card border border-black/5 dark:border-white/10; }
+.btn-primary { @apply zivv-gradient text-white font-semibold rounded-2xl px-5 py-2.5 shadow-pop active:scale-[.98] transition; }
+.btn-ghost { @apply rounded-2xl px-4 py-2 font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 transition; }
+.input { @apply w-full rounded-2xl bg-black/5 dark:bg-white/10 px-4 py-2.5 outline-none focus:ring-2 ring-zivv-purple/60 placeholder:text-neutral-400; }
+.tab-active { @apply zivv-gradient text-white; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+.skeleton { @apply animate-pulse bg-black/10 dark:bg-white/10 rounded-2xl; }
+
+@keyframes float-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.float-in { animation: float-in .35s ease both; }
+
+.reel-snap { scroll-snap-type: y mandatory; }
+.reel-snap > * { scroll-snap-align: start; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
