@@ -18,23 +18,30 @@ function createApp() {
   if (!process.env.VERCEL) app.use(morgan('dev'));
   app.use('/api/', rateLimit({ windowMs: 60e3, max: 300 }));
 
-  app.get('/health', (req, res) => res.json({ ok: true, service: 'zivv-api', time: new Date().toISOString() }));
+  app.get(['/health', '/api/health'], (req, res) => res.json({ ok: true, service: 'zivv-api', time: new Date().toISOString() }));
   app.get('/api', (req, res) => res.json({ ok: true, service: 'zivv-api', version: '1.0' }));
 
-  app.use('/api/auth', require('./routes/auth'));
-  app.use('/api/feed', require('./routes/feed'));
-  app.use('/api/reels', require('./routes/reels'));
-  app.use('/api/search', require('./routes/search'));
-  app.use('/api/users', require('./routes/users'));
-  app.use('/api/friends', require('./routes/friends'));
-  app.use('/api/chat', require('./routes/chat'));
-  app.use('/api/marketplace', require('./routes/marketplace'));
-  app.use('/api/ads', require('./routes/ads'));
-  app.use('/api/gold', require('./routes/gold'));
-  app.use('/api/notifications', require('./routes/notifications'));
-  app.use('/api/admin', require('./routes/admin'));
-  app.use('/api/ai', require('./routes/ai'));
-  app.use('/api/media', require('./routes/media'));
+  // Mounted under BOTH /api/* and /* so the API works whether Vercel
+  // forwards the original path (/api/feed) or a stripped path (/feed).
+  const routers = {
+    auth: require('./routes/auth'),
+    feed: require('./routes/feed'),
+    reels: require('./routes/reels'),
+    search: require('./routes/search'),
+    users: require('./routes/users'),
+    friends: require('./routes/friends'),
+    chat: require('./routes/chat'),
+    marketplace: require('./routes/marketplace'),
+    ads: require('./routes/ads'),
+    gold: require('./routes/gold'),
+    notifications: require('./routes/notifications'),
+    admin: require('./routes/admin'),
+    ai: require('./routes/ai'),
+    media: require('./routes/media'),
+  };
+  for (const prefix of ['/api', '']) {
+    for (const [name, r] of Object.entries(routers)) app.use(`${prefix}/${name}`, r);
+  }
 
   app.use((req, res) => res.status(404).json({ error: 'not_found' }));
   // eslint-disable-next-line no-unused-vars

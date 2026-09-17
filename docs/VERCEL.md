@@ -1,13 +1,21 @@
 # Deploy ZIVV to Vercel + Real AI Setup
 
+## Mode: Vercel Services (frontend + backend, one project, one domain)
+
+`vercel.json` uses the Services model ([docs](https://vercel.com/docs/services)):
+`frontend` (Vite static + SPA fallback) and `backend` (Express via `backend/vercel.js`
+entrypoint). Top-level rewrites route `/api/*` → backend, everything else → frontend.
+Env vars are shared by both services. Correct destination syntax is
+`{ "service": "backend" }` — there is NO `"type": "service"` key.
+
 ## What runs where
 
 | Part | Vercel | Notes |
 |---|---|---|
-| Frontend (Vite → static) | ✅ `frontend/dist` | SPA fallback to `/index.html` included |
-| API (Express → serverless) | ✅ `api/index.js` | Same code as local; HTTP only |
-| Socket.io realtime | ⚠️ Not on serverless | Chat works via REST; add Pusher/Ably or a small realtime VPS later |
-| Demo data | ⚠️ Resets per cold start | Set `DATABASE_URL` (Neon/Supabase) for persistence — see below |
+| Frontend (Vite → static) | ✅ `frontend` service | SPA fallback to `/index.html` included |
+| API (Express service) | ✅ `backend` service | Same code as local; mounted under `/api/*` and `/*` |
+| Socket.io realtime | ⚠️ Depends on runtime | Chat works via REST regardless; add Pusher/Ably if sockets don't persist |
+| Demo data | ⚠️ Resets on redeploy | Set `DATABASE_URL` (Neon/Supabase) for persistence — see below |
 | AI (OpenAI/Gemini) | ✅ Works | Just add keys as env vars |
 
 ## Deploy steps (5 minutes)
