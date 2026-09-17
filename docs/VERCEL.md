@@ -1,12 +1,29 @@
 # Deploy ZIVV to Vercel + Real AI Setup
 
-## Mode: Vercel Services (frontend + backend, one project, one domain)
+## Mode: Classic (static frontend + serverless API — works on all plans)
 
-`vercel.json` uses the Services model ([docs](https://vercel.com/docs/services)):
-`frontend` (Vite static + SPA fallback) and `backend` (Express via `backend/vercel.js`
-entrypoint). Top-level rewrites route `/api/*` → backend, everything else → frontend.
-Env vars are shared by both services. Correct destination syntax is
-`{ "service": "backend" }` — there is NO `"type": "service"` key.
+`vercel.json` builds `frontend/` to static files and runs the Express app as one
+serverless function (`api/index.js`). Top-level rewrites route `/api/*` → API
+function, everything else → `/index.html` (SPA fallback). This is the default
+because it works everywhere with zero beta features.
+
+> Alternative: Vercel Services mode (Beta) — one project, two services. If you
+> prefer it, use this `vercel.json` instead (note: NO `"type"` key in destinations):
+>
+> ```json
+> {
+>   "services": {
+>     "frontend": { "root": "frontend", "framework": "vite", "buildCommand": "npm run build", "outputDirectory": "dist",
+>       "rewrites": [{ "source": "/((?!.*\\.).*)", "destination": "/index.html" }] },
+>     "backend": { "root": "backend", "framework": "express", "entrypoint": "vercel.js",
+>       "functions": { "vercel.js": { "maxDuration": 30 } } }
+>   },
+>   "rewrites": [
+>     { "source": "/api/:path*", "destination": { "service": "backend" } },
+>     { "source": "/(.*)", "destination": { "service": "frontend" } }
+>   ]
+> }
+> ```
 
 ## What runs where
 
