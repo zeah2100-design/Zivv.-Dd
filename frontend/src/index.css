@@ -4,7 +4,7 @@
 
 :root { color-scheme: light dark; }
 html, body, #root { height: 100%; }
-body { @apply bg-neutral-100 text-neutral-900 dark:bg-ink-950 dark:text-neutral-100 antialiased; }
+body { @apply bg-neutral-100 text-neutral-900 dark:bg-ink-950 dark:text-neutral-100 antialiased; font-family: 'Inter', 'Cairo', system-ui, 'Segoe UI', Roboto, Arial, sans-serif; }
 
 .zivv-gradient { background: linear-gradient(135deg, #FF9A3D 0%, #FFD23D 18%, #FF4D8D 42%, #C724B1 62%, #7B2FF7 80%, #2FB7FF 100%); }
 .zivv-gradient-text { background: linear-gradient(135deg, #FF9A3D, #FF4D8D 40%, #7B2FF7 70%, #2FB7FF); -webkit-background-clip: text; background-clip: text; color: transparent; }
