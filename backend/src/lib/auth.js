@@ -13,7 +13,12 @@ function signRefresh(user) {
 function verifyAccess(token) {
   return jwt.verify(token, JWT_SECRET);
 }
+function verifyRefresh(token) {
+  const p = jwt.verify(token, REFRESH_SECRET);
+  if (p.type !== 'refresh') throw new Error('not_refresh');
+  return p;
+}
 async function hashPassword(pw) { return bcrypt.hash(pw, 12); }
 async function checkPassword(pw, hash) { return bcrypt.compare(pw, hash); }
 
-module.exports = { signAccess, signRefresh, verifyAccess, hashPassword, checkPassword };
+module.exports = { signAccess, signRefresh, verifyAccess, verifyRefresh, hashPassword, checkPassword };

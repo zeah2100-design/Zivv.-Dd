@@ -62,7 +62,7 @@ function Composer() {
       <div className="flex gap-3">
         <Avatar user={user} size={40} />
         <div className="flex-1">
-          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} maxLength={2000}
+          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} maxLength={user?.gold ? 5000 : 2000}
             placeholder={t('feed.ph')} className="w-full bg-transparent resize-none text-[15px] placeholder:opacity-40 focus:outline-none" />
           <div className="flex items-center gap-1 pt-2 mt-1 border-t border-black/5 dark:border-white/10">
             <span className="flex items-center gap-1 text-xs font-semibold opacity-50 px-2 py-1"><EarthIcon size={14} />{t('feed.public')}</span>
@@ -93,18 +93,26 @@ function CommentBox({ onSend }) {
 function PostMedia({ p }) {
   const [playing, setPlaying] = useState(false);
   const [zoom, setZoom] = useState(null);
+  const src = p.media?.[0]?.cdnUrl || '';
   if (p.type === 'IMAGE') {
-    const src = `https://picsum.photos/seed/post-${p.id}/800/600`;
+    const zoomSrc = src || `https://picsum.photos/seed/post-${p.id}/800/600`;
     return (
       <div className="px-3 py-2">
-        <button onClick={() => setZoom(src)} className="block w-full rounded-xl overflow-hidden bg-neutral-100 dark:bg-white/5 aspect-[4/3]">
-          <ZImg seed={`post-${p.id}`} w={800} h={600} className="w-full h-full object-cover" alt="Post image" />
+        <button onClick={() => setZoom(zoomSrc)} className="block w-full rounded-xl overflow-hidden bg-neutral-100 dark:bg-white/5 aspect-[4/3]">
+          {src ? <img src={src} alt="" className="w-full h-full object-cover" /> : <ZImg seed={`post-${p.id}`} w={800} h={600} className="w-full h-full object-cover" alt="Post image" />}
         </button>
         <ImageModal src={zoom} onClose={() => setZoom(null)} />
       </div>
     );
   }
   if (p.type === 'VIDEO') {
+    if (src) {
+      return (
+        <div className="px-3 py-2">
+          <video src={src} controls preload="metadata" playsInline className="w-full rounded-xl bg-black aspect-video" />
+        </div>
+      );
+    }
     return (
       <div className="px-3 py-2">
         <div className="rounded-xl overflow-hidden bg-black aspect-video relative cursor-pointer" onClick={() => setPlaying(!playing)}>
@@ -128,13 +136,17 @@ function PostMedia({ p }) {
             <ZImg seed={`song-${p.id}`} w={200} h={200} className="w-full h-full object-cover" alt="Cover" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-sm truncate">Midnight Nile</div>
+            <div className="font-bold text-sm truncate">{p.text?.slice(0, 40) || 'Track'}</div>
             <div className="text-xs opacity-60 flex items-center gap-1"><MusicIcon size={12} />{p.author?.name}</div>
-            <div className="h-1 rounded-full bg-black/10 dark:bg-white/15 mt-2 overflow-hidden"><div className="h-full w-1/3 bg-zivv-purple rounded-full" /></div>
+            {src
+              ? <audio src={src} controls preload="metadata" className="w-full h-8 mt-1.5" />
+              : <div className="h-1 rounded-full bg-black/10 dark:bg-white/15 mt-2 overflow-hidden"><div className="h-full w-1/3 bg-zivv-purple rounded-full" /></div>}
           </div>
-          <button onClick={() => setPlaying(!playing)} className="w-10 h-10 rounded-full bg-zivv-purple text-white flex items-center justify-center shrink-0 active:scale-95 transition" aria-label="Play">
-            {playing ? <PauseIcon size={18} /> : <PlayIcon size={18} className="ms-0.5" />}
-          </button>
+          {!src && (
+            <button onClick={() => setPlaying(!playing)} className="w-10 h-10 rounded-full bg-zivv-purple text-white flex items-center justify-center shrink-0 active:scale-95 transition" aria-label="Play">
+              {playing ? <PauseIcon size={18} /> : <PlayIcon size={18} className="ms-0.5" />}
+            </button>
+          )}
         </div>
       </div>
     );
@@ -149,6 +161,16 @@ export function PostCard({ post: p }) {
   const [showC, setShowC] = useState(false);
   const [shares, setShares] = useState(p.shareCount || 0);
   const nav = useNavigate();
+  useEffect(() => {
+    try {
+      const seen = JSON.parse(sessionStorage.getItem('zv_viewed') || '[]');
+      if (!seen.includes(p.id)) {
+        seen.push(p.id);
+        sessionStorage.setItem('zv_viewed', JSON.stringify(seen));
+        api.post(`/feed/${p.id}/view`).catch(() => {});
+      }
+    } catch {}
+  }, [p.id]);
   const share = async () => {
     setShares((v) => v + 1);
     try {
@@ -166,7 +188,7 @@ export function PostCard({ post: p }) {
             {p.author?.verified && <VerifyIcon size={15} />}
             {p.author?.gold && <CrownIcon size={14} className="text-amber-500" />}
           </button>
-          <div className="text-xs opacity-50">@{p.author?.username} · {fmt.time(p.createdAt)}</div>
+          <div className="text-xs opacity-50">@{p.author?.username} · {fmt.time(p.createdAt)}{(p.viewCount || 0) > 0 && <> · {fmt.n(p.viewCount)} {t('feed.views')}</>}</div>
         </div>
         {p.aiGenerated && <AiBadge />}
       </div>

@@ -177,3 +177,4 @@ export const VerifyIcon = ({ size = 18, className = '' }) => (
     <path d="M8 12.5l2.7 2.7L16.5 9" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+export const StopIcon = (p) => (<Svg filled {...p}><rect x="6" y="6" width="12" height="12" rx="2.5" /></Svg>);

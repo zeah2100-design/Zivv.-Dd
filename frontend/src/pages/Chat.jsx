@@ -5,7 +5,7 @@ import { useZivv } from '../lib/store';
 import { useLang } from '../lib/i18n';
 import { Avatar } from '../components/ui';
 import PageLoader from '../components/PageLoader';
-import { BackIcon, SendIcon, SearchIcon, ImageIcon, SmileIcon, CheckDoubleIcon } from '../components/icons';
+import { BackIcon, SendIcon, SearchIcon, ImageIcon, SmileIcon, CheckDoubleIcon, MicIcon, StopIcon } from '../components/icons';
 
 function timeHM(ts) {
   try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch { return ''; }
@@ -43,7 +43,7 @@ export function ConversationList({ onPick, activeId }) {
                 <span className="text-[11px] opacity-50 shrink-0">{c.updatedAt ? fmt.time(c.updatedAt) : ''}</span>
               </span>
               <span className={`block text-[13px] truncate ${c.unread ? 'font-bold opacity-90' : 'opacity-55'}`}>
-                {c.lastMessage || t('chat.newConv')}
+                {(c.lastMessage || '').startsWith('🎤') ? t('chat.voiceMsg') : (c.lastMessage || t('chat.newConv'))}
               </span>
             </span>
           </button>
@@ -60,12 +60,20 @@ export function Thread({ convId, peer, online, onBack }) {
   const [msgs, setMsgs] = useState([]);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
+  const [rec, setRec] = useState(false);
+  const [secs, setSecs] = useState(0);
   const bottomRef = useRef(null);
+  const mrRef = useRef(null);
+  const timerRef = useRef(null);
+
   useEffect(() => {
     setLoading(true);
     api.get(`/chat/conversations/${convId}/messages`).then((r) => setMsgs(r.data.items || [])).catch(() => {}).finally(() => setLoading(false));
+    api.post(`/chat/conversations/${convId}/read`).catch(() => {});
   }, [convId]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs.length, loading]);
+  useEffect(() => () => { clearInterval(timerRef.current); try { mrRef.current?.stream?.getTracks()?.forEach((tr) => tr.stop()); } catch {} }, []);
+
   const send = async () => {
     if (!text.trim()) return;
     const body = text; setText('');
@@ -76,6 +84,52 @@ export function Thread({ convId, peer, online, onBack }) {
       if (r.data?.id) setMsgs((m) => [...m.filter((x) => x.id !== tmp.id), r.data]);
     } catch { setMsgs((m) => m.filter((x) => x.id !== tmp.id)); }
   };
+
+  const stopRec = (cancel) => {
+    clearInterval(timerRef.current);
+    setRec(false); setSecs(0);
+    const mr = mrRef.current;
+    if (mr && mr.state !== 'inactive') {
+      if (cancel) { mr.ondataavailable = null; mr.onstop = null; mr.stop(); }
+      else mr.stop();
+    }
+    mrRef.current = null;
+  };
+
+  const startRec = async () => {
+    if (rec) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((m) => window.MediaRecorder?.isTypeSupported(m)) || '';
+      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      const chunks = [];
+      mr.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+      mr.onstop = () => {
+        stream.getTracks().forEach((tr) => tr.stop());
+        const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
+        if (!blob.size) return;
+        const rd = new FileReader();
+        rd.onload = async () => {
+          const audio = rd.result;
+          const tmp = { id: 'tmp-' + Date.now(), kind: 'audio', audio, senderId: user?.id, createdAt: new Date().toISOString(), state: 'sending' };
+          setMsgs((m) => [...m, tmp]);
+          try {
+            const r = await api.post(`/chat/conversations/${convId}/messages`, { audio });
+            if (r.data?.id) setMsgs((m) => [...m.filter((x) => x.id !== tmp.id), r.data]);
+          } catch { setMsgs((m) => m.filter((x) => x.id !== tmp.id)); }
+        };
+        rd.readAsDataURL(blob);
+      };
+      mrRef.current = mr;
+      mr.start();
+      setRec(true); setSecs(0);
+      timerRef.current = setInterval(() => setSecs((s) => {
+        if (s + 1 >= 60) { stopRec(false); return s; }
+        return s + 1;
+      }), 1000);
+    } catch { /* mic denied */ }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-2 py-2 border-b border-black/5 dark:border-white/10 sticky top-0 backdrop-blur-xl bg-white/85 dark:bg-black/85 z-10">
@@ -93,15 +147,17 @@ export function Thread({ convId, peer, online, onBack }) {
           const showTail = i === 0 || (msgs[i - 1]?.senderId === user?.id) !== mine;
           return (
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[75%] px-3.5 py-2 text-[15px] leading-snug break-words ${
+              <div className={`max-w-[78%] px-3.5 py-2 text-[15px] leading-snug break-words ${
                 mine
                   ? `bg-zivv-purple text-white rounded-2xl ${showTail ? 'rounded-ee-md' : ''}`
                   : `bg-black/[.07] dark:bg-white/15 rounded-2xl ${showTail ? 'rounded-es-md' : ''}`
               }`}>
-                {m.text}
+                {m.kind === 'audio' && m.audio
+                  ? <audio controls src={m.audio} className="max-w-[210px] h-9" />
+                  : m.text}
                 <span className={`flex items-center justify-end gap-1 text-[10px] mt-0.5 ${mine ? 'text-white/70' : 'opacity-50'}`}>
                   {timeHM(m.createdAt)}
-                  {mine && <CheckDoubleIcon size={13} className={m.state === 'read' ? '!text-white' : ''} />}
+                  {mine && <CheckDoubleIcon size={13} />}
                 </span>
               </div>
             </div>
@@ -109,17 +165,38 @@ export function Thread({ convId, peer, online, onBack }) {
         })}
         <div ref={bottomRef} />
       </div>
-      <div className="p-2.5 border-t border-black/5 dark:border-white/10 flex items-center gap-1.5 sticky bottom-0 bg-white dark:bg-neutral-950">
-        <button className="p-2.5 rounded-full opacity-55 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10" aria-label="Emoji"><SmileIcon size={22} /></button>
-        <button className="p-2.5 rounded-full opacity-55 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10" aria-label="Photo"><ImageIcon size={22} /></button>
-        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()}
-          placeholder={t('chat.typeMsg')} className="input !rounded-full flex-1" />
-        <button onClick={send} disabled={!text.trim()} className="btn-primary !p-3 !rounded-full disabled:opacity-40 shrink-0 rtl:rotate-180" aria-label="Send">
-          <SendIcon size={18} />
-        </button>
+      {/* Pinned composer */}
+      <div className="p-2.5 border-t border-black/5 dark:border-white/10 sticky bottom-0 bg-white dark:bg-neutral-950">
+        {rec ? (
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+            <span className="font-mono text-sm font-bold flex-1">0:{String(secs).padStart(2, '0')}</span>
+            <button onClick={() => stopRec(true)} className="btn-ghost !py-2 text-sm">{t('chat.cancelRec')}</button>
+            <button onClick={() => stopRec(false)} className="btn-primary !p-3 !rounded-full shrink-0" aria-label="Stop"><StopIcon size={18} /></button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <button className="p-2.5 rounded-full opacity-55 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10" aria-label="Emoji"><SmileIcon size={22} /></button>
+            <button className="p-2.5 rounded-full opacity-55 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10" aria-label="Photo"><ImageIcon size={22} /></button>
+            <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()}
+              placeholder={t('chat.typeMsg')} className="input !rounded-full flex-1" />
+            {text.trim() ? (
+              <button onClick={send} className="btn-primary !p-3 !rounded-full shrink-0 rtl:rotate-180" aria-label="Send"><SendIcon size={18} /></button>
+            ) : (
+              <button onClick={startRec} className="btn-primary !p-3 !rounded-full shrink-0" aria-label="Voice"><MicIcon size={18} /></button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+export async function openConversation(peerId, nav) {
+  try {
+    const r = await api.post('/chat/conversations', { userId: peerId });
+    nav(`/chat/${r.data.id}`);
+  } catch { nav('/chat'); }
 }
 
 export default function Chat() {

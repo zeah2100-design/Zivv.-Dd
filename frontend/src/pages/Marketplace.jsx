@@ -4,6 +4,7 @@ import api, { fmt } from '../lib/api';
 import { useLang } from '../lib/i18n';
 import { Avatar, ZImg, Empty } from '../components/ui';
 import PageLoader from '../components/PageLoader';
+import { openConversation } from './Chat';
 import { SearchIcon, BagIcon, BackIcon, FlagIcon, PhoneIcon, ChatIcon, ShieldIcon, PlusIcon } from '../components/icons';
 
 export function Marketplace() {
@@ -106,7 +107,7 @@ export function ProductDetail() {
             <div className="text-xs opacity-50 font-bold">{t('market.seller')}</div>
             <Link to={`/u/${l.seller?.username}`} className="font-bold hover:underline">{l.seller?.name}</Link>
           </div>
-          <button onClick={() => nav('/chat')} className="btn-primary !py-2 text-sm flex items-center gap-1.5"><ChatIcon size={16} />{t('market.chat')}</button>
+          <button onClick={() => l.seller?.id && openConversation(l.seller.id, nav)} className="btn-primary !py-2 text-sm flex items-center gap-1.5"><ChatIcon size={16} />{t('market.chat')}</button>
         </div>
         {l.phonePublic && l.phone && (
           <a href={`tel:${l.phone}`} className="card p-4 flex items-center gap-3 font-bold"><PhoneIcon size={20} className="text-green-500" />{l.phone}</a>

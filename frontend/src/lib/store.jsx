@@ -6,6 +6,7 @@ export const useZivv = () => useContext(Ctx);
 
 export function ZivvProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [ready, setReady] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem('zivv_theme') || 'dark');
 
   useEffect(() => {
@@ -16,24 +17,41 @@ export function ZivvProvider({ children }) {
   useEffect(() => {
     const boot = async () => {
       try {
-        // Production has no demo backdoor: provision a session on first visit.
-        if (!localStorage.getItem('zivv_access')) {
-          const { data } = await api.post('/auth/login', { username: 'you', password: '' });
-          if (data.access) localStorage.setItem('zivv_access', data.access);
-        }
+        if (!localStorage.getItem('zivv_access')) { setUser(null); return; }
         const me = await api.get('/auth/me');
         setUser(me.data.user);
-      } catch { setUser({ id: 'u-you', name: 'You', username: 'you' }); }
+      } catch {
+        localStorage.removeItem('zivv_access');
+        localStorage.removeItem('zivv_refresh');
+        setUser(null);
+      } finally { setReady(true); }
     };
     boot();
   }, []);
 
-  const login = async (username, password) => {
-    const { data } = await api.post('/auth/login', { username, password });
+  const saveSession = (data) => {
     localStorage.setItem('zivv_access', data.access);
+    if (data.refresh) localStorage.setItem('zivv_refresh', data.refresh);
     setUser(data.user);
   };
-  const logout = () => { localStorage.removeItem('zivv_access'); location.href = '/login'; };
+  const login = async (fields) => {
+    const { data } = await api.post('/auth/login', fields);
+    saveSession(data);
+  };
+  const register = async (fields) => {
+    const { data } = await api.post('/auth/register', fields);
+    saveSession(data);
+  };
+  const refreshUser = async () => {
+    try { const me = await api.get('/auth/me'); setUser(me.data.user); } catch {}
+  };
+  const logout = () => {
+    localStorage.removeItem('zivv_access');
+    localStorage.removeItem('zivv_refresh');
+    sessionStorage.removeItem('zivv_king_entry');
+    localStorage.removeItem('zivv_admin');
+    location.href = '/login';
+  };
 
-  return <Ctx.Provider value={{ user, setUser, theme, setTheme, login, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, setUser, ready, theme, setTheme, login, register, refreshUser, logout }}>{children}</Ctx.Provider>;
 }

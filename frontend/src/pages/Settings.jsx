@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useZivv } from '../lib/store';
 import { useLang } from '../lib/i18n';
@@ -22,6 +23,8 @@ export default function Settings() {
   const { t, lang, setLang } = useLang();
   const [name, setName] = useState(user?.name || '');
   const [bio, setBio] = useState(user?.bio || '');
+  const nav = useNavigate();
+  const pressT = useRef(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -80,7 +83,10 @@ export default function Settings() {
         <Row Icon={LogOutIcon} label={t('settings.logout')} danger onClick={logout} />
       </div>
 
-      <div className="text-center text-xs opacity-40 pb-4">ZIVV v1.0 · {t('settings.made')}</div>
+      <button
+        onPointerDown={() => { pressT.current = setTimeout(() => { sessionStorage.setItem('zivv_king_entry', '1'); nav('/king'); }, 1200); }}
+        onPointerUp={() => clearTimeout(pressT.current)} onPointerLeave={() => clearTimeout(pressT.current)}
+        className="w-full text-center text-xs opacity-40 pb-4 select-none">ZIVV v1.0 · {t('settings.made')}</button>
     </div>
   );
 }

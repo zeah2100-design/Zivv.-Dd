@@ -21,6 +21,7 @@ function ReelItem({ reel, active }) {
   useEffect(() => {
     if (!active) return;
     setProgress(8);
+    api.post(`/reels/${reel.id}/play`).catch(() => {});
     const t0 = Date.now();
     const iv = setInterval(() => {
       const p = 8 + ((Date.now() - t0) / ((reel.durationSec || 20) * 1000)) * 92;
@@ -39,9 +40,11 @@ function ReelItem({ reel, active }) {
 
   return (
     <div className="relative h-[calc(100dvh-108px)] md:h-[calc(100vh-40px)] w-full snap-start snap-always bg-black md:rounded-2xl overflow-hidden select-none">
-      <div className="absolute inset-0">
-        <ZImg seed={`reel-${reel.id}`} w={540} h={960} className="w-full h-full object-cover" alt="" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/85" />
+      <div className="absolute inset-0 bg-neutral-900">
+        {reel.mediaUrl
+          ? <video src={reel.mediaUrl} loop muted playsInline autoPlay={active} preload={active ? 'auto' : 'none'} className="w-full h-full object-cover" />
+          : <ZImg seed={`reel-${reel.id}`} w={540} h={960} className="w-full h-full object-cover" alt="" />}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/85 pointer-events-none" />
       </div>
       {!active && (
         <div className="absolute inset-0 flex items-center justify-center">

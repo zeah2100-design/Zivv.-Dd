@@ -44,6 +44,7 @@ export default function Ads() {
 
   return (
     <div className="p-3 md:p-4 max-w-2xl mx-auto space-y-3">
+      <div className="card p-3.5 text-[13px] opacity-80">{t('ads.reviewNote')}</div>
       <div className="flex items-center gap-2 px-1">
         <h1 className="font-bold text-xl flex-1">{t('ads.title')}</h1>
         <button onClick={() => setShow(!show)} className="btn-primary !py-2 text-sm flex items-center gap-1.5"><PlusIcon size={16} />{t('ads.new')}</button>

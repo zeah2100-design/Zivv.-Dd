@@ -1,24 +1,31 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: '/api', timeout: 20000 });
+const api = axios.create({ baseURL: '/api', timeout: 25000 });
 
 api.interceptors.request.use((cfg) => {
   const t = localStorage.getItem('zivv_access');
-  if (t) cfg.headers.Authorization = `Bearer ${t}`;
+  if (t && !cfg.headers.Authorization) cfg.headers.Authorization = `Bearer ${t}`;
   return cfg;
 });
 
 api.interceptors.response.use(
   (r) => r,
   async (err) => {
-    if (err.response?.status === 401 && !err.config._retried) {
-      err.config._retried = true;
+    const cfg = err.config || {};
+    if (err.response?.status === 401 && !cfg._retried && !cfg.url?.includes('/auth/')) {
+      cfg._retried = true;
       try {
-        const { data } = await axios.post('/api/auth/refresh');
+        const refresh = localStorage.getItem('zivv_refresh');
+        if (!refresh) throw new Error('no_refresh');
+        const { data } = await axios.post('/api/auth/refresh', { refresh });
         localStorage.setItem('zivv_access', data.access);
-        err.config.headers.Authorization = `Bearer ${data.access}`;
-        return api(err.config);
-      } catch { /* fallthrough */ }
+        cfg.headers.Authorization = `Bearer ${data.access}`;
+        return api(cfg);
+      } catch {
+        localStorage.removeItem('zivv_access');
+        localStorage.removeItem('zivv_refresh');
+        if (!location.pathname.startsWith('/login')) location.href = '/login';
+      }
     }
     throw err;
   }

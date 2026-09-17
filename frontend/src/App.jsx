@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ZivvProvider } from './lib/store';
+import { ZivvProvider, useZivv } from './lib/store';
 import { LanguageProvider } from './lib/i18n';
 import Layout from './components/Layout';
 import Feed from './pages/Feed';
@@ -19,6 +19,19 @@ import Gold from './pages/Gold';
 import King from './pages/King';
 import Login from './pages/Login';
 
+function Protected({ children }) {
+  const { user, ready } = useZivv();
+  if (!ready) {
+    return (
+      <div className="min-h-full flex items-center justify-center">
+        <img src="/logo.png" alt="" className="w-16 h-16 rounded-[28%] animate-pulse" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <LanguageProvider>
@@ -26,7 +39,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route element={<Layout />}>
+            <Route element={<Protected><Layout /></Protected>}>
               <Route path="/" element={<Feed />} />
               <Route path="/reels" element={<Reels />} />
               <Route path="/search" element={<Search />} />

@@ -3,9 +3,11 @@ const router = require('express').Router();
 const S = require('../lib/store');
 const { requireAuth } = require('../middleware/auth');
 
+function strip(u) { if (!u) return null; const { _pw, _vault, email, ...r } = u; return r; }
+
 router.get('/', requireAuth, (req, res) => {
   const { q, category, maxPrice } = req.query;
-  let items = S.listings.map(l => ({ ...l, seller: S.users.find(u => u.id === l.sellerId) }));
+  let items = S.listings.map(l => ({ ...l, phone: l.phonePublic ? l.phone : '', seller: strip(S.users.find(u => u.id === l.sellerId)) }));
   if (q) items = items.filter(l => (l.title + l.description).toLowerCase().includes(q.toLowerCase()));
   if (category) items = items.filter(l => l.category === category);
   if (maxPrice) items = items.filter(l => l.priceCents <= parseInt(maxPrice, 10));
@@ -15,7 +17,7 @@ router.get('/', requireAuth, (req, res) => {
 router.get('/:id', requireAuth, (req, res) => {
   const l = S.listings.find(x => x.id === req.params.id);
   if (!l) return res.status(404).json({ error: 'not_found' });
-  res.json({ ...l, seller: S.users.find(u => u.id === l.sellerId) });
+  res.json({ ...l, phone: l.phonePublic ? l.phone : '', seller: strip(S.users.find(u => u.id === l.sellerId)) });
 });
 
 router.post('/', requireAuth, (req, res) => {

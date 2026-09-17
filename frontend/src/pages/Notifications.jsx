@@ -3,7 +3,7 @@ import api, { fmt } from '../lib/api';
 import { useLang } from '../lib/i18n';
 import { Empty } from '../components/ui';
 import PageLoader from '../components/PageLoader';
-import { BellIcon, LikeIcon, UserPlusIcon, AtIcon, MegaphoneIcon, SparklesIcon, CrownIcon, CheckDoubleIcon } from '../components/icons';
+import { BellIcon, LikeIcon, UserPlusIcon, AtIcon, MegaphoneIcon, SparklesIcon, CrownIcon, CheckDoubleIcon, ShieldIcon } from '../components/icons';
 
 const catIcon = (c) => {
   if (c === 'like') return <LikeIcon size={19} />;
@@ -12,6 +12,7 @@ const catIcon = (c) => {
   if (c === 'ads') return <MegaphoneIcon size={19} />;
   if (c === 'ai') return <SparklesIcon size={19} />;
   if (c === 'gold') return <CrownIcon size={19} />;
+  if (c === 'admin') return <ShieldIcon size={19} />;
   return <BellIcon size={19} />;
 };
 

@@ -109,7 +109,7 @@ export default function Layout() {
         ))}
         <div className="mt-auto pt-3 space-y-1">
           <LangSwitch />
-          <button onClick={toggleTheme} className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium w-full hover:bg-black/5 dark:hover:bg-white/10 text-[15px]">
+          <button onClick={toggleTheme} className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium w-full bg-white dark:bg-black border border-black/10 dark:border-white/15 shadow-sm text-[15px]">
             {theme === 'dark' ? <SunIcon size={22} /> : <MoonIcon size={22} />}{theme === 'dark' ? t('nav.light') : t('nav.dark')}
           </button>
         </div>
@@ -171,7 +171,7 @@ export default function Layout() {
             </div>
             <div className="mt-auto p-3 border-t border-black/5 dark:border-white/10 space-y-1">
               <LangSwitch />
-              <button onClick={toggleTheme} className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium w-full hover:bg-black/5 dark:hover:bg-white/10 text-[15px]">
+              <button onClick={toggleTheme} className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium w-full bg-white dark:bg-black border border-black/10 dark:border-white/15 shadow-sm text-[15px]">
                 {theme === 'dark' ? <SunIcon size={22} /> : <MoonIcon size={22} />}{theme === 'dark' ? t('nav.light') : t('nav.dark')}
               </button>
               <button onClick={logout} className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium w-full text-red-500 hover:bg-red-500/10 text-[15px]">

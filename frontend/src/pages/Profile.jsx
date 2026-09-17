@@ -5,6 +5,7 @@ import { useLang } from '../lib/i18n';
 import { Avatar, ZImg, Verified, GoldBadge, Empty } from '../components/ui';
 import PageLoader from '../components/PageLoader';
 import { PostCard } from './Feed';
+import { openConversation } from './Chat';
 import { UserPlusIcon, CheckIcon, ChatIcon, GridIcon, FilmIcon, BagIcon, BackIcon, SlidersIcon } from '../components/icons';
 
 export default function Profile() {
@@ -64,7 +65,7 @@ export default function Profile() {
               <button onClick={follow} className={`flex-1 font-bold rounded-2xl px-5 py-2.5 transition flex items-center justify-center gap-2 ${following ? 'bg-black/5 dark:bg-white/10' : 'bg-zivv-purple text-white shadow-md'}`}>
                 {following ? <><CheckIcon size={17} />{t('profile.followingBtn')}</> : <><UserPlusIcon size={17} />{t('profile.follow')}</>}
               </button>
-              <button onClick={() => nav('/chat')} className="btn-ghost font-bold flex items-center gap-2"><ChatIcon size={17} />{t('profile.message')}</button>
+              <button onClick={() => openConversation(u.id, nav)} className="btn-ghost font-bold flex items-center gap-2"><ChatIcon size={17} />{t('profile.message')}</button>
             </>
           )}
         </div>
