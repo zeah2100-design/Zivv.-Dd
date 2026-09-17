@@ -28,7 +28,7 @@ export function Marketplace() {
   return (
     <div className="p-3 md:p-4 max-w-3xl mx-auto space-y-3">
       <div className="flex items-center gap-2 px-1">
-        <h1 className="font-black text-2xl flex-1">{t('market.title')}</h1>
+        <h1 className="font-bold text-xl flex-1">{t('market.title')}</h1>
         <button onClick={() => nav('/create')} className="btn-primary !p-2.5 !rounded-full" aria-label="Sell"><PlusIcon size={19} /></button>
       </div>
       <div className="flex items-center gap-2 bg-black/5 dark:bg-white/10 rounded-full px-4 py-2.5">
@@ -37,21 +37,21 @@ export function Marketplace() {
           placeholder={t('market.searchPh')} className="bg-transparent flex-1 text-sm focus:outline-none placeholder:opacity-40" />
       </div>
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-        <button onClick={() => setCat('')} className={`px-4 py-1.5 text-sm font-black rounded-full shrink-0 transition ${!cat ? 'tab-active' : 'bg-black/5 dark:bg-white/10 opacity-60'}`}>{t('market.all')}</button>
+        <button onClick={() => setCat('')} className={`px-4 py-1.5 text-sm font-bold rounded-full shrink-0 transition ${!cat ? 'tab-active' : 'bg-black/5 dark:bg-white/10 opacity-60'}`}>{t('market.all')}</button>
         {cats.map((c) => (
-          <button key={c} onClick={() => setCat(c)} className={`px-4 py-1.5 text-sm font-black rounded-full shrink-0 transition ${cat === c ? 'tab-active' : 'bg-black/5 dark:bg-white/10 opacity-60'}`}>{c}</button>
+          <button key={c} onClick={() => setCat(c)} className={`px-4 py-1.5 text-sm font-bold rounded-full shrink-0 transition ${cat === c ? 'tab-active' : 'bg-black/5 dark:bg-white/10 opacity-60'}`}>{c}</button>
         ))}
       </div>
       {items.length === 0 && <Empty icon={<BagIcon size={40} />} title={t('market.empty')} sub="" />}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
         {items.map((l) => (
           <button key={l.id} onClick={() => nav(`/market/${l.id}`)} className="card overflow-hidden text-start">
-            <div className="aspect-square zivv-gradient relative">
+            <div className="aspect-square bg-neutral-100 dark:bg-white/5 relative">
               <ZImg seed={`listing-${l.id}`} w={400} h={400} className="w-full h-full object-cover" alt="" />
-              {l.status !== 'available' && <span className="absolute top-2 start-2 text-[10px] font-black px-2 py-0.5 rounded-full bg-black/70 text-white">{l.status}</span>}
+              {l.status !== 'available' && <span className="absolute top-2 start-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/70 text-white">{l.status}</span>}
             </div>
             <div className="p-2.5">
-              <div className="font-black">{fmt.money(l.priceCents, l.currency)}</div>
+              <div className="font-bold">{fmt.money(l.priceCents, l.currency)}</div>
               <div className="text-xs opacity-60 truncate">{l.title}</div>
               <div className="text-[11px] opacity-40 truncate">{l.category} · {l.condition}</div>
             </div>
@@ -82,11 +82,11 @@ export function ProductDetail() {
   };
 
   if (loading) return <PageLoader />;
-  if (!l) return <div className="p-10 text-center font-black">{t('market.notFound')}</div>;
+  if (!l) return <div className="p-10 text-center font-bold">{t('market.notFound')}</div>;
 
   return (
     <div className="max-w-2xl mx-auto pb-6">
-      <div className="relative aspect-square md:rounded-b-3xl overflow-hidden zivv-gradient">
+      <div className="relative aspect-square md:rounded-b-3xl overflow-hidden bg-neutral-900">
         <ZImg seed={`listing-${l.id}`} w={800} h={800} className="w-full h-full object-cover" alt="" />
         <button onClick={() => nav('/market')} className="absolute top-3 start-3 w-10 h-10 rounded-full bg-black/50 text-white backdrop-blur flex items-center justify-center rtl:rotate-180" aria-label="Back"><BackIcon size={20} /></button>
         <button onClick={report} disabled={reported} className="absolute top-3 end-3 h-10 px-3 rounded-full bg-black/50 text-white backdrop-blur flex items-center gap-1.5 text-xs font-bold disabled:opacity-50">
@@ -95,7 +95,7 @@ export function ProductDetail() {
       </div>
       <div className="p-4 space-y-3">
         <div>
-          <div className="font-black text-2xl">{fmt.money(l.priceCents, l.currency)}</div>
+          <div className="font-bold text-2xl">{fmt.money(l.priceCents, l.currency)}</div>
           <div className="font-bold text-lg">{l.title}</div>
           <div className="text-xs opacity-50">{l.category} · {l.condition} · {fmt.time(l.createdAt)}</div>
         </div>

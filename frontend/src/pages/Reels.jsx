@@ -38,7 +38,7 @@ function ReelItem({ reel, active }) {
   };
 
   return (
-    <div className="relative h-[calc(100dvh-108px)] md:h-[calc(100vh-40px)] w-full snap-start snap-always bg-black md:rounded-3xl overflow-hidden select-none">
+    <div className="relative h-[calc(100dvh-108px)] md:h-[calc(100vh-40px)] w-full snap-start snap-always bg-black md:rounded-2xl overflow-hidden select-none">
       <div className="absolute inset-0">
         <ZImg seed={`reel-${reel.id}`} w={540} h={960} className="w-full h-full object-cover" alt="" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/85" />
@@ -48,7 +48,7 @@ function ReelItem({ reel, active }) {
           <span className="w-16 h-16 rounded-full bg-black/55 backdrop-blur flex items-center justify-center text-white"><PlayIcon size={28} className="ms-1" /></span>
         </div>
       )}
-      <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20 z-10"><div className="h-full zivv-gradient" style={{ width: `${progress}%` }} /></div>
+      <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20 z-10"><div className="h-full bg-white" style={{ width: `${progress}%` }} /></div>
 
       {/* Right action rail (TikTok-style) */}
       <div className="absolute bottom-24 end-2 flex flex-col items-center gap-4 text-white z-10">
@@ -73,7 +73,7 @@ function ReelItem({ reel, active }) {
 
       {/* Caption */}
       <div className="absolute bottom-5 start-3 end-20 text-white space-y-1.5 z-10">
-        <button onClick={() => nav(`/u/${reel.author?.username}`)} className="font-black text-[16px] flex items-center gap-1">
+        <button onClick={() => nav(`/u/${reel.author?.username}`)} className="font-bold text-[16px] flex items-center gap-1">
           @{reel.author?.username}{reel.author?.verified && <VerifyIcon size={15} />}
         </button>
         {reel.caption && <p className="text-sm leading-snug line-clamp-2">{reel.caption}</p>}
@@ -92,8 +92,8 @@ function ReelItem({ reel, active }) {
 
       {/* Comments sheet */}
       {showC && (
-        <div className="absolute inset-x-0 bottom-0 top-1/4 bg-white dark:bg-neutral-950 rounded-t-3xl slide-up flex flex-col z-20" onClick={(e) => e.stopPropagation()}>
-          <div className="p-3 text-center font-black text-sm border-b border-black/5 dark:border-white/10">{t('reels.comments', fmt.n((reel.commentCount || 0) + local.length))}</div>
+        <div className="absolute inset-x-0 bottom-0 top-1/4 bg-white dark:bg-neutral-950 rounded-t-2xl slide-up flex flex-col z-20" onClick={(e) => e.stopPropagation()}>
+          <div className="p-3 text-center font-bold text-sm border-b border-black/5 dark:border-white/10">{t('reels.comments', fmt.n((reel.commentCount || 0) + local.length))}</div>
           <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
             {local.map((c) => (
               <div key={c.id} className="flex gap-2 items-start">
@@ -107,7 +107,7 @@ function ReelItem({ reel, active }) {
             <input value={cText} onChange={(e) => setCText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && cText.trim() && (setLocal((l) => [...l, { id: Date.now(), text: cText.trim(), author: user }]), setCText(''))}
               placeholder={t('reels.addComment')} className="input !py-2 text-sm" />
             <button onClick={() => { if (cText.trim()) { setLocal((l) => [...l, { id: Date.now(), text: cText.trim(), author: user }]); setCText(''); } }}
-              className="text-zivv-pink font-black text-sm px-2">{t('reels.send')}</button>
+              className="text-zivv-pink font-bold text-sm px-2">{t('reels.send')}</button>
           </div>
         </div>
       )}
@@ -135,7 +135,7 @@ export default function Reels() {
   }, [loading]);
 
   if (loading) return <PageLoader />;
-  if (!reels.length) return <div className="card p-10 m-4 text-center"><div className="text-5xl mb-3">🎬</div><div className="font-black">{t('reels.empty')}</div></div>;
+  if (!reels.length) return <div className="card p-10 m-4 text-center"><div className="w-14 h-14 mx-auto rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center mb-3 text-neutral-400"><FilmIcon size={26} /></div><div className="font-bold">{t('reels.empty')}</div></div>;
 
   return (
     <div ref={wrapRef} className="h-[calc(100dvh-108px)] md:h-auto md:max-h-[calc(100vh-40px)] overflow-y-auto snap-y snap-mandatory no-scrollbar md:p-4 md:space-y-4">

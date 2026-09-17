@@ -1,29 +1,18 @@
 import { useState } from 'react';
 import { CrownIcon, SparkleIcon } from './icons';
 
-export function Logo({ size = 40, wordmark = true }) {
+export function Logo({ size = 36, wordmark = true }) {
   return (
     <div className="flex items-center gap-2.5 select-none">
-      <svg width={size} height={size} viewBox="0 0 64 64" className="drop-shadow-lg">
-        <defs>
-          <linearGradient id="zv" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#FF9A3D" /><stop offset=".25" stopColor="#FFD23D" />
-            <stop offset=".45" stopColor="#FF4D8D" /><stop offset=".65" stopColor="#C724B1" />
-            <stop offset=".85" stopColor="#7B2FF7" /><stop offset="1" stopColor="#2FB7FF" />
-          </linearGradient>
-        </defs>
-        <rect width="64" height="64" rx="18" fill="url(#zv)" />
-        <path d="M18 20h28l-16 14h14v6H20l16-14H18z" fill="white" opacity=".95" />
-        <path d="M40 44l4-9 4 9 4-13h-4.5L45 38l-2.5-7H38z" fill="white" opacity=".9" transform="translate(-2,-1) scale(.92)" />
-      </svg>
-      {wordmark && <span className="text-2xl font-black tracking-tight">ZIVV<span className="zivv-gradient-text">.</span></span>}
+      <img src="/logo.png" alt="ZIVV" width={size} height={size} className="rounded-[28%] shadow-sm" style={{ width: size, height: size }} />
+      {wordmark && <span className="text-[22px] font-extrabold tracking-tight">ZIVV</span>}
     </div>
   );
 }
 
 function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
 
-// Real face photos online, gradient initials offline.
+// Real face photos online, neutral initials offline.
 export function Avatar({ user, size = 44, ring = false }) {
   const [err, setErr] = useState(false);
   const name = user?.name || user?.username || '?';
@@ -33,7 +22,7 @@ export function Avatar({ user, size = 44, ring = false }) {
     <img src={src} onError={() => setErr(true)} alt={name} loading="lazy"
       className="w-full h-full object-cover rounded-full" />
   ) : (
-    <div className="w-full h-full rounded-full zivv-gradient flex items-center justify-center text-white font-black" style={{ fontSize: size * 0.42 }}>
+    <div className="w-full h-full rounded-full bg-neutral-200 dark:bg-white/15 text-neutral-600 dark:text-neutral-200 flex items-center justify-center font-bold" style={{ fontSize: size * 0.42 }}>
       {name[0]?.toUpperCase()}
     </div>
   );
@@ -41,7 +30,7 @@ export function Avatar({ user, size = 44, ring = false }) {
   return <div className="shrink-0 rounded-full overflow-hidden" style={{ width: size, height: size }}>{inner}</div>;
 }
 
-// Real photos online, parent gradient shows through offline.
+// Real photos online, parent background shows through offline.
 export function ZImg({ seed, w = 800, h = 600, className = '', alt = '' }) {
   const [err, setErr] = useState(false);
   if (err) return null;
@@ -56,11 +45,11 @@ export function Verified({ gold }) {
 }
 
 export function AiBadge() {
-  return <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full zivv-gradient text-white"><SparkleIcon size={11} />AI</span>;
+  return <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300"><SparkleIcon size={11} />AI</span>;
 }
 
 export function GoldBadge() {
-  return <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 text-amber-950 shadow"><CrownIcon size={13} />GOLD</span>;
+  return <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 text-amber-950 shadow-sm"><CrownIcon size={13} />GOLD</span>;
 }
 
 export function SkeletonPost() {
@@ -70,7 +59,7 @@ export function SkeletonPost() {
 export function ImageModal({ src, onClose }) {
   if (!src) return null;
   return (
-    <div className="fixed inset-0 z-[70] bg-black/92 flex items-center justify-center p-4 fade-in" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4 fade-in" onClick={onClose}>
       <img src={src} alt="" className="max-w-full max-h-full rounded-2xl object-contain shadow-2xl" />
     </div>
   );

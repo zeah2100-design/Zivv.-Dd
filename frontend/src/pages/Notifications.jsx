@@ -38,7 +38,7 @@ export default function Notifications() {
   return (
     <div className="p-3 md:p-4 max-w-2xl mx-auto space-y-3">
       <div className="flex items-center justify-between px-1">
-        <h1 className="font-black text-2xl">{t('notif.title')}</h1>
+        <h1 className="font-bold text-xl">{t('notif.title')}</h1>
         <button onClick={readAll} className="text-sm font-bold text-zivv-purple flex items-center gap-1.5">
           <CheckDoubleIcon size={17} />{t('notif.markRead')}
         </button>
@@ -46,7 +46,7 @@ export default function Notifications() {
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
         {tabs.map((tb) => (
           <button key={tb} onClick={() => setTab(tb)}
-            className={`px-4 py-1.5 text-sm font-black rounded-full transition shrink-0 ${tab === tb ? 'tab-active' : 'bg-black/5 dark:bg-white/10 opacity-60'}`}>
+            className={`px-4 py-1.5 text-sm font-bold rounded-full transition shrink-0 ${tab === tb ? 'tab-active' : 'bg-black/5 dark:bg-white/10 opacity-60'}`}>
             {t('notif.t_' + tb)}
           </button>
         ))}
@@ -55,7 +55,7 @@ export default function Notifications() {
       <div className="card divide-y divide-black/5 dark:divide-white/5 overflow-hidden">
         {items.map((n) => (
           <div key={n.id} className={`flex items-start gap-3 p-3.5 ${n.read ? '' : 'bg-zivv-purple/[.06]'}`}>
-            <span className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${n.read ? 'bg-black/5 dark:bg-white/10 opacity-70' : 'zivv-gradient text-white'}`}>
+            <span className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${n.read ? 'bg-black/5 dark:bg-white/10 opacity-70' : 'bg-zivv-purple text-white'}`}>
               {catIcon(n.category)}
             </span>
             <div className="flex-1 min-w-0">

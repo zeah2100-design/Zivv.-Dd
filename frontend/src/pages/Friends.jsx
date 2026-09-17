@@ -32,11 +32,11 @@ export default function Friends() {
 
   return (
     <div className="p-3 md:p-4 max-w-2xl mx-auto space-y-3">
-      <h1 className="font-black text-2xl px-1">{t('friends.title')}</h1>
+      <h1 className="font-bold text-xl px-1">{t('friends.title')}</h1>
       <div className="flex gap-2">
         {tabs.map(([v, l]) => (
           <button key={v} onClick={() => setTab(v)}
-            className={`flex-1 py-1.5 text-sm font-black rounded-full transition ${tab === v ? 'tab-active' : 'bg-black/5 dark:bg-white/10 opacity-60'}`}>{l}</button>
+            className={`flex-1 py-1.5 text-sm font-bold rounded-full transition ${tab === v ? 'tab-active' : 'bg-black/5 dark:bg-white/10 opacity-60'}`}>{l}</button>
         ))}
       </div>
 

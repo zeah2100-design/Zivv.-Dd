@@ -31,7 +31,7 @@ export default function King() {
     return (
       <div className="pt-14 px-6 max-w-sm mx-auto text-center space-y-3">
         <div className="w-20 h-20 mx-auto rounded-[1.75rem] bg-neutral-900 dark:bg-white text-white dark:text-black flex items-center justify-center"><CrownIcon size={36} /></div>
-        <h1 className="text-xl font-black">Restricted area</h1>
+        <h1 className="text-xl font-bold">Restricted area</h1>
         <p className="text-sm opacity-60 flex items-center justify-center gap-1.5"><ShieldIcon size={14} />Admin authentication required</p>
         <div className="relative"><span className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-50"><UserIcon size={17} /></span><input value={u} onChange={(e) => setU(e.target.value)} placeholder="Admin user" className="input !pl-10" /></div>
         <div className="relative"><span className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-50"><KeyIcon size={17} /></span><input value={p} onChange={(e) => setP(e.target.value)} type="password" placeholder="Admin password" className="input !pl-10" onKeyDown={(e) => e.key === 'Enter' && login()} /></div>
@@ -43,14 +43,14 @@ export default function King() {
 
   return (
     <div className="px-3 md:px-0 pt-3 space-y-3">
-      <h1 className="text-2xl font-black flex items-center gap-2"><CrownIcon size={24} />Admin Dashboard</h1>
+      <h1 className="text-2xl font-bold flex items-center gap-2"><CrownIcon size={24} />Admin Dashboard</h1>
       <div className="grid grid-cols-4 gap-2">
         {[['Users', stats?.users], ['Active', stats?.active], ['Posts', stats?.posts], ['Reels', stats?.reels], ['Messages', stats?.messages], ['Ads', stats?.ads], ['Gold', stats?.gold], ['Reports', stats?.reports]].map(([l, v]) => (
-          <div key={l} className="card p-3 text-center"><div className="font-black text-[15px]">{fmt.n(v || 0)}</div><div className="text-[10px] font-bold opacity-50 uppercase">{l}</div></div>
+          <div key={l} className="card p-3 text-center"><div className="font-bold text-[15px]">{fmt.n(v || 0)}</div><div className="text-[10px] font-bold opacity-50 uppercase">{l}</div></div>
         ))}
       </div>
       <div className="card p-4">
-        <div className="font-black mb-2">Ad review queue</div>
+        <div className="font-bold mb-2">Ad review queue</div>
         {queue.ads?.map((c) => (
           <div key={c.id} className="flex items-center gap-2 py-2.5 border-b border-black/5 dark:border-white/10 last:border-0">
             <div className="flex-1 text-sm font-semibold truncate">{c.title}</div>

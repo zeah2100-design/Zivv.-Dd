@@ -37,18 +37,18 @@ export default function Settings() {
 
   return (
     <div className="p-3 md:p-4 max-w-2xl mx-auto space-y-3">
-      <h1 className="font-black text-2xl px-1">{t('settings.title')}</h1>
+      <h1 className="font-bold text-xl px-1">{t('settings.title')}</h1>
 
       <div className="card p-4 flex items-center gap-3">
         <Avatar user={user} size={60} />
         <div className="flex-1 min-w-0">
-          <div className="font-black text-lg truncate">{user?.name}</div>
+          <div className="font-bold text-lg truncate">{user?.name}</div>
           <div className="text-sm opacity-50">@{user?.username}</div>
         </div>
       </div>
 
       <div className="card p-4 space-y-3">
-        <div className="font-black flex items-center gap-2"><UserIcon size={18} />{t('settings.editProfile')}</div>
+        <div className="font-bold flex items-center gap-2"><UserIcon size={18} />{t('settings.editProfile')}</div>
         <div>
           <label className="text-xs font-bold opacity-60">{t('settings.name')}</label>
           <input value={name} onChange={(e) => setName(e.target.value)} className="input mt-1" />
@@ -65,18 +65,18 @@ export default function Settings() {
       <div className="card divide-y divide-black/5 dark:divide-white/5 overflow-hidden">
         <Row Icon={theme === 'dark' ? SunIcon : MoonIcon} label={theme === 'dark' ? t('settings.light') : t('settings.dark')}
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          right={<span className="text-xs font-bold opacity-50">{theme === 'dark' ? '🌙' : '☀️'}</span>} />
+          />
         <Row Icon={LanguagesIcon} label={t('settings.language')}
           right={<div className="flex gap-1 bg-black/5 dark:bg-white/10 rounded-full p-1">
             {['ar', 'en'].map((l) => (
               <button key={l} onClick={(e) => { e.stopPropagation(); setLang(l); }}
-                className={`text-xs font-black px-3.5 py-1.5 rounded-full transition ${lang === l ? 'tab-active shadow' : 'opacity-60'}`}>
+                className={`text-xs font-bold px-3.5 py-1.5 rounded-full transition ${lang === l ? 'tab-active shadow' : 'opacity-60'}`}>
                 {l === 'ar' ? 'عربي' : 'EN'}
               </button>
             ))}
           </div>} />
         <Row Icon={BellIcon} label={t('settings.notif')} right={<span className="text-xs font-bold opacity-50">{t('settings.on')}</span>} />
-        <Row Icon={ShieldIcon} label={t('settings.privacy')} right={<span className="text-xs font-bold opacity-50">🔒</span>} />
+        <Row Icon={ShieldIcon} label={t('settings.privacy')} />
         <Row Icon={LogOutIcon} label={t('settings.logout')} danger onClick={logout} />
       </div>
 

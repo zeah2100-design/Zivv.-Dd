@@ -15,7 +15,7 @@ function StoryViewer({ stories, index, onClose, onNav }) {
   if (!s) return null;
   return (
     <div className="fixed inset-0 z-[60] bg-black fade-in flex items-center justify-center">
-      <div className="relative w-full max-w-[430px] h-full md:h-[92vh] md:rounded-3xl overflow-hidden bg-neutral-900">
+      <div className="relative w-full max-w-[430px] h-full md:h-[92vh] md:rounded-2xl overflow-hidden bg-neutral-900">
         <div className="absolute inset-0 zivv-gradient opacity-40" />
         <ZImg seed={`story-${s.user.id}`} w={540} h={960} className="absolute inset-0 w-full h-full object-cover" alt="Story" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/60" />

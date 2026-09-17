@@ -31,20 +31,20 @@ export default function Gold() {
 
   return (
     <div className="p-3 md:p-4 max-w-2xl mx-auto space-y-4">
-      <div className="rounded-3xl p-6 bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 text-amber-950 shadow-pop text-center">
+      <div className="rounded-2xl p-6 bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 text-amber-950 shadow-md text-center">
         <div className="flex justify-center mb-2"><CrownIcon size={44} /></div>
-        <div className="font-black text-2xl">ZIVV Gold</div>
+        <div className="font-bold text-2xl">ZIVV Gold</div>
         <div className="text-sm font-medium opacity-80 mt-1">{t('gold.pitch')}</div>
         {status?.gold && <div className="mt-3 flex justify-center"><GoldBadge /></div>}
       </div>
 
       {!!status?.requests?.length && (
         <div className="card p-4">
-          <div className="font-black mb-2">{t('gold.myRequests')}</div>
+          <div className="font-bold mb-2">{t('gold.myRequests')}</div>
           {status.requests.map((r) => (
             <div key={r.id} className="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/5 last:border-0 text-sm">
               <span className="font-bold">{r.package?.name}</span>
-              <span className="text-xs font-black px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-600">{r.status}</span>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-600">{r.status}</span>
             </div>
           ))}
         </div>
@@ -53,8 +53,8 @@ export default function Gold() {
       <div className="grid md:grid-cols-2 gap-3">
         {pkgs.map((p) => (
           <div key={p.id} className="card p-5 flex flex-col">
-            <div className="font-black text-lg">{p.name}</div>
-            <div className="font-black text-3xl my-1">{fmt.money(p.priceCents)}</div>
+            <div className="font-bold text-lg">{p.name}</div>
+            <div className="font-bold text-3xl my-1">{fmt.money(p.priceCents)}</div>
             <div className="text-xs opacity-50 mb-3">{p.durationDays} {t('gold.days')}</div>
             <ul className="space-y-1.5 flex-1">
               {(p.perks || []).map((perk, i) => (

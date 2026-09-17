@@ -45,13 +45,13 @@ export default function Ads() {
   return (
     <div className="p-3 md:p-4 max-w-2xl mx-auto space-y-3">
       <div className="flex items-center gap-2 px-1">
-        <h1 className="font-black text-2xl flex-1">{t('ads.title')}</h1>
+        <h1 className="font-bold text-xl flex-1">{t('ads.title')}</h1>
         <button onClick={() => setShow(!show)} className="btn-primary !py-2 text-sm flex items-center gap-1.5"><PlusIcon size={16} />{t('ads.new')}</button>
       </div>
 
       {show && (
         <div className="card p-4 space-y-3 slide-up">
-          <div className="font-black">{t('ads.newTitle')}</div>
+          <div className="font-bold">{t('ads.newTitle')}</div>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('ads.titlePh')} className="input" />
           <div className="flex gap-2">
             <div className="flex-1"><label className="text-xs font-bold opacity-60">{t('ads.budget')}</label><input value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="decimal" className="input mt-1" /></div>
@@ -66,12 +66,12 @@ export default function Ads() {
       {items.map((c) => (
         <div key={c.id} className="card p-4">
           <div className="flex items-center gap-2">
-            <span className="w-10 h-10 rounded-2xl zivv-gradient text-white flex items-center justify-center shrink-0"><MegaphoneIcon size={19} /></span>
+            <span className="w-10 h-10 rounded-2xl bg-zivv-purple text-white flex items-center justify-center shrink-0"><MegaphoneIcon size={19} /></span>
             <div className="flex-1 min-w-0">
               <div className="font-bold truncate">{c.title}</div>
               <div className="text-xs opacity-50">{fmt.money(c.budgetCents)} · {c.durationDays} {t('ads.days')}</div>
             </div>
-            <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${statusColor(c.status)}`}>{c.status?.replace('_', ' ')}</span>
+            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${statusColor(c.status)}`}>{c.status?.replace('_', ' ')}</span>
           </div>
           <div className="flex items-center gap-4 mt-3 text-sm">
             <span className="flex items-center gap-1.5 opacity-70"><EyeIcon size={16} />{fmt.n(c.impressions)} {t('ads.impr')}</span>

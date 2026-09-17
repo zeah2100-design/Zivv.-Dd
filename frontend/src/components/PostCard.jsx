@@ -71,7 +71,7 @@ export default function PostCard({ post }) {
             <div className="text-xs opacity-60 flex items-center gap-1"><MusicIcon size={12} />{p.author?.name} · 3:23</div>
             <div className="h-1 rounded-full bg-black/10 dark:bg-white/15 mt-2 overflow-hidden"><div className="h-full w-1/3 zivv-gradient rounded-full" /></div>
           </div>
-          <button onClick={() => setPlaying(!playing)} className="w-11 h-11 rounded-full zivv-gradient text-white flex items-center justify-center shrink-0 shadow-pop active:scale-95 transition" aria-label="Play">
+          <button onClick={() => setPlaying(!playing)} className="w-11 h-11 rounded-full zivv-gradient text-white flex items-center justify-center shrink-0 shadow-md active:scale-95 transition" aria-label="Play">
             {playing ? <PauseIcon size={19} /> : <PlayIcon size={19} className="ml-0.5" />}
           </button>
         </div>

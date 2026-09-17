@@ -35,7 +35,7 @@ export function ConversationList({ onPick, activeId }) {
             <span className="relative shrink-0">
               <Avatar user={c.peer} size={52} />
               {c.online && <span className="absolute bottom-0.5 end-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white dark:border-neutral-950" />}
-              {!!c.unread && <span className="absolute -top-0.5 -end-0.5 min-w-[20px] h-5 px-1 text-[11px] font-black text-white zivv-gradient rounded-full flex items-center justify-center">{c.unread}</span>}
+              {!!c.unread && <span className="absolute -top-0.5 -end-0.5 badge-count">{c.unread}</span>}
             </span>
             <span className="flex-1 min-w-0">
               <span className="flex items-baseline justify-between gap-2">
@@ -95,7 +95,7 @@ export function Thread({ convId, peer, online, onBack }) {
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[75%] px-3.5 py-2 text-[15px] leading-snug break-words ${
                 mine
-                  ? `zivv-gradient text-white rounded-2xl ${showTail ? 'rounded-ee-md' : ''}`
+                  ? `bg-zivv-purple text-white rounded-2xl ${showTail ? 'rounded-ee-md' : ''}`
                   : `bg-black/[.07] dark:bg-white/15 rounded-2xl ${showTail ? 'rounded-es-md' : ''}`
               }`}>
                 {m.text}
@@ -138,14 +138,14 @@ export default function Chat() {
   return (
     <div className="h-[calc(100dvh-108px)] md:h-[calc(100vh-32px)] flex">
       <div className={`${active ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[340px] md:border-e md:border-black/10 md:dark:border-white/10`}>
-        <div className="px-4 pt-3 pb-1 font-black text-2xl">{t('chat.title')}</div>
+        <div className="px-4 pt-3 pb-1 font-bold text-xl">{t('chat.title')}</div>
         <div className="flex-1 min-h-0"><ConversationList onPick={pick} activeId={active?.id} /></div>
       </div>
       <div className={`${active ? 'flex' : 'hidden md:flex'} flex-col flex-1 min-w-0`}>
         {active
           ? <Thread convId={active.id} peer={active.peer} online={active.online} onBack={() => { setActive(null); nav('/chat', { replace: true }); }} />
           : <div className="flex-1 hidden md:flex flex-col items-center justify-center opacity-40 gap-3">
-              <div className="w-20 h-20 rounded-full zivv-gradient flex items-center justify-center text-white text-3xl font-black">ZV</div>
+              <img src="/logo.png" alt="" className="w-20 h-20 rounded-[28%] opacity-50" />
               <div className="font-bold">{t('chat.pick')}</div>
             </div>}
       </div>

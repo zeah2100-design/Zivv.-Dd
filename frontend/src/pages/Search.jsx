@@ -61,7 +61,7 @@ export default function Search() {
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           {TABS.map((tb) => (
             <button key={tb} onClick={() => setParams({ q, tab: tb })}
-              className={`px-4 py-1.5 text-sm font-black rounded-full transition shrink-0 ${tab === tb ? 'tab-active' : 'bg-black/5 dark:bg-white/10 opacity-60'}`}>
+              className={`px-4 py-1.5 text-sm font-bold rounded-full transition shrink-0 ${tab === tb ? 'tab-active' : 'bg-black/5 dark:bg-white/10 opacity-60'}`}>
               {t('search.t_' + tb)}
             </button>
           ))}
@@ -80,7 +80,7 @@ export default function Search() {
           {history.length > 0 && (
             <div className="card p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="font-black">{t('search.recent')}</span>
+                <span className="font-bold">{t('search.recent')}</span>
                 <button onClick={clearHistory} className="text-xs font-bold text-zivv-purple">{t('search.clearAll')}</button>
               </div>
               {history.slice(0, 6).map((h) => (
@@ -93,7 +93,7 @@ export default function Search() {
           )}
           {!!explore?.trendingHashtags?.length && (
             <div className="card p-4">
-              <div className="font-black mb-2">{t('search.trending')}</div>
+              <div className="font-bold mb-2">{t('search.trending')}</div>
               <div className="flex flex-wrap gap-2">
                 {explore.trendingHashtags.map((h) => (
                   <button key={h} onClick={() => submit('#' + h)} className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 text-sm font-bold text-zivv-purple">
@@ -105,10 +105,10 @@ export default function Search() {
           )}
           {!!explore?.trendingSounds?.length && (
             <div className="card p-4">
-              <div className="font-black mb-2">{t('search.sounds')}</div>
+              <div className="font-bold mb-2">{t('search.sounds')}</div>
               {explore.trendingSounds.map((s) => (
                 <div key={s.id} className="flex items-center gap-3 py-2">
-                  <span className="w-10 h-10 rounded-xl zivv-gradient text-white flex items-center justify-center shrink-0"><MusicIcon size={18} /></span>
+                  <span className="w-10 h-10 rounded-xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center shrink-0"><MusicIcon size={18} /></span>
                   <span className="flex-1 min-w-0"><span className="block font-bold text-sm truncate">{s.title}</span><span className="block text-xs opacity-50">{s.artist} · {fmt.n(s.uses)} {t('search.uses')}</span></span>
                 </div>
               ))}
@@ -116,7 +116,7 @@ export default function Search() {
           )}
           {!!explore?.suggestedAccounts?.length && (
             <div className="card p-4">
-              <div className="font-black mb-2">{t('search.suggested')}</div>
+              <div className="font-bold mb-2">{t('search.suggested')}</div>
               {explore.suggestedAccounts.slice(0, 5).map((u) => (
                 <div key={u.id} className="flex items-center gap-3 py-2">
                   <button onClick={() => nav(`/u/${u.username}`)}><Avatar user={u} size={42} /></button>
@@ -134,7 +134,7 @@ export default function Search() {
 
       {!!q && show('users') && !!res?.users?.length && (
         <div className="card p-4">
-          <div className="font-black mb-2">{t('search.t_users')}</div>
+          <div className="font-bold mb-2">{t('search.t_users')}</div>
           {res.users.map((u) => (
             <div key={u.id} className="flex items-center gap-3 py-2">
               <button onClick={() => nav(`/u/${u.username}`)}><Avatar user={u} size={42} /></button>
@@ -150,7 +150,7 @@ export default function Search() {
 
       {!!q && show('hashtags') && !!res?.hashtags?.length && (
         <div className="card p-4">
-          <div className="font-black mb-2">{t('search.t_hashtags')}</div>
+          <div className="font-bold mb-2">{t('search.t_hashtags')}</div>
           <div className="flex flex-wrap gap-2">
             {res.hashtags.map((h) => (
               <button key={h.tag} onClick={() => submit('#' + h.tag)} className="px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 text-sm font-bold text-zivv-purple">
@@ -163,7 +163,7 @@ export default function Search() {
 
       {!!q && show('reels') && !!res?.reels?.length && (
         <div>
-          <div className="font-black mb-2 px-1">{t('search.t_reels')}</div>
+          <div className="font-bold mb-2 px-1">{t('search.t_reels')}</div>
           <div className="grid grid-cols-3 gap-1.5">
             {res.reels.map((r) => (
               <button key={r.id} onClick={() => nav('/reels')} className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-neutral-800">
@@ -179,7 +179,7 @@ export default function Search() {
 
       {!!q && show('posts') && !!res?.posts?.length && (
         <div className="card p-4">
-          <div className="font-black mb-2">{t('search.t_posts')}</div>
+          <div className="font-bold mb-2">{t('search.t_posts')}</div>
           {res.posts.map((p) => (
             <button key={p.id} onClick={() => nav('/')} className="block w-full text-start py-2 border-b border-black/5 dark:border-white/5 last:border-0">
               <span className="text-sm line-clamp-2">{p.text}</span>
@@ -190,10 +190,10 @@ export default function Search() {
 
       {!!q && show('music') && !!res?.music?.length && (
         <div className="card p-4">
-          <div className="font-black mb-2">{t('search.t_music')}</div>
+          <div className="font-bold mb-2">{t('search.t_music')}</div>
           {res.music.map((s) => (
             <div key={s.id} className="flex items-center gap-3 py-2">
-              <span className="w-10 h-10 rounded-xl zivv-gradient text-white flex items-center justify-center shrink-0"><MusicIcon size={18} /></span>
+              <span className="w-10 h-10 rounded-xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center shrink-0"><MusicIcon size={18} /></span>
               <span className="flex-1 min-w-0"><span className="block font-bold text-sm truncate">{s.title}</span><span className="block text-xs opacity-50">{s.artist}</span></span>
             </div>
           ))}
@@ -202,12 +202,12 @@ export default function Search() {
 
       {!!q && show('store') && !!res?.store?.length && (
         <div>
-          <div className="font-black mb-2 px-1">{t('search.t_store')}</div>
+          <div className="font-bold mb-2 px-1">{t('search.t_store')}</div>
           <div className="grid grid-cols-2 gap-2">
             {res.store.map((l) => (
               <button key={l.id} onClick={() => nav(`/market/${l.id}`)} className="card overflow-hidden text-start">
-                <div className="aspect-square zivv-gradient relative"><ZImg seed={`listing-${l.id}`} w={400} h={400} className="w-full h-full object-cover" alt="" /></div>
-                <div className="p-2.5"><div className="font-black text-sm">{fmt.money(l.priceCents, l.currency)}</div><div className="text-xs opacity-60 truncate">{l.title}</div></div>
+                <div className="aspect-square bg-neutral-100 dark:bg-white/5 relative"><ZImg seed={`listing-${l.id}`} w={400} h={400} className="w-full h-full object-cover" alt="" /></div>
+                <div className="p-2.5"><div className="font-bold text-sm">{fmt.money(l.priceCents, l.currency)}</div><div className="text-xs opacity-60 truncate">{l.title}</div></div>
               </button>
             ))}
           </div>

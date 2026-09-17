@@ -102,11 +102,11 @@ export default function AI() {
 
       <div className="flex-1 card p-4 min-h-[70vh] flex flex-col">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2"><Logo size={30} wordmark={false} /><span className="font-black text-lg">ZIVV AI</span><AiBadge /></div>
+          <div className="flex items-center gap-2"><Logo size={30} wordmark={false} /><span className="font-bold text-lg">ZIVV AI</span><AiBadge /></div>
           <div className="flex items-center gap-2">
             {live && (live.live
-              ? <span className="text-[11px] font-black px-2.5 py-1 rounded-full bg-green-500/15 text-green-600 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-green-500" />Live · {live.provider}</span>
-              : <span className="text-[11px] font-black px-2.5 py-1 rounded-full bg-black/10 dark:bg-white/10 opacity-70">Demo mode</span>)}
+              ? <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-green-500/15 text-green-600 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-green-500" />Live · {live.provider}</span>
+              : <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-black/10 dark:bg-white/10 opacity-70">Demo mode</span>)}
             <button onClick={() => setLiveVoice(!liveVoice)} className={`btn-ghost !px-3 text-sm ${liveVoice ? '!bg-red-500/15 text-red-500' : ''}`} aria-label="Live voice"><MicIcon size={18} /></button>
             <button onClick={newChat} className="btn-ghost !px-3 text-sm md:hidden" aria-label="New chat"><PlusIcon size={18} /></button>
           </div>
@@ -115,7 +115,7 @@ export default function AI() {
         {liveVoice && (
           <div className="mt-3 rounded-2xl zivv-gradient p-6 text-white text-center fade-in">
             <div className={`w-16 h-16 mx-auto rounded-full bg-white/20 flex items-center justify-center ${muted ? '' : 'animate-pulse'}`}>{muted ? <MicOffIcon size={28} /> : <MicIcon size={28} />}</div>
-            <div className="font-black mt-2">Live conversation</div>
+            <div className="font-bold mt-2">Live conversation</div>
             <div className="text-sm opacity-90">Speak anytime · interruption supported · transcript on</div>
             <div className="flex justify-center gap-2 mt-3">
               <button onClick={() => setMuted(!muted)} className="bg-white/20 rounded-full px-4 py-1.5 text-sm font-bold flex items-center gap-1.5">{muted ? <MicOffIcon size={15} /> : <MicIcon size={15} />}{muted ? 'Unmute' : 'Mute'}</button>
@@ -130,8 +130,8 @@ export default function AI() {
           ))}
           {!active?.messages?.length && (
             <div className="text-center mt-8">
-              <div className="w-16 h-16 mx-auto rounded-3xl zivv-gradient flex items-center justify-center text-white shadow-pop"><SparklesIcon size={30} /></div>
-              <div className="font-black text-lg mt-3">How can I help?</div>
+              <div className="w-16 h-16 mx-auto rounded-2xl zivv-gradient flex items-center justify-center text-white shadow-md"><SparklesIcon size={30} /></div>
+              <div className="font-bold text-lg mt-3">How can I help?</div>
               <div className="text-sm opacity-60">Arabic, Egyptian dialect & English supported</div>
               <div className="grid grid-cols-2 gap-2 mt-4 text-left">
                 {starters.map((s) => <button key={s} onClick={() => send(s)} className="text-xs font-semibold p-3 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 transition text-left">{s}</button>)}
@@ -146,8 +146,8 @@ export default function AI() {
 
         {plan && (
           <div className="mt-3 rounded-2xl border-2 border-zivv-purple/50 p-4 fade-in">
-            <div className="font-black text-sm flex items-center gap-2"><BotIcon size={18} className="text-zivv-purple" />Agent preview
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${plan.risk === 'HIGH' ? 'bg-red-500/15 text-red-500' : plan.risk === 'MEDIUM' ? 'bg-amber-500/15 text-amber-600' : 'bg-green-500/15 text-green-600'}`}>{plan.risk}</span>
+            <div className="font-bold text-sm flex items-center gap-2"><BotIcon size={18} className="text-zivv-purple" />Agent preview
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${plan.risk === 'HIGH' ? 'bg-red-500/15 text-red-500' : plan.risk === 'MEDIUM' ? 'bg-amber-500/15 text-amber-600' : 'bg-green-500/15 text-green-600'}`}>{plan.risk}</span>
             </div>
             <div className="text-sm mt-1.5">Tool: <b>{plan.tool}</b> — {plan.preview}</div>
             <div className="text-xs opacity-60 mt-1">Permission → validation → {plan.needsConfirmation ? 'confirmation required' : 'auto-approved (low risk)'} → execution → audit</div>

@@ -11,15 +11,16 @@ body { @apply text-neutral-900 dark:text-neutral-100 antialiased; font-family: '
 .zivv-gradient-text { background: linear-gradient(135deg, #FF9A3D, #FF4D8D 40%, #7B2FF7 70%, #2FB7FF); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .zivv-ring { background: conic-gradient(from 210deg, #FF9A3D, #FFD23D, #FF4D8D, #C724B1, #7B2FF7, #2FB7FF, #FF9A3D); }
 
-.card { @apply bg-white dark:bg-ink-900 rounded-3xl shadow-card border border-black/5 dark:border-white/10; }
-.btn-primary { @apply zivv-gradient text-white font-semibold rounded-2xl px-5 py-2.5 shadow-pop active:scale-[.98] transition; }
-.btn-ghost { @apply rounded-2xl px-4 py-2 font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 transition; }
-.input { @apply w-full rounded-2xl bg-black/5 dark:bg-white/10 px-4 py-2.5 outline-none focus:ring-2 ring-zivv-purple/60 placeholder:text-neutral-400; }
-.tab-active { @apply zivv-gradient text-white; }
+.card { @apply bg-white dark:bg-ink-900 rounded-2xl border border-black/[.06] dark:border-white/[.08] shadow-[0_1px_2px_rgba(0,0,0,.05)]; }
+.btn-primary { @apply bg-zivv-purple hover:bg-[#5B21B6] text-white font-semibold rounded-xl px-5 py-2.5 shadow-sm active:scale-[.98] transition; }
+.btn-ghost { @apply rounded-xl px-4 py-2 font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 transition; }
+.input { @apply w-full rounded-xl bg-black/5 dark:bg-white/10 px-4 py-2.5 outline-none focus:ring-2 ring-zivv-purple/60 placeholder:text-neutral-400; }
+.tab-active { @apply bg-zivv-purple text-white; }
+.badge-count { @apply min-w-[20px] h-5 px-1.5 text-[11px] font-bold text-white bg-red-500 rounded-full inline-flex items-center justify-center; }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
-.skeleton { @apply animate-pulse bg-black/10 dark:bg-white/10 rounded-2xl; }
+.skeleton { @apply animate-pulse bg-black/10 dark:bg-white/10 rounded-xl; }
 
 @keyframes float-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .float-in { animation: float-in .35s ease both; }

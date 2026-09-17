@@ -36,8 +36,8 @@ export default function PrivateChat() {
     return (
       <div className="p-4 max-w-2xl mx-auto">
         <div className="card p-10 text-center">
-          <div className="w-16 h-16 mx-auto rounded-3xl bg-green-500/15 text-green-500 flex items-center justify-center mb-3"><CheckIcon size={30} /></div>
-          <div className="font-black text-xl">{t('private.open')}</div>
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-green-500/15 text-green-500 flex items-center justify-center mb-3"><CheckIcon size={30} /></div>
+          <div className="font-bold text-xl">{t('private.open')}</div>
           <div className="text-sm opacity-60 mt-1">{t('private.openSub')}</div>
           <button onClick={() => setUnlocked(false)} className="btn-ghost mt-4 text-sm font-bold">{t('private.lockAgain')}</button>
         </div>
@@ -48,8 +48,8 @@ export default function PrivateChat() {
   return (
     <div className="p-4 max-w-md mx-auto">
       <div className="card p-6 text-center">
-        <div className="w-16 h-16 mx-auto rounded-3xl zivv-gradient text-white flex items-center justify-center mb-3"><VaultIcon size={30} /></div>
-        <div className="font-black text-xl">{t('private.title')}</div>
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-neutral-900 dark:bg-white text-white dark:text-black flex items-center justify-center mb-3"><VaultIcon size={30} /></div>
+        <div className="font-bold text-xl">{t('private.title')}</div>
         <div className="text-sm opacity-60 mt-1 mb-5">{t('private.sub')}</div>
 
         <div className="flex items-center gap-2 bg-black/5 dark:bg-white/10 rounded-2xl px-4 py-1">

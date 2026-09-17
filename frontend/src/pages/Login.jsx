@@ -22,11 +22,11 @@ export default function Login() {
 
   return (
     <div className="min-h-full flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute inset-0 zivv-gradient opacity-[.12] pointer-events-none" />
+      <div className="absolute inset-0 bg-zivv-purple opacity-[.07] pointer-events-none" />
       <div className="absolute top-4 end-4 flex gap-1 bg-black/5 dark:bg-white/10 rounded-full p-1">
         {['ar', 'en'].map((l) => (
           <button key={l} onClick={() => setLang(l)}
-            className={`text-xs font-black px-3.5 py-1.5 rounded-full transition ${lang === l ? 'tab-active shadow' : 'opacity-60'}`}>
+            className={`text-xs font-bold px-3.5 py-1.5 rounded-full transition ${lang === l ? 'tab-active shadow' : 'opacity-60'}`}>
             {l === 'ar' ? 'عربي' : 'EN'}
           </button>
         ))}
