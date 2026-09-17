@@ -1,48 +1,90 @@
 import { useEffect, useState } from 'react';
 import api, { fmt } from '../lib/api';
-import { MegaphoneIcon, PlayIcon, PauseIcon, PlusIcon, TargetIcon, GaugeIcon } from '../components/icons';
+import { useLang } from '../lib/i18n';
+import { Empty } from '../components/ui';
+import PageLoader from '../components/PageLoader';
+import { MegaphoneIcon, PlusIcon, PauseIcon, PlayIcon, EyeIcon } from '../components/icons';
 
-const flow = ['DRAFT', 'PENDING_REVIEW', 'PENDING_PAYMENT', 'ACTIVE', 'COMPLETED'];
+const statusColor = (s) => ({
+  ACTIVE: 'bg-green-500/15 text-green-500',
+  PAUSED: 'bg-amber-500/15 text-amber-500',
+  PENDING_REVIEW: 'bg-zivv-purple/15 text-zivv-purple',
+}[s] || 'bg-black/5 dark:bg-white/10 opacity-70');
 
 export default function Ads() {
+  const { t } = useLang();
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [show, setShow] = useState(false);
   const [title, setTitle] = useState('');
   const [budget, setBudget] = useState('500');
-  useEffect(() => { api.get('/ads').then((r) => setItems(r.data.items)); }, []);
+  const [days, setDays] = useState('7');
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try { const r = await api.get('/ads'); setItems(r.data.items || []); } catch {} finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, []);
 
   const create = async () => {
-    const { data } = await api.post('/ads', { title: title || 'My campaign', budgetCents: Math.round(parseFloat(budget || '0') * 100), durationDays: 7 });
-    setItems([data, ...items]); setTitle('');
+    if (!title.trim() || busy) return;
+    setBusy(true);
+    try {
+      await api.post('/ads', { title, budgetCents: Math.round(parseFloat(budget || '0') * 100), durationDays: parseInt(days, 10) || 7 });
+      setTitle(''); setShow(false); load();
+    } finally { setBusy(false); }
   };
 
+  const toggle = async (c) => {
+    try { await api.post(`/ads/${c.id}/${c.status === 'ACTIVE' ? 'pause' : 'resume'}`); load(); } catch {}
+  };
+
+  if (loading) return <PageLoader />;
+
   return (
-    <div className="px-3 md:px-0 pt-3 space-y-3 pb-6">
-      <h1 className="text-2xl font-black px-1 flex items-center gap-2"><MegaphoneIcon size={24} />Ads Manager</h1>
-      <div className="card p-4 space-y-2.5">
-        <div className="font-black flex items-center gap-2"><PlusIcon size={18} />Create campaign</div>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Campaign title" className="input" />
-        <div className="flex gap-2">
-          <input value={budget} onChange={(e) => setBudget(e.target.value)} type="number" placeholder="Budget (EGP)" className="input" />
-          <input placeholder="7 days" className="input opacity-60" disabled />
-        </div>
-        <div className="text-[11px] opacity-60 flex gap-1.5"><TargetIcon size={14} className="shrink-0 mt-0.5" /><span>Flow: Draft → Review → Verified payment → Active. Delivery depends on budget, relevance & quality.</span></div>
-        <button onClick={create} className="btn-primary w-full">Submit for review</button>
+    <div className="p-3 md:p-4 max-w-2xl mx-auto space-y-3">
+      <div className="flex items-center gap-2 px-1">
+        <h1 className="font-black text-2xl flex-1">{t('ads.title')}</h1>
+        <button onClick={() => setShow(!show)} className="btn-primary !py-2 text-sm flex items-center gap-1.5"><PlusIcon size={16} />{t('ads.new')}</button>
       </div>
+
+      {show && (
+        <div className="card p-4 space-y-3 slide-up">
+          <div className="font-black">{t('ads.newTitle')}</div>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('ads.titlePh')} className="input" />
+          <div className="flex gap-2">
+            <div className="flex-1"><label className="text-xs font-bold opacity-60">{t('ads.budget')}</label><input value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="decimal" className="input mt-1" /></div>
+            <div className="flex-1"><label className="text-xs font-bold opacity-60">{t('ads.days')}</label><input value={days} onChange={(e) => setDays(e.target.value)} inputMode="numeric" className="input mt-1" /></div>
+          </div>
+          <button onClick={create} disabled={!title.trim() || busy} className="btn-primary w-full disabled:opacity-40">{t('ads.launch')}</button>
+        </div>
+      )}
+
+      {items.length === 0 && <Empty icon={<MegaphoneIcon size={40} />} title={t('ads.empty')} sub={t('ads.emptySub')} />}
+
       {items.map((c) => (
         <div key={c.id} className="card p-4">
-          <div className="flex justify-between items-center gap-2"><div className="font-bold truncate">{c.title}</div><span className={`text-[10px] font-black px-2.5 py-1 rounded-full whitespace-nowrap ${c.status === 'ACTIVE' ? 'bg-green-500/15 text-green-600' : 'bg-black/5 dark:bg-white/10'}`}>{c.status.replace(/_/g, ' ')}</span></div>
-          <div className="flex gap-1 mt-2.5">{flow.map((s) => <div key={s} className={`h-1.5 flex-1 rounded-full ${flow.indexOf(s) <= flow.indexOf(c.status) ? 'zivv-gradient' : 'bg-black/10 dark:bg-white/10'}`} />)}</div>
-          <div className="grid grid-cols-4 gap-2 mt-3 text-center">
-            <div className="p-2 rounded-2xl bg-black/[.04] dark:bg-white/[.06]"><div className="font-black text-sm">{fmt.money(c.budgetCents)}</div><div className="text-[10px] opacity-50 font-bold">BUDGET</div></div>
-            <div className="p-2 rounded-2xl bg-black/[.04] dark:bg-white/[.06]"><div className="font-black text-sm">{fmt.n(c.impressions)}</div><div className="text-[10px] opacity-50 font-bold">REACH</div></div>
-            <div className="p-2 rounded-2xl bg-black/[.04] dark:bg-white/[.06]"><div className="font-black text-sm">{fmt.n(c.clicks)}</div><div className="text-[10px] opacity-50 font-bold">CLICKS</div></div>
-            <button onClick={() => api.post(`/ads/${c.id}/${c.status === 'ACTIVE' ? 'pause' : 'resume'}`)} className="p-2 rounded-2xl bg-black/[.04] dark:bg-white/[.06] flex items-center justify-center gap-1 text-xs font-bold" aria-label="Pause or resume">
-              {c.status === 'ACTIVE' ? <PauseIcon size={15} /> : <PlayIcon size={14} />}{c.status === 'ACTIVE' ? 'Pause' : 'Start'}
-            </button>
+          <div className="flex items-center gap-2">
+            <span className="w-10 h-10 rounded-2xl zivv-gradient text-white flex items-center justify-center shrink-0"><MegaphoneIcon size={19} /></span>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold truncate">{c.title}</div>
+              <div className="text-xs opacity-50">{fmt.money(c.budgetCents)} · {c.durationDays} {t('ads.days')}</div>
+            </div>
+            <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${statusColor(c.status)}`}>{c.status?.replace('_', ' ')}</span>
+          </div>
+          <div className="flex items-center gap-4 mt-3 text-sm">
+            <span className="flex items-center gap-1.5 opacity-70"><EyeIcon size={16} />{fmt.n(c.impressions)} {t('ads.impr')}</span>
+            <span className="opacity-70 font-semibold">{fmt.n(c.clicks)} {t('ads.clicks')}</span>
+            <div className="flex-1" />
+            {(c.status === 'ACTIVE' || c.status === 'PAUSED') && (
+              <button onClick={() => toggle(c)} className="btn-ghost !py-1.5 text-xs font-bold flex items-center gap-1.5">
+                {c.status === 'ACTIVE' ? <><PauseIcon size={14} />{t('ads.pause')}</> : <><PlayIcon size={14} />{t('ads.resume')}</>}
+              </button>
+            )}
           </div>
         </div>
       ))}
-      {!items.length && <div className="card p-10 text-center"><GaugeIcon size={44} className="mx-auto opacity-30" /><div className="font-bold mt-2">No campaigns yet</div><div className="text-sm opacity-50">Create your first campaign above.</div></div>}
     </div>
   );
 }

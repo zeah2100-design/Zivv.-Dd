@@ -1,137 +1,221 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api, { fmt } from '../lib/api';
-import { Avatar, Verified, AiBadge, ZImg } from '../components/ui';
-import {
-  SearchIcon, MicIcon, CameraIcon, SparklesIcon, PlayIcon, HashIcon, FlameIcon,
-  MusicIcon, ClockIcon, XIcon, TrendingIcon, BagIcon,
-} from '../components/icons';
+import { useLang } from '../lib/i18n';
+import { Avatar, ZImg, Empty } from '../components/ui';
+import { SearchIcon, XIcon, HashIcon, MusicIcon, PlayIcon, SparklesIcon, ClockIcon, UserPlusIcon } from '../components/icons';
 
-const tabs = ['top', 'users', 'reels', 'posts', 'music', 'hashtags', 'store'];
+const TABS = ['top', 'users', 'reels', 'posts', 'music', 'hashtags', 'store'];
 
 export default function Search() {
-  const [sp] = useSearchParams();
-  const [q, setQ] = useState(sp.get('q') || '');
-  const [tab, setTab] = useState('top');
+  const { t } = useLang();
+  const nav = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const q = params.get('q') || '';
+  const tab = params.get('tab') || 'top';
+  const [input, setInput] = useState(q);
   const [res, setRes] = useState(null);
-  const [suggest, setSuggest] = useState(null);
   const [explore, setExplore] = useState(null);
   const [history, setHistory] = useState([]);
   const [aiAnswer, setAiAnswer] = useState('');
-  const [aiMode, setAiMode] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
 
-  useEffect(() => { api.get('/search/explore').then((r) => setExplore(r.data)); api.get('/search/history').then((r) => setHistory(r.data.items)); }, []);
-  useEffect(() => { const v = sp.get('q'); if (v) { setQ(v); run(v); } }, []);
+  useEffect(() => { setInput(q); }, [q]);
 
-  const run = async (query = q, t = tab) => {
-    if (!query.trim()) { setRes(null); return; }
-    const { data } = await api.get('/search', { params: { q: query, tab: t } });
-    setRes(data); setSuggest(null);
+  useEffect(() => {
+    if (q) {
+      api.get('/search', { params: { q, tab } }).then((r) => setRes(r.data)).catch(() => setRes(null));
+    } else {
+      api.get('/search/explore').then((r) => setExplore(r.data)).catch(() => {});
+      api.get('/search/history').then((r) => setHistory(r.data.items || [])).catch(() => {});
+    }
+  }, [q, tab]);
+
+  const submit = (v) => {
+    const val = (v ?? input).trim();
+    if (val) setParams({ q: val });
+    else setParams({});
   };
 
-  const onType = async (v) => {
-    setQ(v);
-    if (v.trim().length > 1) { const { data } = await api.get('/search/suggest', { params: { q: v } }); setSuggest(data); }
-    else setSuggest(null);
+  const askAi = async () => {
+    if (!q || aiLoading) return;
+    setAiLoading(true);
+    try { const r = await api.post('/search/ai', { query: q }); setAiAnswer(r.data.answer || ''); }
+    catch { setAiAnswer(''); } finally { setAiLoading(false); }
   };
 
-  const aiSearch = async () => {
-    if (!q.trim()) return;
-    setAiMode(true);
-    const { data } = await api.post('/search/ai', { query: q });
-    setAiAnswer(data.answer); setRes(data);
-  };
+  const clearHistory = async () => { try { await api.delete('/search/history'); setHistory([]); } catch {} };
+
+  const show = (name) => tab === 'top' || tab === name;
 
   return (
-    <div className="px-3 md:px-0 pt-3 space-y-3">
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-50"><SearchIcon size={18} /></span>
-          <input value={q} onChange={(e) => onType(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && run()} placeholder="Search users, hashtags, reels, music, store…" className="input !pl-10 !rounded-full" />
-          {!!q && <button onClick={() => { setQ(''); setRes(null); }} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50" aria-label="Clear"><XIcon size={16} /></button>}
-        </div>
-        <button className="btn-ghost !px-3 !rounded-full" title="Voice search" aria-label="Voice search"><MicIcon size={19} /></button>
-        <button className="btn-ghost !px-3 !rounded-full" title="Image search" aria-label="Image search"><CameraIcon size={19} /></button>
-        <button onClick={aiSearch} className="btn-primary !px-3.5 !rounded-full" title="AI Search" aria-label="AI Search"><SparklesIcon size={19} /></button>
+    <div className="p-3 md:p-4 space-y-3 max-w-2xl mx-auto">
+      <div className="flex items-center gap-2 bg-black/5 dark:bg-white/10 rounded-full px-4 py-2.5 sticky top-0 z-10 backdrop-blur-xl">
+        <SearchIcon size={19} className="opacity-50 shrink-0" />
+        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()}
+          placeholder={t('search.ph')} className="bg-transparent flex-1 text-[15px] focus:outline-none placeholder:opacity-40" />
+        {!!input && <button onClick={() => { setInput(''); submit(''); }} aria-label="Clear"><XIcon size={17} className="opacity-50" /></button>}
       </div>
 
-      {suggest && q && (
-        <div className="card p-2 float-in">
-          {suggest.users?.map((u) => <button key={u.id} onClick={() => run(u.username)} className="w-full flex items-center gap-2.5 p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-xl"><Avatar user={u} size={32} /><span className="font-semibold text-sm">{u.name}</span><span className="text-xs opacity-50">@{u.username}</span></button>)}
-          {suggest.hashtags?.map((h) => <button key={h} onClick={() => run('#' + h)} className="w-full text-left p-2 text-sm font-bold text-zivv-purple flex items-center gap-1"><HashIcon size={14} />{h}</button>)}
-        </div>
-      )}
-
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-        {tabs.map((t) => <button key={t} onClick={() => { setTab(t); setAiMode(false); run(q, t); }} className={`px-4 py-1.5 rounded-full text-sm font-bold capitalize whitespace-nowrap transition ${tab === t && !aiMode ? 'tab-active' : 'bg-black/5 dark:bg-white/10'}`}>{t}</button>)}
-      </div>
-
-      {aiMode && aiAnswer && <div className="card p-4 flex gap-2.5 items-start"><AiBadge /><p className="text-sm font-medium">{aiAnswer}</p></div>}
-
-      {!res && (
-        <div className="space-y-3">
-          {!!history.length && (
-            <div className="card p-4">
-              <div className="flex justify-between items-center mb-1"><span className="font-black flex items-center gap-2"><ClockIcon size={17} />Recent</span><button onClick={() => { api.delete('/search/history'); setHistory([]); }} className="text-xs text-zivv-pink font-bold">Clear all</button></div>
-              {history.map((h) => <button key={h.id} onClick={() => { setQ(h.query); run(h.query); }} className="flex items-center gap-2 w-full py-2 text-sm opacity-80 hover:opacity-100"><ClockIcon size={15} className="opacity-50" />{h.query}</button>)}
-            </div>
-          )}
-          <div className="card p-4">
-            <div className="font-black mb-2.5 flex items-center gap-2"><FlameIcon size={18} className="text-zivv-pink" />Trending now</div>
-            <div className="flex flex-wrap gap-2">{explore?.trendingHashtags?.map((h) => <button key={h} onClick={() => { setQ('#' + h); run('#' + h); }} className="px-3.5 py-1.5 rounded-full bg-black/5 dark:bg-white/10 text-sm font-bold flex items-center gap-1"><HashIcon size={13} />{h}</button>)}</div>
-          </div>
-          <div className="card p-4">
-            <div className="font-black mb-1 flex items-center gap-2"><TrendingIcon size={18} className="text-zivv-purple" />Trending sounds</div>
-            {explore?.trendingSounds?.map((s) => (
-              <div key={s.id} className="flex items-center gap-3 py-2.5 border-b border-black/5 dark:border-white/5 last:border-0">
-                <div className="w-11 h-11 rounded-xl zivv-gradient flex items-center justify-center text-white shrink-0"><MusicIcon size={20} /></div>
-                <div className="flex-1 min-w-0"><div className="font-bold text-sm truncate">{s.title}</div><div className="text-xs opacity-60">{s.artist} · {fmt.n(s.uses)} uses</div></div>
-                <button className="w-9 h-9 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center" aria-label="Preview"><PlayIcon size={15} /></button>
-              </div>
-            ))}
-          </div>
-          <div className="card p-4">
-            <div className="font-black mb-1">Suggested accounts</div>
-            {explore?.suggestedAccounts?.map((u) => (
-              <div key={u.id} className="flex items-center gap-3 py-2.5 border-b border-black/5 dark:border-white/5 last:border-0">
-                <Avatar user={u} size={44} />
-                <div className="flex-1 min-w-0"><div className="font-bold text-sm flex gap-1 items-center truncate">{u.name} {u.verified && <Verified gold={u.gold} />}</div><div className="text-xs opacity-60 truncate">@{u.username} · {fmt.n(u.followers)} followers</div><div className="text-xs opacity-50 truncate">{u.bio}</div></div>
-                <Link to={`/u/${u.username}`} className="btn-primary !py-1.5 !px-4 text-sm">View</Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {res && (
-        <div className="space-y-2.5">
-          {(res.users || []).map((u) => (
-            <div key={u.id} className="card p-3 flex items-center gap-3">
-              <Avatar user={u} size={50} /><div className="flex-1 min-w-0"><div className="font-bold flex gap-1 items-center">{u.name} {u.verified && <Verified gold={u.gold} />}</div><div className="text-xs opacity-60 truncate">@{u.username} · {u.bio}</div><div className="text-xs opacity-60">{fmt.n(u.followers)} followers</div></div>
-              <Link to={`/u/${u.username}`} className="btn-primary !py-1.5 !px-4 text-sm">Follow</Link>
-            </div>
+      {!!q && (
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          {TABS.map((tb) => (
+            <button key={tb} onClick={() => setParams({ q, tab: tb })}
+              className={`px-4 py-1.5 text-sm font-black rounded-full transition shrink-0 ${tab === tb ? 'tab-active' : 'bg-black/5 dark:bg-white/10 opacity-60'}`}>
+              {t('search.t_' + tb)}
+            </button>
           ))}
-          {(res.reels || []).length > 0 && (
-            <div className="grid grid-cols-3 gap-2">
-              {(res.reels || []).map((r) => (
-                <Link key={r.id} to="/reels" className="card overflow-hidden !rounded-2xl">
-                  <div className="aspect-[3/4] zivv-gradient relative"><ZImg seed={`reel-${r.id}`} w={300} h={400} className="absolute inset-0 w-full h-full object-cover" alt="Reel" />
-                    <span className="absolute bottom-1.5 left-1.5 text-[10px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded-md flex items-center gap-1"><PlayIcon size={9} />{fmt.n(r.playCount)}</span>
-                  </div>
-                </Link>
+        </div>
+      )}
+
+      {!!q && (
+        <button onClick={askAi} className="w-full card p-3 flex items-center gap-2.5 text-start hover:border-zivv-purple/50 transition">
+          <span className="w-9 h-9 rounded-xl zivv-gradient text-white flex items-center justify-center shrink-0"><SparklesIcon size={17} /></span>
+          <span className="flex-1 text-sm font-semibold">{aiLoading ? '…' : aiAnswer || t('search.askAi')}</span>
+        </button>
+      )}
+
+      {!q && (
+        <div className="space-y-4">
+          {history.length > 0 && (
+            <div className="card p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-black">{t('search.recent')}</span>
+                <button onClick={clearHistory} className="text-xs font-bold text-zivv-purple">{t('search.clearAll')}</button>
+              </div>
+              {history.slice(0, 6).map((h) => (
+                <button key={h.id} onClick={() => submit(h.query)} className="flex items-center gap-2.5 w-full py-2 text-start">
+                  <ClockIcon size={17} className="opacity-40" />
+                  <span className="text-sm font-medium truncate">{h.query}</span>
+                </button>
               ))}
             </div>
           )}
-          {(res.posts || []).map((p) => <div key={p.id} className="card p-4 text-sm"><span className="font-bold">@{p.authorId}</span> — {p.text?.slice(0, 140)}</div>)}
-          {(res.music || []).map((s) => <div key={s.id} className="card p-3 flex items-center gap-3"><div className="w-11 h-11 rounded-xl zivv-gradient flex items-center justify-center text-white"><MusicIcon size={20} /></div><div className="flex-1"><div className="font-bold text-sm">{s.title}</div><div className="text-xs opacity-60">{s.artist} · {fmt.n(s.uses)} uses</div></div><button className="btn-ghost text-sm">Use sound</button></div>)}
-          {(res.store || []).map((l) => (
-            <Link key={l.id} to={`/market/${l.id}`} className="card p-3 flex gap-3 items-center">
-              <div className="w-16 h-16 rounded-2xl zivv-gradient relative overflow-hidden shrink-0"><ZImg seed={`listing-${l.id}`} w={200} h={200} className="absolute inset-0 w-full h-full object-cover" alt="" /></div>
-              <div><div className="font-bold text-sm">{l.title}</div><div className="font-black text-zivv-purple">{fmt.money(l.priceCents, l.currency)}</div></div>
-              <BagIcon size={18} className="ml-auto opacity-40" />
-            </Link>
+          {!!explore?.trendingHashtags?.length && (
+            <div className="card p-4">
+              <div className="font-black mb-2">{t('search.trending')}</div>
+              <div className="flex flex-wrap gap-2">
+                {explore.trendingHashtags.map((h) => (
+                  <button key={h} onClick={() => submit('#' + h)} className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 text-sm font-bold text-zivv-purple">
+                    <HashIcon size={14} />{h}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {!!explore?.trendingSounds?.length && (
+            <div className="card p-4">
+              <div className="font-black mb-2">{t('search.sounds')}</div>
+              {explore.trendingSounds.map((s) => (
+                <div key={s.id} className="flex items-center gap-3 py-2">
+                  <span className="w-10 h-10 rounded-xl zivv-gradient text-white flex items-center justify-center shrink-0"><MusicIcon size={18} /></span>
+                  <span className="flex-1 min-w-0"><span className="block font-bold text-sm truncate">{s.title}</span><span className="block text-xs opacity-50">{s.artist} · {fmt.n(s.uses)} {t('search.uses')}</span></span>
+                </div>
+              ))}
+            </div>
+          )}
+          {!!explore?.suggestedAccounts?.length && (
+            <div className="card p-4">
+              <div className="font-black mb-2">{t('search.suggested')}</div>
+              {explore.suggestedAccounts.slice(0, 5).map((u) => (
+                <div key={u.id} className="flex items-center gap-3 py-2">
+                  <button onClick={() => nav(`/u/${u.username}`)}><Avatar user={u} size={42} /></button>
+                  <button onClick={() => nav(`/u/${u.username}`)} className="flex-1 min-w-0 text-start">
+                    <span className="block font-bold text-sm truncate">{u.name}</span>
+                    <span className="block text-xs opacity-50 truncate">@{u.username} · {fmt.n(u.followers)} {t('search.followers')}</span>
+                  </button>
+                  <button onClick={() => nav(`/u/${u.username}`)} className="btn-ghost !py-1.5 text-xs font-bold">{t('search.view')}</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!!q && show('users') && !!res?.users?.length && (
+        <div className="card p-4">
+          <div className="font-black mb-2">{t('search.t_users')}</div>
+          {res.users.map((u) => (
+            <div key={u.id} className="flex items-center gap-3 py-2">
+              <button onClick={() => nav(`/u/${u.username}`)}><Avatar user={u} size={42} /></button>
+              <button onClick={() => nav(`/u/${u.username}`)} className="flex-1 min-w-0 text-start">
+                <span className="block font-bold text-sm truncate">{u.name}</span>
+                <span className="block text-xs opacity-50 truncate">@{u.username}</span>
+              </button>
+              <button onClick={() => api.post(`/users/${u.id}/follow`).catch(() => {})} className="btn-ghost !py-1.5 text-xs font-bold flex items-center gap-1"><UserPlusIcon size={14} />{t('search.follow')}</button>
+            </div>
           ))}
         </div>
+      )}
+
+      {!!q && show('hashtags') && !!res?.hashtags?.length && (
+        <div className="card p-4">
+          <div className="font-black mb-2">{t('search.t_hashtags')}</div>
+          <div className="flex flex-wrap gap-2">
+            {res.hashtags.map((h) => (
+              <button key={h.tag} onClick={() => submit('#' + h.tag)} className="px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 text-sm font-bold text-zivv-purple">
+                #{h.tag} <span className="opacity-50 font-medium">· {fmt.n(h.posts)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!!q && show('reels') && !!res?.reels?.length && (
+        <div>
+          <div className="font-black mb-2 px-1">{t('search.t_reels')}</div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {res.reels.map((r) => (
+              <button key={r.id} onClick={() => nav('/reels')} className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-neutral-800">
+                <ZImg seed={`reel-${r.id}`} w={300} h={400} className="w-full h-full object-cover" alt="" />
+                <span className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                <PlayIcon size={20} className="absolute top-2 start-2 text-white" />
+                <span className="absolute bottom-2 start-2 end-2 text-white text-[11px] font-semibold truncate text-start">{r.caption}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!!q && show('posts') && !!res?.posts?.length && (
+        <div className="card p-4">
+          <div className="font-black mb-2">{t('search.t_posts')}</div>
+          {res.posts.map((p) => (
+            <button key={p.id} onClick={() => nav('/')} className="block w-full text-start py-2 border-b border-black/5 dark:border-white/5 last:border-0">
+              <span className="text-sm line-clamp-2">{p.text}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!!q && show('music') && !!res?.music?.length && (
+        <div className="card p-4">
+          <div className="font-black mb-2">{t('search.t_music')}</div>
+          {res.music.map((s) => (
+            <div key={s.id} className="flex items-center gap-3 py-2">
+              <span className="w-10 h-10 rounded-xl zivv-gradient text-white flex items-center justify-center shrink-0"><MusicIcon size={18} /></span>
+              <span className="flex-1 min-w-0"><span className="block font-bold text-sm truncate">{s.title}</span><span className="block text-xs opacity-50">{s.artist}</span></span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!!q && show('store') && !!res?.store?.length && (
+        <div>
+          <div className="font-black mb-2 px-1">{t('search.t_store')}</div>
+          <div className="grid grid-cols-2 gap-2">
+            {res.store.map((l) => (
+              <button key={l.id} onClick={() => nav(`/market/${l.id}`)} className="card overflow-hidden text-start">
+                <div className="aspect-square zivv-gradient relative"><ZImg seed={`listing-${l.id}`} w={400} h={400} className="w-full h-full object-cover" alt="" /></div>
+                <div className="p-2.5"><div className="font-black text-sm">{fmt.money(l.priceCents, l.currency)}</div><div className="text-xs opacity-60 truncate">{l.title}</div></div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!!q && res && !['users', 'reels', 'posts', 'music', 'hashtags', 'store'].some((k) => res[k]?.length) && (
+        <Empty icon={<SearchIcon size={40} />} title={t('search.noRes')} sub={q} />
       )}
     </div>
   );

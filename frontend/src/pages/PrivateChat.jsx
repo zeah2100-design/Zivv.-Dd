@@ -1,60 +1,78 @@
 import { useState } from 'react';
 import api from '../lib/api';
-import { VaultIcon, LockIcon, ShieldIcon, EyeOffIcon, TimerIcon, FingerprintIcon } from '../components/icons';
+import { useLang } from '../lib/i18n';
+import { VaultIcon, LockIcon, EyeIcon, EyeOffIcon, CheckIcon, ShieldIcon } from '../components/icons';
 
 export default function PrivateChat() {
-  const [unlocked, setUnlocked] = useState(false);
-  const [pw, setPw] = useState('');
-  const [mode, setMode] = useState('unlock');
+  const { t } = useLang();
+  const [pass, setPass] = useState('');
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [unlocked, setUnlocked] = useState(false);
+  const [hasVault, setHasVault] = useState(null);
 
   const setup = async () => {
-    setErr('');
-    try { await api.post('/chat/vault/setup', { password: pw }); setMode('unlock'); setPw(''); setErr('Vault created — enter your password to unlock.'); }
-    catch { setErr('Password must be 6+ characters.'); }
+    if (pass.length < 6 || busy) return;
+    setBusy(true); setErr('');
+    try { await api.post('/chat/vault/setup', { password: pass }); setHasVault(true); setPass(''); }
+    catch { setErr(t('private.err')); } finally { setBusy(false); }
   };
+
   const unlock = async () => {
-    setErr('');
-    try { await api.post('/chat/vault/unlock', { password: pw }); setUnlocked(true); setPw(''); }
-    catch (e) { setErr(e.response?.data?.error === 'no_vault' ? 'No vault yet — create one first.' : 'Wrong password. Attempts are rate-limited.'); }
+    if (!pass || busy) return;
+    setBusy(true); setErr('');
+    try {
+      await api.post('/chat/vault/unlock', { password: pass });
+      setUnlocked(true); setPass('');
+    } catch (e) {
+      if (e.response?.status === 404) setHasVault(false);
+      else if (e.response?.status === 429) setErr(t('private.lockedOut'));
+      else setErr(t('private.badPass'));
+    } finally { setBusy(false); }
   };
 
   if (unlocked) {
     return (
-      <div className="px-3 md:px-0 pt-3 space-y-3">
-        <div className="flex justify-between items-center px-1">
-          <h1 className="text-2xl font-black flex items-center gap-2"><VaultIcon size={24} />Private Chat</h1>
-          <button onClick={() => setUnlocked(false)} className="btn-ghost text-sm flex items-center gap-1.5"><LockIcon size={15} />Lock now</button>
-        </div>
-        <div className="card p-8 text-center">
-          <div className="w-16 h-16 mx-auto rounded-3xl zivv-gradient flex items-center justify-center text-white"><ShieldIcon size={30} /></div>
-          <div className="font-black text-lg mt-3">Vault unlocked</div>
-          <div className="text-sm opacity-60 mt-1">Your private space is open</div>
-          <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-            {[['Auto-lock', TimerIcon], ['Hidden previews', EyeOffIcon], ['E2EE-ready', ShieldIcon]].map(([l, Icon]) => (
-              <div key={l} className="p-3 rounded-2xl bg-black/5 dark:bg-white/10"><Icon size={20} className="mx-auto text-zivv-purple" /><div className="text-[11px] font-bold mt-1">{l}</div></div>
-            ))}
-          </div>
+      <div className="p-4 max-w-2xl mx-auto">
+        <div className="card p-10 text-center">
+          <div className="w-16 h-16 mx-auto rounded-3xl bg-green-500/15 text-green-500 flex items-center justify-center mb-3"><CheckIcon size={30} /></div>
+          <div className="font-black text-xl">{t('private.open')}</div>
+          <div className="text-sm opacity-60 mt-1">{t('private.openSub')}</div>
+          <button onClick={() => setUnlocked(false)} className="btn-ghost mt-4 text-sm font-bold">{t('private.lockAgain')}</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="px-6 pt-12 max-w-sm mx-auto text-center space-y-4">
-      <div className="w-20 h-20 mx-auto rounded-[1.75rem] zivv-gradient flex items-center justify-center text-white shadow-pop"><VaultIcon size={38} /></div>
-      <h1 className="text-2xl font-black">Private Chat</h1>
-      <p className="text-sm opacity-60">Protected by your vault password. Never stored in plain text. Rate-limited with lockouts.</p>
-      <div className="card p-4 space-y-3">
-        <div className="relative">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-50"><LockIcon size={17} /></span>
-          <input value={pw} onChange={(e) => setPw(e.target.value)} type="password" placeholder="Vault password" className="input !pl-10 text-center" onKeyDown={(e) => e.key === 'Enter' && (mode === 'setup' ? setup() : unlock())} />
+    <div className="p-4 max-w-md mx-auto">
+      <div className="card p-6 text-center">
+        <div className="w-16 h-16 mx-auto rounded-3xl zivv-gradient text-white flex items-center justify-center mb-3"><VaultIcon size={30} /></div>
+        <div className="font-black text-xl">{t('private.title')}</div>
+        <div className="text-sm opacity-60 mt-1 mb-5">{t('private.sub')}</div>
+
+        <div className="flex items-center gap-2 bg-black/5 dark:bg-white/10 rounded-2xl px-4 py-1">
+          <LockIcon size={18} className="opacity-50 shrink-0" />
+          <input type={show ? 'text' : 'password'} value={pass} onChange={(e) => setPass(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && (hasVault === false ? setup() : unlock())}
+            placeholder={t('private.passPh')} className="bg-transparent flex-1 py-2.5 text-[15px] focus:outline-none placeholder:opacity-40" />
+          <button onClick={() => setShow(!show)} className="opacity-50" aria-label="Toggle">{show ? <EyeOffIcon size={19} /> : <EyeIcon size={19} />}</button>
         </div>
-        {mode === 'setup'
-          ? <button onClick={setup} className="btn-primary w-full flex items-center justify-center gap-2"><VaultIcon size={17} />Create vault</button>
-          : <button onClick={unlock} className="btn-primary w-full flex items-center justify-center gap-2"><FingerprintIcon size={17} />Unlock</button>}
-        <button onClick={() => setMode(mode === 'setup' ? 'unlock' : 'setup')} className="text-sm text-zivv-purple font-bold">{mode === 'setup' ? 'Have a vault? Unlock' : 'First time? Create vault'}</button>
-        {err && <div className="text-sm font-semibold text-zivv-pink">{err}</div>}
+        {!!err && <div className="text-red-500 text-sm font-bold mt-2">{err}</div>}
+
+        {hasVault === false ? (
+          <button onClick={setup} disabled={pass.length < 6 || busy} className="btn-primary w-full mt-4 disabled:opacity-40">{t('private.create')}</button>
+        ) : (
+          <button onClick={unlock} disabled={!pass || busy} className="btn-primary w-full mt-4 disabled:opacity-40">{t('private.unlock')}</button>
+        )}
+        {hasVault === null && (
+          <button onClick={() => setHasVault(false)} className="text-xs font-bold text-zivv-purple mt-3">{t('private.firstTime')}</button>
+        )}
+
+        <div className="flex items-center justify-center gap-1.5 text-[11px] opacity-50 mt-4">
+          <ShieldIcon size={13} />{t('private.secure')}
+        </div>
       </div>
     </div>
   );

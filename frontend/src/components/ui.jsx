@@ -67,6 +67,15 @@ export function SkeletonPost() {
   return <div className="card p-4 space-y-3"><div className="flex gap-3 items-center"><div className="skeleton w-11 h-11 !rounded-full" /><div className="skeleton h-4 w-40" /></div><div className="skeleton h-56" /><div className="skeleton h-4 w-2/3" /></div>;
 }
 
+export function ImageModal({ src, onClose }) {
+  if (!src) return null;
+  return (
+    <div className="fixed inset-0 z-[70] bg-black/92 flex items-center justify-center p-4 fade-in" onClick={onClose}>
+      <img src={src} alt="" className="max-w-full max-h-full rounded-2xl object-contain shadow-2xl" />
+    </div>
+  );
+}
+
 export function Empty({ icon, title, sub }) {
   return <div className="card p-10 text-center float-in"><div className="flex justify-center mb-3 text-neutral-400">{icon}</div><div className="font-bold text-lg">{title}</div><div className="text-sm opacity-60 mt-1">{sub}</div></div>;
 }

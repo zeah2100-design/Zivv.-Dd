@@ -1,8 +1,8 @@
 // ZIVV SVG icon set — professional line icons (no emoji in UI).
-function Svg({ size = 22, filled = false, sw = 1.9, className = '', children }) {
+function Svg({ size = 22, filled = false, sw = 1.9, strokeWidth, className = '', children }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'}
-      stroke={filled ? 'none' : 'currentColor'} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"
+      stroke={filled ? 'none' : 'currentColor'} strokeWidth={strokeWidth ?? sw} strokeLinecap="round" strokeLinejoin="round"
       className={`shrink-0 ${className}`} aria-hidden="true">{children}</svg>
   );
 }
@@ -165,3 +165,15 @@ export const LogOutIcon = (p) => (<Svg {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2
 export const PowerIcon = (p) => (<Svg {...p}><path d="M12 3v8" /><path d="M6.3 6.3a8 8 0 1 0 11.4 0" /></Svg>);
 export const StarIcon = (p) => (<Svg {...p}><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.3L12 17l-5.7 3.2 1.2-6.3L2.8 9.5l6.4-.8L12 2.8z" /></Svg>);
 export const IdCardIcon = (p) => (<Svg {...p}><rect x="3" y="5" width="18" height="14" rx="2.5" /><circle cx="8.5" cy="11" r="2" /><path d="M5.5 16.5a3.5 3.5 0 0 1 6 0M14 9.5h5M14 13h5" /></Svg>);
+// Aliases + additions for the 2026 redesign
+export const LikeIcon = (p) => (p.filled ? HeartFilledIcon(p) : HeartIcon(p));
+export const EarthIcon = GlobeIcon;
+export const MuteIcon = VolumeXIcon;
+export const BackIcon = ArrowLeftIcon;
+export const SmileIcon = (p) => (<Svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0" /><path d="M9 9.5h.01M15 9.5h.01" /></Svg>);
+export const VerifyIcon = ({ size = 18, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={`shrink-0 ${className}`} aria-hidden="true">
+    <circle cx="12" cy="12" r="10" fill="#1d9bf0" />
+    <path d="M8 12.5l2.7 2.7L16.5 9" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);

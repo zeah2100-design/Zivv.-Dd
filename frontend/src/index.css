@@ -4,7 +4,8 @@
 
 :root { color-scheme: light dark; }
 html, body, #root { height: 100%; }
-body { @apply bg-neutral-100 text-neutral-900 dark:bg-ink-950 dark:text-neutral-100 antialiased; font-family: 'Inter', 'Cairo', system-ui, 'Segoe UI', Roboto, Arial, sans-serif; }
+body { @apply text-neutral-900 dark:text-neutral-100 antialiased; font-family: 'Inter', 'Cairo', system-ui, 'Segoe UI', Roboto, Arial, sans-serif; background: #f0f2f5; }
+.dark body { background: #000; }
 
 .zivv-gradient { background: linear-gradient(135deg, #FF9A3D 0%, #FFD23D 18%, #FF4D8D 42%, #C724B1 62%, #7B2FF7 80%, #2FB7FF 100%); }
 .zivv-gradient-text { background: linear-gradient(135deg, #FF9A3D, #FF4D8D 40%, #7B2FF7 70%, #2FB7FF); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -25,6 +26,34 @@ body { @apply bg-neutral-100 text-neutral-900 dark:bg-ink-950 dark:text-neutral-
 
 .reel-snap { scroll-snap-type: y mandatory; }
 .reel-snap > * { scroll-snap-align: start; }
+
+/* ---- 2026 redesign utilities ---- */
+.story-ring { background: conic-gradient(from 210deg, #FF9A3D, #FFD23D, #FF4D8D, #C724B1, #7B2FF7, #2FB7FF, #FF9A3D); }
+.story-card { background: linear-gradient(160deg, #2b1055 0%, #7597de 100%); }
+.chat-bg { background-image: radial-gradient(rgba(123,47,247,.07) 1px, transparent 1px); background-size: 18px 18px; }
+
+@keyframes drawer-in { from { transform: translateX(-100%); } to { transform: none; } }
+.drawer-in { animation: drawer-in .25s ease both; }
+@keyframes drawer-in-rtl { from { transform: translateX(100%); } to { transform: none; } }
+.drawer-in-rtl { animation: drawer-in-rtl .25s ease both; }
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fade-in .2s ease both; }
+
+@keyframes slide-up { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+.slide-up { animation: slide-up .28s ease both; }
+
+@keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.45); } 100% { transform: scale(1); } }
+.pop { animation: pop .45s ease; }
+
+@keyframes heart-burst { 0% { opacity: 1; transform: scale(.4); } 100% { opacity: 0; transform: scale(2.2) translateY(-10px); } }
+.heart-burst { animation: heart-burst .45s ease both; font-size: 22px; line-height: 1; }
+
+@keyframes typing-bounce { 0%, 60%, 100% { transform: none; opacity: .4; } 30% { transform: translateY(-5px); opacity: 1; } }
+.typing-dot { animation: typing-bounce 1.1s infinite; }
+
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: spin-slow 6s linear infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .01ms !important; transition-duration: .01ms !important; }

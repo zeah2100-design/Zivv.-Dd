@@ -1,95 +1,145 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api, { fmt } from '../lib/api';
+import { useZivv } from '../lib/store';
+import { useLang } from '../lib/i18n';
 import { Avatar, ZImg } from '../components/ui';
-import {
-  HeartIcon, HeartFilledIcon, CommentIcon, ShareIcon, BookmarkIcon, BookmarkFilledIcon,
-  MusicIcon, DiscIcon, PlusIcon, PlayIcon, CameraIcon, HashIcon,
-} from '../components/icons';
+import PageLoader from '../components/PageLoader';
+import { LikeButton } from './Feed';
+import { CommentIcon, ShareIcon, MusicIcon, PlusIcon, VerifyIcon, PlayIcon } from '../components/icons';
 
-export default function Reels() {
-  const [items, setItems] = useState([]);
-  const [idx, setIdx] = useState(0);
-  const [playing, setPlaying] = useState(true);
-  const [liked, setLiked] = useState({});
-  const [saved, setSaved] = useState({});
-  const [following, setFollowing] = useState({});
-  const ref = useRef(null);
+function ReelItem({ reel, active }) {
+  const { user } = useZivv();
+  const { t } = useLang();
   const nav = useNavigate();
-
-  useEffect(() => { api.get('/reels').then((r) => setItems(r.data.items)); }, []);
+  const [showC, setShowC] = useState(false);
+  const [local, setLocal] = useState([]);
+  const [cText, setCText] = useState('');
+  const [shares, setShares] = useState(reel.shareCount || 0);
+  const [progress, setProgress] = useState(8);
 
   useEffect(() => {
-    const el = ref.current; if (!el) return;
-    const onScroll = () => { const i = Math.round(el.scrollTop / el.clientHeight); setIdx(i); setPlaying(true); };
-    el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
-  }, []);
+    if (!active) return;
+    setProgress(8);
+    const t0 = Date.now();
+    const iv = setInterval(() => {
+      const p = 8 + ((Date.now() - t0) / ((reel.durationSec || 20) * 1000)) * 92;
+      setProgress(p >= 100 ? 8 : p);
+    }, 300);
+    return () => clearInterval(iv);
+  }, [active, reel.id]);
+
+  const share = async () => {
+    setShares((v) => v + 1);
+    try {
+      if (navigator.share) await navigator.share({ title: 'ZIVV Reel', text: reel.caption, url: location.href });
+      else await navigator.clipboard.writeText(location.href);
+    } catch {}
+  };
 
   return (
-    <div className="relative">
-      <div className="md:hidden absolute top-3 left-0 right-0 z-10 flex items-center justify-between px-4 text-white pointer-events-none">
-        <span className="font-black text-lg drop-shadow">Reels</span>
-        <button onClick={() => nav('/create')} className="pointer-events-auto p-2" aria-label="Create"><CameraIcon size={24} /></button>
+    <div className="relative h-[calc(100dvh-108px)] md:h-[calc(100vh-40px)] w-full snap-start snap-always bg-black md:rounded-3xl overflow-hidden select-none">
+      <div className="absolute inset-0">
+        <ZImg seed={`reel-${reel.id}`} w={540} h={960} className="w-full h-full object-cover" alt="" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/85" />
       </div>
-      <div ref={ref} className="reel-snap h-[calc(100dvh-129px)] md:h-[calc(100dvh-48px)] overflow-y-auto no-scrollbar md:rounded-3xl">
-        {items.map((reel, i) => {
-          const active = i === idx;
-          return (
-            <div key={reel.id} className="relative h-full w-full bg-black md:rounded-3xl overflow-hidden shrink-0" onClick={() => active && setPlaying(!playing)}>
-              <div className="absolute inset-0 zivv-gradient" />
-              <ZImg seed={`reel-${reel.id}`} w={540} h={960} className="absolute inset-0 w-full h-full object-cover" alt="Reel" />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70" />
-              {active && !playing && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="w-20 h-20 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white pop-in"><PlayIcon size={34} className="ml-1" /></span>
-                </div>
-              )}
+      {!active && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="w-16 h-16 rounded-full bg-black/55 backdrop-blur flex items-center justify-center text-white"><PlayIcon size={28} className="ms-1" /></span>
+        </div>
+      )}
+      <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20 z-10"><div className="h-full zivv-gradient" style={{ width: `${progress}%` }} /></div>
 
-              {/* right action stack */}
-              <div className="absolute right-2.5 bottom-28 flex flex-col gap-5 items-center text-white" onClick={(e) => e.stopPropagation()}>
-                <span className="relative">
-                  <Avatar user={reel.author} size={46} />
-                  <button onClick={() => setFollowing({ ...following, [reel.id]: !following[reel.id] })} aria-label="Follow"
-                    className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full flex items-center justify-center border-2 border-black transition ${following[reel.id] ? 'bg-white text-black' : 'zivv-gradient text-white'}`}>
-                    {following[reel.id] ? <span className="text-sm font-black">✓</span> : <PlusIcon size={13} />}
-                  </button>
-                </span>
-                <button onClick={() => { setLiked({ ...liked, [reel.id]: !liked[reel.id] }); api.post(`/reels/${reel.id}/like`).catch(() => {}); }} className="flex flex-col items-center gap-0.5 active:scale-90 transition" aria-label="Like">
-                  <span key={String(!!liked[reel.id])} className={liked[reel.id] ? 'pop-in' : ''}>{liked[reel.id] ? <HeartFilledIcon size={30} className="text-rose-500 drop-shadow" /> : <HeartIcon size={30} className="drop-shadow" />}</span>
-                  <span className="text-[11px] font-bold drop-shadow">{fmt.n(reel.likeCount + (liked[reel.id] ? 1 : 0))}</span>
-                </button>
-                <button className="flex flex-col items-center gap-0.5 active:scale-90 transition" aria-label="Comments"><CommentIcon size={29} className="drop-shadow" /><span className="text-[11px] font-bold drop-shadow">{fmt.n(reel.commentCount)}</span></button>
-                <button className="flex flex-col items-center gap-0.5 active:scale-90 transition" aria-label="Share"><ShareIcon size={29} className="drop-shadow" /><span className="text-[11px] font-bold drop-shadow">{fmt.n(reel.shareCount)}</span></button>
-                <button onClick={() => setSaved({ ...saved, [reel.id]: !saved[reel.id] })} className="flex flex-col items-center gap-0.5 active:scale-90 transition" aria-label="Save">
-                  {saved[reel.id] ? <BookmarkFilledIcon size={28} className="text-amber-400 drop-shadow" /> : <BookmarkIcon size={28} className="drop-shadow" />}
-                  <span className="text-[11px] font-bold drop-shadow">Save</span>
-                </button>
-                <span className="mt-1 spin-slow drop-shadow"><DiscIcon size={32} /></span>
-              </div>
-
-              {/* bottom info */}
-              <div className="absolute left-0 right-16 bottom-0 p-4 pt-10 text-white" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold drop-shadow">@{reel.author?.username}</span>
-                  <button onClick={() => setFollowing({ ...following, [reel.id]: !following[reel.id] })} className={`text-xs font-bold rounded-full px-3.5 py-1.5 border transition ${following[reel.id] ? 'bg-white/20 border-transparent' : 'border-white/70'}`}>
-                    {following[reel.id] ? 'Following' : 'Follow'}
-                  </button>
-                </div>
-                <p className="mt-2 text-sm drop-shadow line-clamp-2">{reel.caption}</p>
-                <div className="flex gap-2 mt-1.5 flex-wrap">{reel.hashtags?.map((h) => <span key={h} className="text-[13px] font-bold drop-shadow flex items-center"><HashIcon size={12} />{h}</span>)}</div>
-                <Link to={`/search?q=${encodeURIComponent(reel.sound?.title || '')}`} className="mt-2.5 inline-flex items-center gap-2 text-xs bg-white/15 backdrop-blur rounded-full pl-2 pr-3 py-1.5 max-w-full">
-                  <MusicIcon size={14} className="shrink-0" /><span className="truncate">{reel.sound?.title} · {reel.sound?.artist}</span>
-                </Link>
-              </div>
-              <div className="absolute top-3 left-3 text-[11px] font-bold bg-black/55 backdrop-blur text-white px-2.5 py-1 rounded-full">0:{String(reel.durationSec).padStart(2, '0')} · {fmt.n(reel.playCount)} views</div>
-              {/* progress */}
-              <div className="absolute bottom-0 inset-x-0 h-[3px] bg-white/20"><div className={`h-full bg-white rounded-full ${active && playing ? 'story-fill' : ''}`} style={{ animationDuration: `${reel.durationSec}s` }} /></div>
-            </div>
-          );
-        })}
-        {!items.length && <div className="h-full flex items-center justify-center text-white/60 bg-neutral-900 md:rounded-3xl">Loading reels…</div>}
+      {/* Right action rail (TikTok-style) */}
+      <div className="absolute bottom-24 end-2 flex flex-col items-center gap-4 text-white z-10">
+        <button onClick={() => nav(`/u/${reel.author?.username}`)} className="relative mb-1">
+          <Avatar user={reel.author} size={46} />
+          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-zivv-pink flex items-center justify-center"><PlusIcon size={13} /></span>
+        </button>
+        <div className="flex flex-col items-center -mb-1 [&_button]:!text-white [&_button]:!opacity-100">
+          <LikeButton targetType="reel" targetId={reel.id} count={0} />
+          <span className="text-[11px] font-bold -mt-1">{fmt.n(reel.likeCount || 0)}</span>
+        </div>
+        <button onClick={() => setShowC(!showC)} className="flex flex-col items-center gap-0.5">
+          <CommentIcon size={29} /><span className="text-[11px] font-bold">{fmt.n((reel.commentCount || 0) + local.length)}</span>
+        </button>
+        <button onClick={share} className="flex flex-col items-center gap-0.5">
+          <ShareIcon size={29} /><span className="text-[11px] font-bold">{shares > 0 ? fmt.n(shares) : t('reels.share')}</span>
+        </button>
+        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/40 animate-spin-slow">
+          <Avatar user={reel.author} size={40} />
+        </div>
       </div>
+
+      {/* Caption */}
+      <div className="absolute bottom-5 start-3 end-20 text-white space-y-1.5 z-10">
+        <button onClick={() => nav(`/u/${reel.author?.username}`)} className="font-black text-[16px] flex items-center gap-1">
+          @{reel.author?.username}{reel.author?.verified && <VerifyIcon size={15} />}
+        </button>
+        {reel.caption && <p className="text-sm leading-snug line-clamp-2">{reel.caption}</p>}
+        {!!reel.hashtags?.length && (
+          <div className="flex flex-wrap gap-x-2">
+            {reel.hashtags.map((h) => <Link key={h} to={`/search?q=${encodeURIComponent('#' + h)}`} className="text-[13px] font-bold text-white">#{h}</Link>)}
+          </div>
+        )}
+        {reel.sound && (
+          <div className="flex items-center gap-1.5 text-[13px] opacity-90">
+            <MusicIcon size={14} className="animate-spin-slow shrink-0" />
+            <span className="truncate">{reel.sound.title} · {reel.sound.artist}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Comments sheet */}
+      {showC && (
+        <div className="absolute inset-x-0 bottom-0 top-1/4 bg-white dark:bg-neutral-950 rounded-t-3xl slide-up flex flex-col z-20" onClick={(e) => e.stopPropagation()}>
+          <div className="p-3 text-center font-black text-sm border-b border-black/5 dark:border-white/10">{t('reels.comments', fmt.n((reel.commentCount || 0) + local.length))}</div>
+          <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+            {local.map((c) => (
+              <div key={c.id} className="flex gap-2 items-start">
+                <Avatar user={c.author} size={32} />
+                <div className="text-sm"><span className="font-bold text-[13px] block">{c.author?.name}</span>{c.text}</div>
+              </div>
+            ))}
+            {local.length === 0 && <div className="text-center text-sm opacity-50 py-6">{t('reels.noComments')}</div>}
+          </div>
+          <div className="p-3 border-t border-black/5 dark:border-white/10 flex items-center gap-2">
+            <input value={cText} onChange={(e) => setCText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && cText.trim() && (setLocal((l) => [...l, { id: Date.now(), text: cText.trim(), author: user }]), setCText(''))}
+              placeholder={t('reels.addComment')} className="input !py-2 text-sm" />
+            <button onClick={() => { if (cText.trim()) { setLocal((l) => [...l, { id: Date.now(), text: cText.trim(), author: user }]); setCText(''); } }}
+              className="text-zivv-pink font-black text-sm px-2">{t('reels.send')}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Reels() {
+  const { t } = useLang();
+  const [reels, setReels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [active, setActive] = useState(0);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    api.get('/reels').then((r) => setReels(r.data.items || [])).catch(() => setReels([])).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const onScroll = () => setActive(Math.round(el.scrollTop / el.clientHeight));
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [loading]);
+
+  if (loading) return <PageLoader />;
+  if (!reels.length) return <div className="card p-10 m-4 text-center"><div className="text-5xl mb-3">🎬</div><div className="font-black">{t('reels.empty')}</div></div>;
+
+  return (
+    <div ref={wrapRef} className="h-[calc(100dvh-108px)] md:h-auto md:max-h-[calc(100vh-40px)] overflow-y-auto snap-y snap-mandatory no-scrollbar md:p-4 md:space-y-4">
+      {reels.map((r, i) => <ReelItem key={r.id} reel={r} active={i === active} />)}
     </div>
   );
 }

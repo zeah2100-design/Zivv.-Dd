@@ -7,7 +7,6 @@ export const useZivv = () => useContext(Ctx);
 export function ZivvProvider({ children }) {
   const [user, setUser] = useState(null);
   const [theme, setTheme] = useState(localStorage.getItem('zivv_theme') || 'dark');
-  const [lang, setLang] = useState(localStorage.getItem('zivv_lang') || 'en');
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -36,5 +35,5 @@ export function ZivvProvider({ children }) {
   };
   const logout = () => { localStorage.removeItem('zivv_access'); location.href = '/login'; };
 
-  return <Ctx.Provider value={{ user, setUser, theme, setTheme, lang, setLang, login, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, setUser, theme, setTheme, login, logout }}>{children}</Ctx.Provider>;
 }
