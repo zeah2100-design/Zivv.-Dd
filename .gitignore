@@ -45,3 +45,4 @@ tmp/
 
 # Prisma
 prisma/migrations/dev/
+.vercel

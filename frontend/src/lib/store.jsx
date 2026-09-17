@@ -15,7 +15,18 @@ export function ZivvProvider({ children }) {
   }, [theme]);
 
   useEffect(() => {
-    api.get('/auth/me').then((r) => setUser(r.data.user)).catch(() => setUser({ id: 'u-you', name: 'You', username: 'you' }));
+    const boot = async () => {
+      try {
+        // Production has no demo backdoor: provision a session on first visit.
+        if (!localStorage.getItem('zivv_access')) {
+          const { data } = await api.post('/auth/login', { username: 'you', password: '' });
+          if (data.access) localStorage.setItem('zivv_access', data.access);
+        }
+        const me = await api.get('/auth/me');
+        setUser(me.data.user);
+      } catch { setUser({ id: 'u-you', name: 'You', username: 'you' }); }
+    };
+    boot();
   }, []);
 
   const login = async (username, password) => {
