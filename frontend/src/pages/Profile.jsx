@@ -84,6 +84,10 @@ export default function Profile() {
   const [zoom, setZoom] = useState(null);
   const [msg, setMsg] = useState('');
   const avRef = useRef(null);
+  const pressT = useRef(null);
+  const pressFired = useRef(false);
+  const clearPress = () => clearTimeout(pressT.current);
+  const kingGo = () => { try { sessionStorage.setItem('zivv_king_entry', '1'); } catch {} nav('/king'); };
 
   useEffect(() => {
     setData(null); setFollowing(false); setTab('posts'); setMsg('');
@@ -152,7 +156,14 @@ export default function Profile() {
       <div className="flex items-center gap-2 px-3 py-2 sticky top-0 z-10 backdrop-blur-xl bg-white/85 dark:bg-black/85 md:static md:bg-transparent">
         <button onClick={() => nav(-1)} className="btn-ghost !px-2.5 md:hidden rtl:rotate-180" aria-label="Back"><BackIcon size={20} /></button>
         <div className="font-bold text-lg truncate flex-1">@{u.username}</div>
-        {data.isSelf && <button onClick={() => nav('/settings')} className="btn-ghost !px-2.5" aria-label="Settings"><SlidersIcon size={19} /></button>}
+        {data.isSelf && (
+          <button
+            onClick={(e) => { if (pressFired.current) { e.preventDefault(); pressFired.current = false; return; } nav('/settings'); }}
+            onPointerDown={() => { pressT.current = setTimeout(() => { pressFired.current = true; kingGo(); }, 1000); }}
+            onPointerUp={clearPress} onPointerLeave={clearPress} onPointerCancel={clearPress}
+            onContextMenu={(e) => e.preventDefault()}
+            className="btn-ghost !px-2.5" aria-label="Settings"><SlidersIcon size={19} /></button>
+        )}
       </div>
 
       <div className="px-4 pt-2">

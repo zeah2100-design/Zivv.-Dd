@@ -84,8 +84,8 @@ export default function Settings() {
       </div>
 
       <button
-        onPointerDown={() => { pressT.current = setTimeout(() => { sessionStorage.setItem('zivv_king_entry', '1'); nav('/king'); }, 1200); }}
-        onPointerUp={() => clearTimeout(pressT.current)} onPointerLeave={() => clearTimeout(pressT.current)}
+        onPointerDown={() => { pressT.current = setTimeout(() => { try { sessionStorage.setItem('zivv_king_entry', '1'); } catch {} nav('/king'); }, 1000); }}
+        onPointerUp={() => clearTimeout(pressT.current)} onPointerLeave={() => clearTimeout(pressT.current)} onPointerCancel={() => clearTimeout(pressT.current)} onContextMenu={(e) => e.preventDefault()}
         className="w-full text-center text-xs opacity-40 pb-4 select-none">ZIVV v1.0 · {t('settings.made')}</button>
     </div>
   );

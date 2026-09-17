@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Logo, Avatar } from './ui';
 import { useZivv } from '../lib/store';
@@ -68,9 +68,16 @@ function LangSwitch({ compact }) {
   );
 }
 
-function NavItem({ to, label, Icon, badge, count, hot, gold, onClick }) {
+function NavItem({ to, label, Icon, badge, count, hot, gold, onClick, onLongPress }) {
+  const tRef = useRef(null);
+  const fired = useRef(false);
+  const clear = () => clearTimeout(tRef.current);
   return (
-    <NavLink to={to} onClick={onClick}
+    <NavLink to={to}
+      onClick={(e) => { if (fired.current) { e.preventDefault(); fired.current = false; return; } onClick?.(e); }}
+      onPointerDown={onLongPress ? () => { tRef.current = setTimeout(() => { fired.current = true; onLongPress(); }, 1000); } : undefined}
+      onPointerUp={clear} onPointerLeave={clear} onPointerCancel={clear}
+      onContextMenu={onLongPress ? (e) => e.preventDefault() : undefined}
       className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-xl text-[15px] transition hover:bg-black/5 dark:hover:bg-white/10 ${isActive ? 'bg-zivv-purple/10 text-zivv-purple font-bold' : 'font-medium'}`}>
       <span className="relative shrink-0">
         <Icon size={22} />
@@ -95,6 +102,7 @@ export default function Layout() {
   }, []);
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+  const kingGo = () => { try { sessionStorage.setItem('zivv_king_entry', '1'); } catch {} setDrawer(false); nav('/king'); };
 
   return (
     <div className="min-h-full max-w-[1200px] mx-auto md:flex md:justify-center">
@@ -104,7 +112,7 @@ export default function Layout() {
         {groups(t, user?.username).map((g) => (
           <div key={g.label} className="mb-1">
             <div className="px-3 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wider opacity-40">{g.label}</div>
-            {g.items.map((it) => <NavItem key={it.to} {...it} count={unread} />)}
+            {g.items.map((it) => <NavItem key={it.to} {...it} count={unread} onLongPress={it.to === '/settings' ? kingGo : undefined} />)}
           </div>
         ))}
         <div className="mt-auto pt-3 space-y-1">
@@ -165,7 +173,7 @@ export default function Layout() {
               {groups(t, user?.username).map((g) => (
                 <div key={g.label} className="mb-1">
                   <div className="px-3 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wider opacity-40">{g.label}</div>
-                  {g.items.map((it) => <NavItem key={it.to} {...it} count={unread} onClick={() => setDrawer(false)} />)}
+                  {g.items.map((it) => <NavItem key={it.to} {...it} count={unread} onClick={() => setDrawer(false)} onLongPress={it.to === '/settings' ? kingGo : undefined} />)}
                 </div>
               ))}
             </div>
