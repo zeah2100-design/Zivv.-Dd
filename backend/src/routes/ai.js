@@ -136,7 +136,7 @@ router.post('/agent/execute', requireAuth, async (req, res) => {
     result = { published: id };
   }
   if (tool === 'follow' && input?.username) {
-    const upd = await db.q('UPDATE users SET followers=followers+1 WHERE username=$1 RETURNING username', [input.username]);
+    const upd = await db.q('UPDATE users SET followers=followers+1 WHERE LOWER(username)=LOWER($1) RETURNING username', [input.username]);
     if (upd.length) result = { followed: upd[0].username };
   }
   if (tool === 'edit_profile' && input?.bio) {

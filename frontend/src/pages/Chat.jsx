@@ -114,7 +114,7 @@ export function Thread({ convId, peer, online, onBack }) {
           const tmp = { id: 'tmp-' + Date.now(), kind: 'audio', audio, senderId: user?.id, createdAt: new Date().toISOString(), state: 'sending' };
           setMsgs((m) => [...m, tmp]);
           try {
-            const r = await api.post(`/chat/conversations/${convId}/messages`, { audio });
+            const r = await api.post(`/chat/conversations/${convId}/messages`, { audio }, { timeout: 120000 });
             if (r.data?.id) setMsgs((m) => [...m.filter((x) => x.id !== tmp.id), r.data]);
           } catch { setMsgs((m) => m.filter((x) => x.id !== tmp.id)); }
         };

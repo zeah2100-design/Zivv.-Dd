@@ -22,7 +22,7 @@ router.get('/', requireAuth, async (req, res) => {
 router.post('/', requireAuth, async (req, res) => {
   const { caption = '', hashtags = [], mediaUrl = '', durationSec = 0, sound = null } = req.body || {};
   if (!caption && !mediaUrl) return res.status(400).json({ error: 'empty_reel' });
-  if (mediaUrl && mediaUrl.length > 2.5e6) return res.status(413).json({ error: 'media_too_large' });
+  if (mediaUrl && mediaUrl.length > 4.2e6) return res.status(413).json({ error: 'media_too_large' });
   const id = 'r-' + db.uuid().slice(0, 6);
   const rows = await db.q(
     `INSERT INTO reels (id, author_id, caption, hashtags, media_url, sound, duration_sec)

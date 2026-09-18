@@ -33,7 +33,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 
 router.post('/', requireAuth, async (req, res) => {
   const { title, description, priceCents, category, condition, phone, phonePublic, aiDeclared, image } = req.body || {};
-  if (image && image.length > 2.5e6) return res.status(413).json({ error: 'media_too_large' });
+  if (image && image.length > 4.2e6) return res.status(413).json({ error: 'media_too_large' });
   if (!title || !priceCents) return res.status(400).json({ error: 'missing_fields' });
   // Policy: AI-fabricated "genuine product" listings are rejected.
   if (aiDeclared === 'fabricated') return res.status(422).json({ error: 'ai_fabricated_listing_blocked' });

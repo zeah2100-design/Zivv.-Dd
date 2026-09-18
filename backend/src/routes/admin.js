@@ -169,7 +169,7 @@ router.post('/notify', gate, async (req, res) => {
     await db.auditLog(req.user.username, 'notify_all', title);
     return res.json({ sent });
   }
-  const rows = await db.q('SELECT id, username FROM users WHERE username=$1 OR id=$1', [to]);
+  const rows = await db.q('SELECT id, username FROM users WHERE LOWER(username)=LOWER($1) OR id=$1', [to]);
   if (!rows.length) return res.status(404).json({ error: 'user_not_found' });
   await db.notify(rows[0].id, { category: 'admin', title: fullTitle, body });
   await db.auditLog(req.user.username, 'notify_user', rows[0].username);

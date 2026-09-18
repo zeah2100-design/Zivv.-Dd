@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api, { fmt } from '../lib/api';
+import { processImage, MAX_UPLOAD_CHARS } from '../lib/image';
 import { useZivv } from '../lib/store';
 import { useLang } from '../lib/i18n';
 import { Avatar, Verified, GoldBadge, Empty, ImageModal } from '../components/ui';
@@ -27,14 +28,15 @@ function EditModal({ user, onClose, onSaved }) {
   const [err, setErr] = useState('');
   const fileRef = useRef(null);
 
-  const pick = (e) => {
+  const pick = async (e) => {
     const f = e.target.files?.[0];
+    e.target.value = '';
     if (!f) return;
-    if (f.size > 2 * 1024 * 1024) { setErr(t('profile.photoBig')); return; }
     setErr('');
-    const rd = new FileReader();
-    rd.onload = () => setAvatar(rd.result);
-    rd.readAsDataURL(f);
+    const dataUrl = await processImage(f);
+    if (!dataUrl) { setErr(t('create.failed')); return; }
+    if (dataUrl.length > MAX_UPLOAD_CHARS) { setErr(t('profile.photoBig')); return; }
+    setAvatar(dataUrl);
   };
   const save = async () => {
     setBusy(true); setErr('');
@@ -83,6 +85,7 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [zoom, setZoom] = useState(null);
   const [msg, setMsg] = useState('');
+  const [loadErr, setLoadErr] = useState(0);
   const avRef = useRef(null);
   const pressT = useRef(null);
   const pressFired = useRef(false);
@@ -90,8 +93,8 @@ export default function Profile() {
   const kingGo = () => { try { sessionStorage.setItem('zivv_king_entry', '1'); } catch {} nav('/king'); };
 
   useEffect(() => {
-    setData(null); setFollowing(false); setTab('posts'); setMsg('');
-    api.get(`/users/${username}`).then((r) => setData(r.data)).catch(() => setData(false));
+    setData(null); setFollowing(false); setTab('posts'); setMsg(''); setLoadErr(0);
+    api.get(`/users/${username}`).then((r) => setData(r.data)).catch((e) => { setLoadErr(e.response?.status || -1); setData(false); });
   }, [username]);
 
   useEffect(() => {
@@ -107,22 +110,22 @@ export default function Profile() {
     try { await api.post(`/users/${u.id}/follow`); } catch { setFollowing(following); }
   };
 
-  const changeAvatar = (e) => {
+  const changeAvatar = async (e) => {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
-    if (f.size > 2 * 1024 * 1024) { setMsg(t('profile.photoBig')); return; }
-    const rd = new FileReader();
-    rd.onload = async () => {
+    const dataUrl = await processImage(f);
+    if (!dataUrl) { setMsg(t('create.failed')); return; }
+    if (dataUrl.length > MAX_UPLOAD_CHARS) { setMsg(t('profile.photoBig')); return; }
+    {
       try {
-        const r = await api.patch('/users/me', { avatar: rd.result });
+        const r = await api.patch('/users/me', { avatar: dataUrl }, { timeout: 120000 });
         setData((d) => ({ ...d, user: r.data.user }));
         refreshUser();
         setMsg(t('profile.saved'));
       } catch { setMsg(t('create.failed')); }
     };
-    rd.readAsDataURL(f);
-  };
+    }
 
   const onSaved = (u) => {
     setData((d) => ({ ...d, user: u }));
@@ -132,7 +135,17 @@ export default function Profile() {
   };
 
   if (data === null) return <PageLoader />;
-  if (!data?.user) return <div className="p-10 text-center font-bold">{t('profile.notFound')}</div>;
+  if (!data?.user) {
+    if (loadErr && loadErr !== 404) {
+      return (
+        <div className="p-10 text-center space-y-3">
+          <div className="font-bold">{t('profile.loadFailed')}</div>
+          <button onClick={() => { setData(null); setLoadErr(0); api.get(`/users/${username}`).then((r) => setData(r.data)).catch((e) => { setLoadErr(e.response?.status || -1); setData(false); }); }} className="btn-primary">{t('profile.retry')}</button>
+        </div>
+      );
+    }
+    return <div className="p-10 text-center font-bold">@{username} — {t('profile.notFound')}</div>;
+  }
   const u = data.user;
   const posts = (data.posts || []).map((p) => ({ ...p, author: u }));
   const written = posts.filter((p) => !p.type || p.type === 'TEXT');

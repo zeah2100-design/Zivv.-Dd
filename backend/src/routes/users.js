@@ -3,7 +3,7 @@ const db = require('../lib/db');
 const { requireAuth } = require('../middleware/auth');
 
 router.get('/:username', requireAuth, async (req, res) => {
-  const rows = await db.q('SELECT * FROM users WHERE username=$1', [req.params.username]);
+  const rows = await db.q('SELECT * FROM users WHERE LOWER(username)=LOWER($1)', [req.params.username]);
   const u = db.userRow(rows[0]);
   if (!u || u.banned) return res.status(404).json({ error: 'not_found' });
   const [posts, reels, listings] = await Promise.all([
@@ -31,7 +31,7 @@ router.patch('/me', requireAuth, async (req, res) => {
   const u = db.userRow(rows[0]);
   if (!u) return res.status(404).json({ error: 'not_found' });
   const { name, bio, website, language, theme, avatar } = req.body || {};
-  if (avatar && avatar.length > 2.5e6) return res.status(413).json({ error: 'media_too_large' });
+  if (avatar && avatar.length > 4.2e6) return res.status(413).json({ error: 'media_too_large' });
   const sets = [], vals = [];
   const set = (col, v) => { vals.push(v); sets.push(`${col}=$${vals.length}`); };
   if (name) set('name', name);

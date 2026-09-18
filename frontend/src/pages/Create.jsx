@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../lib/api';
+import { processImage, MAX_UPLOAD_CHARS } from '../lib/image';
 import { useZivv } from '../lib/store';
 import { useLang } from '../lib/i18n';
 import { Avatar } from '../components/ui';
@@ -40,24 +41,26 @@ export default function Create() {
 
   const max = user?.gold ? 5000 : 2000;
 
-  const pickFile = (e) => {
+  const pickFile = async (e) => {
     const f = e.target.files?.[0];
+    e.target.value = '';
     if (!f) return;
-    if (f.size > 2 * 1024 * 1024) { setErr(t('create.tooBig')); return; }
     setErr('');
-    const rd = new FileReader();
-    rd.onload = () => { setMediaUrl(rd.result); setPreview(rd.result); };
-    rd.readAsDataURL(f);
+    const dataUrl = await processImage(f);
+    if (!dataUrl) { setErr(t('create.failed')); return; }
+    if (dataUrl.length > MAX_UPLOAD_CHARS) { setErr(t('create.tooBig')); return; }
+    setMediaUrl(dataUrl); setPreview(dataUrl);
   };
 
-  const pickListingImg = (e) => {
+  const pickListingImg = async (e) => {
     const f = e.target.files?.[0];
+    e.target.value = '';
     if (!f) return;
-    if (f.size > 2 * 1024 * 1024) { setErr(t('create.tooBig')); return; }
     setErr('');
-    const rd = new FileReader();
-    rd.onload = () => setLimg(rd.result);
-    rd.readAsDataURL(f);
+    const dataUrl = await processImage(f);
+    if (!dataUrl) { setErr(t('create.failed')); return; }
+    if (dataUrl.length > MAX_UPLOAD_CHARS) { setErr(t('create.tooBig')); return; }
+    setLimg(dataUrl);
   };
 
   const detectDuration = (url, isVideo) => {
@@ -81,20 +84,20 @@ export default function Create() {
         setTimeout(() => nav('/'), 900);
       } else if (kind === 'image') {
         if (!mediaUrl) { setErr(t('create.needMedia')); return; }
-        await api.post('/feed', { type: 'IMAGE', text, hashtags, mediaUrl });
+        await api.post('/feed', { type: 'IMAGE', text, hashtags, mediaUrl }, { timeout: 120000 });
         afterMedia('/');
       } else if (kind === 'short') {
         if (!mediaUrl) { setErr(t('create.needMedia')); return; }
         if (duration > 60) { setErr(t('create.tooLong')); return; }
-        await api.post('/reels', { caption: text, hashtags, mediaUrl, durationSec: duration });
+        await api.post('/reels', { caption: text, hashtags, mediaUrl, durationSec: duration }, { timeout: 120000 });
         afterMedia('/reels');
       } else if (kind === 'video') {
         if (!mediaUrl) { setErr(t('create.needMedia')); return; }
-        await api.post('/feed', { type: 'VIDEO', text, hashtags, mediaUrl, durationSec: duration });
+        await api.post('/feed', { type: 'VIDEO', text, hashtags, mediaUrl, durationSec: duration }, { timeout: 120000 });
         afterMedia('/');
       } else if (kind === 'song') {
         if (!mediaUrl) { setErr(t('create.needMedia')); return; }
-        await api.post('/feed', { type: 'MUSIC', text, hashtags, mediaUrl, durationSec: duration });
+        await api.post('/feed', { type: 'MUSIC', text, hashtags, mediaUrl, durationSec: duration }, { timeout: 120000 });
         afterMedia('/');
       }
     } catch (e) {
@@ -107,7 +110,7 @@ export default function Create() {
     if (!title.trim() || !price || busy) return;
     setBusy(true); setErr('');
     try {
-      await api.post('/marketplace', { title, description: desc, priceCents: Math.round(parseFloat(price) * 100), category: cat, condition: cond, image: limg || undefined });
+      await api.post('/marketplace', { title, description: desc, priceCents: Math.round(parseFloat(price) * 100), category: cat, condition: cond, image: limg || undefined }, { timeout: 120000 });
       setTitle(''); setPrice(''); setDesc(''); setLimg('');
       setDone(t('create.listed'));
       setTimeout(() => nav('/market'), 900);
