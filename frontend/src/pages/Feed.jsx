@@ -153,7 +153,10 @@ export function PostCard({ post: p }) {
     } catch {}
   }, [p.id]);
   const share = async () => {
-    setShares((v) => v + 1);
+    try {
+      const r = await api.post(`/feed/${p.id}/share`);
+      setShares(r.data.shareCount ?? shares + 1);
+    } catch { setShares((v) => v + 1); }
     try {
       if (navigator.share) await navigator.share({ title: 'ZIVV', text: p.text?.slice(0, 120), url: location.href });
       else await navigator.clipboard.writeText(location.href);

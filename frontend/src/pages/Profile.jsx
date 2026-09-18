@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api, { fmt } from '../lib/api';
-import { usePostMedia, useListingImage } from '../lib/media';
+import { usePostMedia, useListingImage, useReelMedia } from '../lib/media';
 import { processImage, MAX_UPLOAD_CHARS } from '../lib/image';
 import { useZivv } from '../lib/store';
 import { useLang } from '../lib/i18n';
@@ -58,6 +58,53 @@ function SongRow({ p }) {
         <div className="text-xs opacity-60">{fmt.time(p.createdAt)}</div>
         {media === null ? <div className="h-8 mt-1.5 rounded animate-pulse bg-black/5 dark:bg-white/10" />
           : src ? <audio src={src} controls preload="metadata" className="w-full h-8 mt-1.5" /> : null}
+      </div>
+    </div>
+  );
+}
+
+function ReelThumb({ r, onOpen }) {
+  const src = useReelMedia(r);
+  return (
+    <button onClick={onOpen} className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-neutral-900">
+      {src === null ? <div className="w-full h-full animate-pulse bg-white/5" />
+        : src ? <video src={src} preload="metadata" muted playsInline className="w-full h-full object-cover" />
+        : <Tile icon={<ClapperIcon size={26} />} label={r.caption} />}
+      <span className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+      <span className="absolute bottom-2 start-2 end-2 text-white text-[11px] font-semibold truncate text-start flex items-center gap-1">
+        <PlayIcon size={12} />{fmt.n(r.playCount || 0)}
+      </span>
+    </button>
+  );
+}
+
+function FollowList({ userId, kind, title, empty, onClose }) {
+  const nav = useNavigate();
+  const [items, setItems] = useState(null);
+  useEffect(() => {
+    api.get(`/users/${userId}/${kind}`).then((r) => setItems(r.data.items || [])).catch(() => setItems([]));
+  }, [userId, kind]);
+  return (
+    <div className="fixed inset-0 z-[60] fade-in flex items-end md:items-center justify-center" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="relative card w-full max-w-sm max-h-[70vh] flex flex-col slide-up overflow-hidden">
+        <div className="flex items-center p-4 pb-2">
+          <div className="font-bold text-lg flex-1">{title}</div>
+          <button onClick={onClose} className="w-9 h-9 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center" aria-label="Close"><XIcon size={18} /></button>
+        </div>
+        <div className="overflow-y-auto p-2">
+          {items === null && <PageLoader />}
+          {items !== null && items.length === 0 && <div className="p-8 text-center text-sm opacity-50">{empty}</div>}
+          {(items || []).map((x) => (
+            <button key={x.id} onClick={() => { onClose(); nav(`/u/${x.username}`); }} className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 text-start">
+              <Avatar user={x} size={44} />
+              <span className="flex-1 min-w-0">
+                <span className="font-bold text-sm truncate block">{x.name}</span>
+                <span className="text-xs opacity-50 truncate block">@{x.username}</span>
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -141,6 +188,7 @@ export default function Profile() {
   const nav = useNavigate();
   const [data, setData] = useState(null);
   const [following, setFollowing] = useState(false);
+  const [flist, setFlist] = useState(null); // 'followers' | 'following' | null
   const [tab, setTab] = useState('posts');
   const [editing, setEditing] = useState(false);
   const [zoom, setZoom] = useState(null);
@@ -154,7 +202,7 @@ export default function Profile() {
 
   useEffect(() => {
     setData(null); setFollowing(false); setTab('posts'); setMsg(''); setLoadErr(0);
-    api.get(`/users/${username}`).then((r) => setData(r.data)).catch((e) => { setLoadErr(e.response?.status || -1); setData(false); });
+    api.get(`/users/${username}`).then((r) => { setData(r.data); setFollowing(!!r.data.isFollowing); }).catch((e) => { setLoadErr(e.response?.status || -1); setData(false); });
   }, [username]);
 
   useEffect(() => {
@@ -166,8 +214,17 @@ export default function Profile() {
   const follow = async () => {
     const u = data?.user;
     if (!u) return;
-    setFollowing(!following);
-    try { await api.post(`/users/${u.id}/follow`); } catch { setFollowing(following); }
+    const next = !following;
+    setFollowing(next);
+    setData((d) => d && { ...d, user: { ...d.user, followers: Math.max(0, (d.user.followers || 0) + (next ? 1 : -1)) } });
+    try {
+      const r = await api.post(`/users/${u.id}/follow`);
+      setFollowing(!!r.data.following);
+      setData((d) => d && { ...d, user: { ...d.user, followers: r.data.followers ?? d.user.followers } });
+    } catch {
+      setFollowing(!next);
+      api.get(`/users/${username}`).then((r) => { setData(r.data); setFollowing(!!r.data.isFollowing); }).catch(() => {});
+    }
   };
 
   const changeAvatar = async (e) => {
@@ -256,9 +313,9 @@ export default function Profile() {
             <input ref={avRef} type="file" accept="image/*" className="hidden" onChange={changeAvatar} />
           </div>
           <div className="flex-1 flex justify-around text-center">
-            {[[posts.length, t('profile.posts')], [u.followers, t('profile.followers')], [u.following, t('profile.following')]].map(([n, l], i) => (
-              <div key={i}><div className="font-bold text-lg">{fmt.n(n)}</div><div className="text-xs opacity-60">{l}</div></div>
-            ))}
+            <div><div className="font-bold text-lg">{fmt.n(posts.length)}</div><div className="text-xs opacity-60">{t('profile.posts')}</div></div>
+            <button onClick={() => setFlist('followers')}><div className="font-bold text-lg">{fmt.n(u.followers)}</div><div className="text-xs opacity-60">{t('profile.followers')}</div></button>
+            <button onClick={() => setFlist('following')}><div className="font-bold text-lg">{fmt.n(u.following)}</div><div className="text-xs opacity-60">{t('profile.following')}</div></button>
           </div>
         </div>
 
@@ -307,17 +364,7 @@ export default function Profile() {
             ? <Empty icon={<ClapperIcon size={40} />} title={t('profile.noShorts')} sub="" />
             : (
               <div className="grid grid-cols-3 gap-1.5">
-                {shorts.map((r) => (
-                  <button key={r.id} onClick={() => nav('/reels')} className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-neutral-900">
-                    {r.mediaUrl
-                      ? <video src={r.mediaUrl} preload="metadata" muted playsInline className="w-full h-full object-cover" />
-                      : <Tile icon={<ClapperIcon size={26} />} label={r.caption} />}
-                    <span className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
-                    <span className="absolute bottom-2 start-2 end-2 text-white text-[11px] font-semibold truncate text-start flex items-center gap-1">
-                      <PlayIcon size={12} />{fmt.n(r.playCount || 0)}
-                    </span>
-                  </button>
-                ))}
+                {shorts.map((r) => <ReelThumb key={r.id} r={r} onOpen={() => nav('/reels')} />)}
               </div>
             ))}
 
@@ -339,6 +386,7 @@ export default function Profile() {
         </div>
       </div>
 
+      {flist && <FollowList userId={u.id} kind={flist} title={t(flist === 'followers' ? 'profile.followers' : 'profile.following')} empty={t(flist === 'followers' ? 'profile.noFollowers' : 'profile.noFollowing')} onClose={() => setFlist(null)} />}
       {editing && <EditModal user={u} onClose={() => setEditing(false)} onSaved={onSaved} />}
       <ImageModal src={zoom} onClose={() => setZoom(null)} />
     </div>

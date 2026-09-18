@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import api from '../lib/api';
 import { useLang } from '../lib/i18n';
-import { VaultIcon, LockIcon, EyeIcon, EyeOffIcon, CheckIcon, ShieldIcon } from '../components/icons';
+import { ConversationList, Thread } from './Chat';
+import { VaultIcon, LockIcon, EyeIcon, EyeOffIcon, ShieldIcon } from '../components/icons';
 
 export default function PrivateChat() {
   const { t } = useLang();
@@ -11,6 +12,13 @@ export default function PrivateChat() {
   const [err, setErr] = useState('');
   const [unlocked, setUnlocked] = useState(false);
   const [hasVault, setHasVault] = useState(null);
+  const [vault, setVault] = useState('');
+  const [active, setActive] = useState(null);
+  const [uname, setUname] = useState('');
+  const [starting, setStarting] = useState(false);
+  const [startErr, setStartErr] = useState('');
+
+  const vh = useMemo(() => ({ 'X-Vault-Token': vault }), [vault]);
 
   const setup = async () => {
     if (pass.length < 6 || busy) return;
@@ -23,8 +31,9 @@ export default function PrivateChat() {
     if (!pass || busy) return;
     setBusy(true); setErr('');
     try {
-      await api.post('/chat/vault/unlock', { password: pass });
-      setUnlocked(true); setPass('');
+      const r = await api.post('/chat/vault/unlock', { password: pass });
+      setVault(r.data.vaultToken || '');
+      setUnlocked(true); setPass(''); setActive(null);
     } catch (e) {
       if (e.response?.status === 404) setHasVault(false);
       else if (e.response?.status === 429) setErr(t('private.lockedOut'));
@@ -32,14 +41,61 @@ export default function PrivateChat() {
     } finally { setBusy(false); }
   };
 
+  const lock = () => {
+    setVault(''); setUnlocked(false); setActive(null); setPass(''); setErr(''); setUname(''); setStartErr('');
+  };
+  const expired = () => {
+    lock();
+    setErr(t('private.lockExpired'));
+  };
+
+  const start = async () => {
+    const name = uname.trim().replace(/^@/, '');
+    if (!name || starting) return;
+    setStarting(true); setStartErr('');
+    try {
+      const u = await api.get(`/users/${encodeURIComponent(name)}`);
+      const r = await api.post('/chat/private/conversations', { userId: u.data.user.id }, { headers: vh });
+      setActive(r.data); setUname('');
+    } catch (e) {
+      if (e.response?.status === 403) { expired(); return; }
+      setStartErr(t(e.response?.status === 404 ? 'private.badUser' : 'private.err'));
+    } finally { setStarting(false); }
+  };
+
   if (unlocked) {
     return (
-      <div className="p-4 max-w-2xl mx-auto">
-        <div className="card p-10 text-center">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-green-500/15 text-green-500 flex items-center justify-center mb-3"><CheckIcon size={30} /></div>
-          <div className="font-bold text-xl">{t('private.open')}</div>
-          <div className="text-sm opacity-60 mt-1">{t('private.openSub')}</div>
-          <button onClick={() => setUnlocked(false)} className="btn-ghost mt-4 text-sm font-bold">{t('private.lockAgain')}</button>
+      <div className="h-[calc(100dvh-108px)] md:h-[calc(100vh-32px)] flex flex-col max-w-4xl mx-auto">
+        <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+          <VaultIcon size={20} />
+          <div className="font-bold text-lg flex-1">{t('private.title')}</div>
+          <button onClick={lock} className="btn-ghost !py-1.5 text-xs font-bold">{t('private.lockAgain')}</button>
+        </div>
+        <div className="px-3 pb-2">
+          <div className="flex items-center gap-2 bg-black/5 dark:bg-white/10 rounded-full ps-4 pe-1.5 py-1.5">
+            <span className="text-xs font-bold opacity-50 shrink-0">{t('private.newChat')}</span>
+            <input value={uname} onChange={(e) => setUname(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && start()}
+              placeholder={t('private.userPh')} className="bg-transparent flex-1 text-sm focus:outline-none placeholder:opacity-40 min-w-0" dir="ltr" autoCapitalize="none" />
+            <button onClick={start} disabled={!uname.trim() || starting} className="text-sm font-bold text-zivv-purple disabled:opacity-40 px-2 shrink-0">{t('private.start')}</button>
+          </div>
+          {!!startErr && <div className="text-red-500 text-xs font-bold px-2 mt-1">{startErr}</div>}
+        </div>
+        <div className="flex-1 min-h-0 flex">
+          <div className={`${active ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[320px] md:border-e md:border-black/10 md:dark:border-white/10`}>
+            <div className="flex-1 min-h-0">
+              <ConversationList base="/chat/private/conversations" headers={vh} onAuthFail={expired}
+                onPick={(c) => setActive(c)} activeId={active?.id} />
+            </div>
+          </div>
+          <div className={`${active ? 'flex' : 'hidden md:flex'} flex-col flex-1 min-w-0`}>
+            {active
+              ? <Thread convId={active.id} peer={active.peer} online={active.online} base="/chat/private/conversations" headers={vh}
+                  onAuthFail={expired} onBack={() => setActive(null)} />
+              : <div className="flex-1 hidden md:flex flex-col items-center justify-center opacity-40 gap-3">
+                  <VaultIcon size={44} />
+                  <div className="font-bold text-sm">{t('chat.pick')}</div>
+                </div>}
+          </div>
         </div>
       </div>
     );

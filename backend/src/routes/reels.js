@@ -7,7 +7,7 @@ router.get('/', requireAuth, async (req, res) => {
     `SELECT r.* FROM reels r JOIN users u ON u.id=r.author_id AND u.banned=FALSE
      ORDER BY r.created_at DESC LIMIT 30`
   );
-  const items = rows.map(db.reelRow);
+  const items = rows.map((r) => db.reelRow(r, false));
   const aids = [...new Set(items.map((r) => r.authorId))];
   const rids = items.map((r) => r.id);
   const [authors, likes] = await Promise.all([
@@ -29,9 +29,21 @@ router.post('/', requireAuth, async (req, res) => {
      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
     [id, req.user.id, caption, JSON.stringify(hashtags || []), mediaUrl, sound ? JSON.stringify(sound) : null, durationSec || 0]
   );
-  const r = db.reelRow(rows[0]);
+  const r = db.reelRow(rows[0], true);
   const a = await db.q('SELECT * FROM users WHERE id=$1', [req.user.id]);
   res.status(201).json({ ...r, author: db.strip(db.userRow(a[0], true)) });
+});
+
+router.get('/:id/media', requireAuth, async (req, res) => {
+  const rows = await db.q('SELECT media_url FROM reels WHERE id=$1', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  res.json({ mediaUrl: rows[0].media_url || '' });
+});
+
+router.post('/:id/share', requireAuth, async (req, res) => {
+  const upd = await db.q('UPDATE reels SET share_count=share_count+1 WHERE id=$1 RETURNING share_count', [req.params.id]);
+  if (!upd.length) return res.status(404).json({ error: 'not_found' });
+  res.json({ shareCount: upd[0].share_count });
 });
 
 router.post('/:id/like', requireAuth, async (req, res) => {
@@ -71,7 +83,7 @@ router.get('/sounds/:id', requireAuth, async (req, res) => {
   if (!sRows.length) return res.status(404).json({ error: 'not_found' });
   const s = db.soundRow(sRows[0]);
   const reels = await db.q("SELECT * FROM reels WHERE sound->>'title' = $1 ORDER BY created_at DESC LIMIT 50", [s.title]);
-  res.json({ ...s, reels: reels.map(db.reelRow) });
+  res.json({ ...s, reels: reels.map((r) => db.reelRow(r, false)) });
 });
 
 module.exports = router;

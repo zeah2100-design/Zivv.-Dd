@@ -6,6 +6,7 @@ import { useLang } from '../lib/i18n';
 import { Avatar } from '../components/ui';
 import PageLoader from '../components/PageLoader';
 import { BackIcon, SendIcon, SearchIcon, ImageIcon, SmileIcon, CheckDoubleIcon, MicIcon, StopIcon, PlayIcon } from '../components/icons';
+import { processImage, MAX_UPLOAD_CHARS } from '../lib/image';
 
 function timeHM(ts) {
   try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch { return ''; }
@@ -34,14 +35,41 @@ function VoiceBubble({ m }) {
   );
 }
 
-export function ConversationList({ onPick, activeId }) {
+const imgCache = new Map();
+function ImageBubble({ m }) {
+  const [src, setSrc] = useState(m.image || imgCache.get(m.id) || null);
+  useEffect(() => {
+    if (src || !m.hasImage) return;
+    let on = true;
+    api.get(`/chat/messages/${m.id}/image`)
+      .then((r) => { const v = r.data.image || ''; imgCache.set(m.id, v); if (on) setSrc(v); })
+      .catch(() => { if (on) setSrc(''); });
+    return () => { on = false; };
+  }, [m.id]);
+  if (!src) return <span className="block w-44 h-28 animate-pulse rounded-xl bg-black/10 dark:bg-white/10" />;
+  return <img src={src} alt="" loading="lazy" className="max-w-[220px] rounded-xl" />;
+}
+
+const EMOJIS = ['😀','😁','😂','🤣','😊','😍','😘','😎','🤔','😅','😭','😡','👍','👎','🙏','👏','🔥','❤️','💔','🎉','✅','❌','⭐','💯'];
+
+export function ConversationList({ onPick, activeId, base = '/chat/conversations', headers = {}, onAuthFail }) {
   const { t } = useLang();
   const [convs, setConvs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
+  const hRef = useRef(headers);
+  hRef.current = headers;
   useEffect(() => {
-    api.get('/chat/conversations').then((r) => setConvs(r.data.items || [])).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+    const fetchList = (first) => {
+      api.get(base, { headers: hRef.current })
+        .then((r) => setConvs(r.data.items || []))
+        .catch((e) => { if (e.response?.status === 403) onAuthFail?.(); })
+        .finally(() => { if (first) setLoading(false); });
+    };
+    fetchList(true);
+    const iv = setInterval(() => fetchList(false), 15000);
+    return () => clearInterval(iv);
+  }, [base]);
   const filtered = convs.filter((c) => !q || c.peer?.name?.toLowerCase().includes(q.toLowerCase()) || c.peer?.username?.toLowerCase().includes(q.toLowerCase()));
   if (loading) return <PageLoader />;
   return (
@@ -66,7 +94,7 @@ export function ConversationList({ onPick, activeId }) {
                 <span className="text-[11px] opacity-50 shrink-0">{c.updatedAt ? fmt.time(c.updatedAt) : ''}</span>
               </span>
               <span className={`block text-[13px] truncate ${c.unread ? 'font-bold opacity-90' : 'opacity-55'}`}>
-                {(c.lastMessage || '').startsWith('🎤') ? t('chat.voiceMsg') : (c.lastMessage || t('chat.newConv'))}
+                {(c.lastMessage || '').startsWith('🎤') ? t('chat.voiceMsg') : (c.lastMessage || '').startsWith('📷') ? t('chat.photoMsg') : (c.lastMessage || t('chat.newConv'))}
               </span>
             </span>
           </button>
@@ -77,7 +105,7 @@ export function ConversationList({ onPick, activeId }) {
   );
 }
 
-export function Thread({ convId, peer, online, onBack }) {
+export function Thread({ convId, peer, online, onBack, base = '/chat/conversations', headers = {}, onAuthFail }) {
   const { user } = useZivv();
   const { t } = useLang();
   const [msgs, setMsgs] = useState([]);
@@ -85,15 +113,42 @@ export function Thread({ convId, peer, online, onBack }) {
   const [loading, setLoading] = useState(true);
   const [rec, setRec] = useState(false);
   const [secs, setSecs] = useState(0);
+  const [showEm, setShowEm] = useState(false);
   const bottomRef = useRef(null);
   const mrRef = useRef(null);
   const timerRef = useRef(null);
+  const imgRef = useRef(null);
+  const hRef = useRef(headers);
+  hRef.current = headers;
+
+  const mergeMsgs = (data) => {
+    setMsgs((prev) => {
+      const byId = new Map(prev.map((m) => [m.id, m]));
+      for (const m of (data || [])) byId.set(m.id, m);
+      const mine = new Set(
+        (data || []).filter((m) => m.senderId === user?.id).map((m) => `${m.kind || 'text'}:${m.text || ''}`)
+      );
+      return [...byId.values()].filter((m) =>
+        !String(m.id).startsWith('tmp-') || !mine.has(`${m.kind || 'text'}:${m.text || ''}`));
+    });
+  };
 
   useEffect(() => {
     setLoading(true);
-    api.get(`/chat/conversations/${convId}/messages`).then((r) => setMsgs(r.data.items || [])).catch(() => {}).finally(() => setLoading(false));
-    api.post(`/chat/conversations/${convId}/read`).catch(() => {});
-  }, [convId]);
+    setMsgs([]);
+    api.get(`${base}/${convId}/messages`, { headers })
+      .then((r) => mergeMsgs(r.data.items || []))
+      .catch((e) => { if (e.response?.status === 403) onAuthFail?.(); })
+      .finally(() => setLoading(false));
+    api.post(`${base}/${convId}/read`, {}, { headers }).catch(() => {});
+    const iv = setInterval(() => {
+      api.get(`${base}/${convId}/messages`, { headers: hRef.current })
+        .then((r) => mergeMsgs(r.data.items || []))
+        .catch((e) => { if (e.response?.status === 403) onAuthFail?.(); });
+      api.post(`${base}/${convId}/read`, {}, { headers: hRef.current }).catch(() => {});
+    }, 3000);
+    return () => clearInterval(iv);
+  }, [convId, base]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs.length, loading]);
   useEffect(() => () => { clearInterval(timerRef.current); try { mrRef.current?.stream?.getTracks()?.forEach((tr) => tr.stop()); } catch {} }, []);
 
@@ -103,7 +158,7 @@ export function Thread({ convId, peer, online, onBack }) {
     const tmp = { id: 'tmp-' + Date.now(), text: body, senderId: user?.id, createdAt: new Date().toISOString(), state: 'sending' };
     setMsgs((m) => [...m, tmp]);
     try {
-      const r = await api.post(`/chat/conversations/${convId}/messages`, { text: body });
+      const r = await api.post(`${base}/${convId}/messages`, { text: body }, { headers });
       if (r.data?.id) setMsgs((m) => [...m.filter((x) => x.id !== tmp.id), r.data]);
     } catch { setMsgs((m) => m.filter((x) => x.id !== tmp.id)); }
   };
@@ -137,7 +192,7 @@ export function Thread({ convId, peer, online, onBack }) {
           const tmp = { id: 'tmp-' + Date.now(), kind: 'audio', audio, senderId: user?.id, createdAt: new Date().toISOString(), state: 'sending' };
           setMsgs((m) => [...m, tmp]);
           try {
-            const r = await api.post(`/chat/conversations/${convId}/messages`, { audio }, { timeout: 120000 });
+            const r = await api.post(`${base}/${convId}/messages`, { audio }, { headers, timeout: 120000 });
             if (r.data?.id) setMsgs((m) => [...m.filter((x) => x.id !== tmp.id), r.data]);
           } catch { setMsgs((m) => m.filter((x) => x.id !== tmp.id)); }
         };
@@ -151,6 +206,20 @@ export function Thread({ convId, peer, online, onBack }) {
         return s + 1;
       }), 1000);
     } catch { /* mic denied */ }
+  };
+
+  const pickImg = async (e) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    const dataUrl = await processImage(f).catch(() => null);
+    if (!dataUrl || dataUrl.length > MAX_UPLOAD_CHARS) return;
+    const tmp = { id: 'tmp-' + Date.now(), kind: 'image', image: dataUrl, senderId: user?.id, createdAt: new Date().toISOString(), state: 'sending' };
+    setMsgs((m) => [...m, tmp]);
+    try {
+      const r = await api.post(`${base}/${convId}/messages`, { kind: 'image', image: dataUrl }, { headers, timeout: 120000 });
+      if (r.data?.id) setMsgs((m) => [...m.filter((x) => x.id !== tmp.id), r.data]);
+    } catch { setMsgs((m) => m.filter((x) => x.id !== tmp.id)); }
   };
 
   return (
@@ -177,7 +246,9 @@ export function Thread({ convId, peer, online, onBack }) {
               }`}>
                 {m.kind === 'audio'
                   ? <VoiceBubble m={m} />
-                  : m.text}
+                  : m.kind === 'image'
+                    ? <ImageBubble m={m} />
+                    : m.text}
                 <span className={`flex items-center justify-end gap-1 text-[10px] mt-0.5 ${mine ? 'text-white/70' : 'opacity-50'}`}>
                   {timeHM(m.createdAt)}
                   {mine && <CheckDoubleIcon size={13} />}
@@ -198,9 +269,17 @@ export function Thread({ convId, peer, online, onBack }) {
             <button onClick={() => stopRec(false)} className="btn-primary !p-3 !rounded-full shrink-0" aria-label="Stop"><StopIcon size={18} /></button>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5">
-            <button className="p-2.5 rounded-full opacity-55 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10" aria-label="Emoji"><SmileIcon size={22} /></button>
-            <button className="p-2.5 rounded-full opacity-55 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10" aria-label="Photo"><ImageIcon size={22} /></button>
+          <div className="flex items-center gap-1.5 relative">
+            {showEm && (
+              <div className="absolute bottom-12 start-0 card p-2 grid grid-cols-8 gap-0.5 z-20 shadow-xl">
+                {EMOJIS.map((e) => (
+                  <button key={e} onClick={() => { setText((v) => v + e); setShowEm(false); }} className="text-xl p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">{e}</button>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setShowEm((v) => !v)} className="p-2.5 rounded-full opacity-55 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10" aria-label="Emoji"><SmileIcon size={22} /></button>
+            <button onClick={() => imgRef.current?.click()} className="p-2.5 rounded-full opacity-55 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10" aria-label="Photo"><ImageIcon size={22} /></button>
+            <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={pickImg} />
             <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()}
               placeholder={t('chat.typeMsg')} className="input !rounded-full flex-1" />
             {text.trim() ? (

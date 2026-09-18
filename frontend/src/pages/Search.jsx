@@ -3,8 +3,24 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api, { fmt } from '../lib/api';
 import { useLang } from '../lib/i18n';
 import { Avatar, Empty } from '../components/ui';
-import { useListingImage } from '../lib/media';
+import { useListingImage, useReelMedia } from '../lib/media';
 import { SearchIcon, XIcon, HashIcon, MusicIcon, PlayIcon, SparklesIcon, ClockIcon, UserPlusIcon } from '../components/icons';
+
+function SearchReel({ r, onOpen }) {
+  const src = useReelMedia(r);
+  return (
+    <button onClick={onOpen} className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-neutral-800">
+      {src === null
+        ? <div className="w-full h-full animate-pulse bg-white/5" />
+        : src
+          ? <video src={src} preload="metadata" muted playsInline className="w-full h-full object-cover" />
+          : <div className="w-full h-full zivv-gradient" />}
+      <span className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+      <PlayIcon size={20} className="absolute top-2 start-2 text-white" />
+      <span className="absolute bottom-2 start-2 end-2 text-white text-[11px] font-semibold truncate text-start">{r.caption}</span>
+    </button>
+  );
+}
 
 const TABS = ['top', 'users', 'reels', 'posts', 'music', 'hashtags', 'store'];
 
@@ -180,16 +196,7 @@ export default function Search() {
         <div>
           <div className="font-bold mb-2 px-1">{t('search.t_reels')}</div>
           <div className="grid grid-cols-3 gap-1.5">
-            {res.reels.map((r) => (
-              <button key={r.id} onClick={() => nav('/reels')} className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-neutral-800">
-                {r.mediaUrl
-                  ? <video src={r.mediaUrl} preload="metadata" muted playsInline className="w-full h-full object-cover" />
-                  : <div className="w-full h-full zivv-gradient" />}
-                <span className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                <PlayIcon size={20} className="absolute top-2 start-2 text-white" />
-                <span className="absolute bottom-2 start-2 end-2 text-white text-[11px] font-semibold truncate text-start">{r.caption}</span>
-              </button>
-            ))}
+            {res.reels.map((r) => <SearchReel key={r.id} r={r} onOpen={() => nav('/reels')} />)}
           </div>
         </div>
       )}

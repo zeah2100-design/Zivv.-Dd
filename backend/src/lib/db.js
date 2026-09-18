@@ -23,7 +23,7 @@ const SCHEMA = [
     followers INT DEFAULT 0, following INT DEFAULT 0,
     verified BOOLEAN DEFAULT FALSE, gold BOOLEAN DEFAULT FALSE, points INT DEFAULT 0,
     banned BOOLEAN DEFAULT FALSE, role TEXT DEFAULT 'USER',
-    pw_hash TEXT NOT NULL, vault TEXT, attempts INT DEFAULT 0, lockout_until BIGINT DEFAULT 0,
+    pw_hash TEXT NOT NULL, vault TEXT, attempts INT DEFAULT 0, lockout_until BIGINT DEFAULT 0, last_seen TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT now()
   )`,
   `CREATE TABLE IF NOT EXISTS posts (
@@ -38,6 +38,12 @@ const SCHEMA = [
     post_id TEXT REFERENCES posts(id) ON DELETE CASCADE,
     user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
     PRIMARY KEY (post_id, user_id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS follows (
+    follower_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+    followee_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    PRIMARY KEY (follower_id, followee_id)
   )`,
   `CREATE TABLE IF NOT EXISTS point_awards (
     target_type TEXT NOT NULL, target_id TEXT NOT NULL, user_id TEXT NOT NULL,
@@ -78,11 +84,11 @@ const SCHEMA = [
     a_id TEXT REFERENCES users(id) ON DELETE CASCADE, b_id TEXT REFERENCES users(id) ON DELETE CASCADE,
     last_message TEXT DEFAULT '', unread INT DEFAULT 0, is_private BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE (a_id, b_id)
+    UNIQUE (a_id, b_id, is_private)
   )`,
   `CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY, conv_id TEXT REFERENCES conversations(id) ON DELETE CASCADE,
-    sender_id TEXT, kind TEXT DEFAULT 'text', text TEXT DEFAULT '', audio TEXT DEFAULT '',
+    sender_id TEXT, kind TEXT DEFAULT 'text', text TEXT DEFAULT '', audio TEXT DEFAULT '', image TEXT DEFAULT '',
     state TEXT DEFAULT 'sent', created_at TIMESTAMPTZ DEFAULT now()
   )`,
   `CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conv_id)`,
@@ -128,6 +134,38 @@ const SCHEMA = [
   )`,
 ];
 
+// Versioned migrations for EXISTING databases (fresh DBs get everything via SCHEMA).
+const MIGRATION_VERSION = 2;
+const MIGRATIONS = [
+  { v: 2, stmts: [
+    `CREATE TABLE IF NOT EXISTS follows (
+      follower_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+      followee_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (follower_id, followee_id)
+    )`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ`,
+    `ALTER TABLE messages ADD COLUMN IF NOT EXISTS image TEXT DEFAULT ''`,
+    `ALTER TABLE conversations DROP CONSTRAINT IF EXISTS conversations_a_id_b_id_key`,
+    `DO $$ BEGIN
+       ALTER TABLE conversations ADD CONSTRAINT conversations_pair_priv_key UNIQUE (a_id, b_id, is_private);
+     EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+  ] },
+];
+async function applyPending(s) {
+  await s.query('CREATE TABLE IF NOT EXISTS _meta (k TEXT PRIMARY KEY, v TEXT)');
+  let cur = 1;
+  try {
+    const r = await s.query("SELECT v FROM _meta WHERE k='mig'");
+    if (r.length && r[0].v) cur = parseInt(r[0].v, 10) || 1;
+  } catch { cur = 1; }
+  for (const m of MIGRATIONS) {
+    if (m.v > cur) {
+      for (const st of m.stmts) await s.query(st);
+      await s.query("INSERT INTO _meta (k, v) VALUES ('mig', $1) ON CONFLICT (k) DO UPDATE SET v=$1", [String(m.v)]);
+    }
+  }
+}
 let _migrated = false;
 let _migrating = null;
 async function migrate() {
@@ -138,11 +176,13 @@ async function migrate() {
       const s = sql();
       try {
         await s.query('SELECT 1 FROM users LIMIT 1');
-        _migrated = true; // tables already exist: skip (fast cold start)
+        await applyPending(s); // tables exist: apply only pending versioned migrations
+        _migrated = true;
         return;
       } catch { /* fresh DB: fall through to full migrate */ }
       // Sequential: tables reference each other, so order matters.
       for (const stmt of SCHEMA) await s.query(stmt);
+      await applyPending(s);
       _migrated = true;
     } catch (e) {
       _migrating = null; // allow retry on next request
@@ -171,6 +211,9 @@ function J(v, fb) {
 const now = () => new Date().toISOString();
 const nid = (p) => p + Date.now() + Math.floor(Math.random() * 1e4);
 
+function isOnline(v) {
+  try { return !!v && (Date.now() - new Date(v).getTime() < 120000); } catch { return false; }
+}
 function userRow(r, secret = false) {
   if (!r) return null;
   const u = {
@@ -180,7 +223,7 @@ function userRow(r, secret = false) {
     website: r.website || '', language: r.language || 'ar', theme: r.theme || 'light',
     followers: r.followers || 0, following: r.following || 0,
     verified: !!r.verified, gold: !!r.gold, points: r.points || 0,
-    banned: !!r.banned, role: r.role || 'USER', createdAt: iso(r.created_at),
+    banned: !!r.banned, role: r.role || 'USER', online: isOnline(r.last_seen), createdAt: iso(r.created_at),
   };
   if (secret) { u._pw = r.pw_hash; u._vault = r.vault || null; u._attempts = r.attempts || 0; u._lockoutUntil = Number(r.lockout_until || 0); }
   return u;
@@ -200,11 +243,11 @@ function postRow(r, withMedia = true) {
     createdAt: iso(r.created_at),
   };
 }
-function reelRow(r) {
+function reelRow(r, withMedia = false) {
   if (!r) return null;
   return {
     id: r.id, authorId: r.author_id, caption: r.caption || '', hashtags: J(r.hashtags, []),
-    mediaUrl: r.media_url || '', sound: J(r.sound, null), durationSec: r.duration_sec || 0,
+    mediaUrl: withMedia ? (r.media_url || '') : '', hasMedia: !!(r.media_url), sound: J(r.sound, null), durationSec: r.duration_sec || 0,
     likeCount: r.like_count || 0, commentCount: r.comment_count || 0,
     shareCount: r.share_count || 0, playCount: r.play_count || 0,
     createdAt: iso(r.created_at),
@@ -239,7 +282,7 @@ function msgRow(r, withAudio = true) {
   if (!r) return null;
   return {
     id: r.id, senderId: r.sender_id, kind: r.kind || 'text',
-    text: r.text || '', audio: withAudio ? (r.audio || '') : '', hasAudio: !!(r.audio), createdAt: iso(r.created_at), state: r.state || 'sent',
+    text: r.text || '', audio: withAudio ? (r.audio || '') : '', image: withAudio ? (r.image || '') : '', hasAudio: !!(r.audio), hasImage: !!(r.image), createdAt: iso(r.created_at), state: r.state || 'sent',
   };
 }
 function notifRow(r) {

@@ -31,6 +31,7 @@ export default function Create() {
   const [done, setDone] = useState('');
   const [err, setErr] = useState('');
   const fileRef = useRef(null);
+  const mediaRef = useRef(null);
   // listing fields
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
@@ -66,6 +67,34 @@ export default function Create() {
       if (dataUrl.length > MAX_UPLOAD_CHARS) { setErr(t('create.tooBig')); return; }
       setLimg(dataUrl);
     } finally { setPreparing(false); }
+  };
+
+  const pickMediaFile = async (e) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    setErr('');
+    if (f.size > 3.9e6) { setErr(t('create.tooBig')); return; }
+    setPreparing(true);
+    try {
+      const dataUrl = await new Promise((res, rej) => {
+        const rd = new FileReader();
+        rd.onload = () => res(rd.result);
+        rd.onerror = rej;
+        rd.readAsDataURL(f);
+      });
+      if (!dataUrl || dataUrl.length > MAX_UPLOAD_CHARS) { setErr(t('create.tooBig')); return; }
+      const el = document.createElement(kind === 'song' ? 'audio' : 'video');
+      el.preload = 'metadata';
+      el.onloadedmetadata = () => {
+        const d = Math.round(el.duration || 0);
+        if (kind === 'short' && d > 65) { setErr(t('create.tooLong')); setMediaUrl(''); setDuration(0); return; }
+        setDuration(d);
+      };
+      el.onerror = () => {};
+      el.src = dataUrl;
+      setMediaUrl(dataUrl);
+    } catch { setErr(t('create.failed')); } finally { setPreparing(false); }
   };
 
   const detectDuration = (url, isVideo) => {
@@ -170,19 +199,26 @@ export default function Create() {
 
           {needsUrl && (
             <div className="mt-2 space-y-2">
+              <button onClick={() => mediaRef.current?.click()} disabled={preparing} className="w-full py-4 rounded-xl border-2 border-dashed border-black/15 dark:border-white/15 text-sm font-bold opacity-70 hover:opacity-100 disabled:opacity-50 flex items-center justify-center gap-2">
+                {preparing ? t('create.preparing') : <>{kind === 'song' ? <MusicIcon size={19} /> : <FilmIcon size={19} />}{t(kind === 'song' ? 'create.pickAudio' : 'create.pickVideo')}</>}
+              </button>
+              <input ref={mediaRef} type="file" accept={kind === 'song' ? 'audio/*' : 'video/*'} className="hidden" onChange={pickMediaFile} />
+              {mediaUrl.startsWith('data:') && (
+                <button onClick={() => { setMediaUrl(''); setDuration(0); }} className="text-xs font-bold text-red-500 px-1"><XIcon size={13} className="inline -mt-0.5" /> {t('friends.delete')}</button>
+              )}
               <div className="flex items-center gap-2 bg-black/5 dark:bg-white/10 rounded-xl px-3">
                 <LinkIcon size={16} className="opacity-50 shrink-0" />
                 <input value={mediaUrl} onChange={(e) => { setMediaUrl(e.target.value); detectDuration(e.target.value, kind !== 'song'); }} placeholder={t(kind === 'song' ? 'create.audioUrlPh' : 'create.videoUrlPh')} className="bg-transparent flex-1 py-2.5 text-sm focus:outline-none placeholder:opacity-40" dir="ltr" />
               </div>
               {kind === 'short' && <div className="text-[11px] opacity-50 px-1">{t('create.shortNote')}{duration > 0 && ` · ${duration}s`}</div>}
               {kind === 'video' && duration > 0 && <div className="text-[11px] opacity-50 px-1">{duration}s · {t('create.longNote')}</div>}
-              {kind === 'short' && mediaUrl.startsWith('http') && (
+              {kind === 'short' && (mediaUrl.startsWith('http') || mediaUrl.startsWith('data:')) && (
                 <video src={mediaUrl} preload="metadata" muted playsInline className="w-full max-h-64 rounded-xl bg-black" controls />
               )}
-              {kind === 'video' && mediaUrl.startsWith('http') && (
+              {kind === 'video' && (mediaUrl.startsWith('http') || mediaUrl.startsWith('data:')) && (
                 <video src={mediaUrl} preload="metadata" className="w-full max-h-64 rounded-xl bg-black" controls />
               )}
-              {kind === 'song' && mediaUrl.startsWith('http') && <audio src={mediaUrl} controls className="w-full" />}
+              {kind === 'song' && (mediaUrl.startsWith('http') || mediaUrl.startsWith('data:')) && <audio src={mediaUrl} controls className="w-full" />}
             </div>
           )}
 

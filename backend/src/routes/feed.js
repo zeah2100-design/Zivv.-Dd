@@ -69,6 +69,12 @@ router.post('/:id/like', requireAuth, async (req, res) => {
   res.json({ likeCount: c[0].like_count, liked });
 });
 
+router.post('/:id/share', requireAuth, async (req, res) => {
+  const upd = await db.q('UPDATE posts SET share_count=share_count+1 WHERE id=$1 RETURNING share_count', [req.params.id]);
+  if (!upd.length) return res.status(404).json({ error: 'not_found' });
+  res.json({ shareCount: upd[0].share_count });
+});
+
 router.post('/:id/save', requireAuth, async (req, res) => {
   const upd = await db.q('UPDATE posts SET save_count=save_count+1 WHERE id=$1 RETURNING id', [req.params.id]);
   if (!upd.length) return res.status(404).json({ error: 'not_found' });

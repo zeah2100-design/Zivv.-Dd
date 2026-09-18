@@ -4,19 +4,22 @@ import api from '../lib/api';
 import { useLang } from '../lib/i18n';
 import { Avatar, Empty } from '../components/ui';
 import PageLoader from '../components/PageLoader';
-import { UsersIcon, UserPlusIcon, CheckIcon, XIcon } from '../components/icons';
+import { UsersIcon, UserPlusIcon, CheckIcon, XIcon, ChatIcon } from '../components/icons';
+import { openConversation } from './Chat';
 
 export default function Friends() {
   const { t } = useLang();
   const nav = useNavigate();
-  const [tab, setTab] = useState('suggested');
-  const [data, setData] = useState({ incoming: [], outgoing: [], suggested: [] });
+  const [tab, setTab] = useState('friends');
+  const [data, setData] = useState({ friends: [], incoming: [], outgoing: [], suggested: [] });
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
-    try { const r = await api.get('/friends/requests'); setData({ incoming: r.data.incoming || [], outgoing: r.data.outgoing || [], suggested: r.data.suggested || [] }); }
-    catch {} finally { setLoading(false); }
+    try {
+      const [f, r] = await Promise.all([api.get('/friends'), api.get('/friends/requests')]);
+      setData({ friends: f.data.items || [], incoming: r.data.incoming || [], outgoing: r.data.outgoing || [], suggested: r.data.suggested || [] });
+    } catch {} finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
@@ -26,9 +29,12 @@ export default function Friends() {
   const add = async (toId) => {
     try { await api.post('/friends/requests', { toId }); load(); } catch {}
   };
+  const unfriend = async (frId) => {
+    try { await api.delete(`/friends/requests/${frId}`); load(); } catch {}
+  };
 
   if (loading) return <PageLoader />;
-  const tabs = [['suggested', t('friends.suggested')], ['incoming', `${t('friends.requests')} (${data.incoming.length})`], ['outgoing', t('friends.sent')]];
+  const tabs = [['friends', `${t('friends.friends')} (${data.friends.length})`], ['suggested', t('friends.suggested')], ['incoming', `${t('friends.requests')} (${data.incoming.length})`], ['outgoing', t('friends.sent')]];
 
   return (
     <div className="p-3 md:p-4 max-w-2xl mx-auto space-y-3">
@@ -39,6 +45,24 @@ export default function Friends() {
             className={`flex-1 py-1.5 text-sm font-bold rounded-full transition ${tab === v ? 'tab-active' : 'bg-black/5 dark:bg-white/10 opacity-60'}`}>{l}</button>
         ))}
       </div>
+
+      {tab === 'friends' && (
+        data.friends.length === 0 ? <Empty icon={<UsersIcon size={40} />} title={t('friends.noFriends')} sub="" /> : (
+          <div className="space-y-2">
+            {data.friends.map((f) => (
+              <div key={f.frId} className="card p-3 flex items-center gap-3">
+                <button onClick={() => nav(`/u/${f.user?.username}`)} className="shrink-0"><Avatar user={f.user} size={48} /></button>
+                <button onClick={() => nav(`/u/${f.user?.username}`)} className="flex-1 min-w-0 text-start">
+                  <div className="font-bold truncate flex items-center gap-1.5">{f.user?.name}{f.user?.online && <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />}</div>
+                  <div className="text-xs opacity-50 truncate">@{f.user?.username}</div>
+                </button>
+                <button onClick={() => openConversation(f.user.id, nav)} title={t('friends.message')} className="p-2.5 rounded-xl bg-black/5 dark:bg-white/10"><ChatIcon size={17} /></button>
+                <button onClick={() => unfriend(f.frId)} title={t('friends.unfriend')} className="p-2.5 rounded-xl bg-red-500/10 text-red-500"><XIcon size={17} /></button>
+              </div>
+            ))}
+          </div>
+        )
+      )}
 
       {tab === 'incoming' && (
         data.incoming.length === 0 ? <Empty icon={<UsersIcon size={40} />} title={t('friends.noRequests')} sub="" /> : (

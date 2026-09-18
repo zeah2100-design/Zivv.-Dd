@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api, { fmt } from '../lib/api';
 import { useLang } from '../lib/i18n';
+import { useReelMedia } from '../lib/media';
 import { Avatar } from '../components/ui';
 import PageLoader from '../components/PageLoader';
 import CommentsSheet from '../components/CommentsSheet';
 import { LikeButton } from './Feed';
-import { CommentIcon, ShareIcon, MusicIcon, PlusIcon, VerifyIcon, PlayIcon } from '../components/icons';
+import { CommentIcon, ShareIcon, MusicIcon, PlusIcon, VerifyIcon, PlayIcon, FilmIcon } from '../components/icons';
 
 function ReelItem({ reel, active }) {
   const { t } = useLang();
@@ -16,6 +17,7 @@ function ReelItem({ reel, active }) {
   const [lc, setLc] = useState(reel.likeCount || 0);
   const [shares, setShares] = useState(reel.shareCount || 0);
   const [progress, setProgress] = useState(8);
+  const src = useReelMedia(reel, active);
 
   useEffect(() => {
     if (!active) return;
@@ -30,7 +32,10 @@ function ReelItem({ reel, active }) {
   }, [active, reel.id]);
 
   const share = async () => {
-    setShares((v) => v + 1);
+    try {
+      const r = await api.post(`/reels/${reel.id}/share`);
+      setShares(r.data.shareCount ?? shares + 1);
+    } catch { setShares((v) => v + 1); }
     try {
       if (navigator.share) await navigator.share({ title: 'ZIVV Reel', text: reel.caption, url: location.href });
       else await navigator.clipboard.writeText(location.href);
@@ -40,9 +45,11 @@ function ReelItem({ reel, active }) {
   return (
     <div className="relative h-[calc(100dvh-108px)] md:h-[calc(100vh-40px)] w-full snap-start snap-always bg-black md:rounded-2xl overflow-hidden select-none">
       <div className="absolute inset-0 bg-neutral-900">
-        {reel.mediaUrl
-          ? <video src={reel.mediaUrl} loop muted playsInline autoPlay={active} preload={active ? 'auto' : 'none'} className="w-full h-full object-cover" />
-          : <div className="w-full h-full zivv-gradient" />}
+        {src === null && reel.hasMedia
+          ? <div className="w-full h-full flex items-center justify-center"><span className="w-10 h-10 rounded-full border-[3px] border-white/25 border-t-white animate-spin" /></div>
+          : src
+            ? <video src={src} loop muted playsInline autoPlay={active} preload={active ? 'auto' : 'none'} className="w-full h-full object-cover" />
+            : <div className="w-full h-full zivv-gradient" />}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/85 pointer-events-none" />
       </div>
       {!active && (
