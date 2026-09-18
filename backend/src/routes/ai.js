@@ -1,6 +1,6 @@
 // ZIVV AI: per-user chats + pins + vision + image-gen + Gold-only agent actions.
 const router = require('express').Router();
-const S = require('../lib/store');
+const db = require('../lib/db');
 const AI = require('../lib/ai');
 const { requireAuth } = require('../middleware/auth');
 
@@ -9,35 +9,39 @@ const MEDIUM = new Set(['send_message', 'publish', 'follow', 'edit_profile', 'de
 const HIGH = new Set(['delete_account', 'purchase', 'security_change', 'grant_permission']);
 
 router.get('/status', requireAuth, (req, res) => res.json(AI.status()));
-router.get('/chats', requireAuth, (req, res) => {
-  const items = S.aiChats.filter(c => c.userId === req.user.id)
-    .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-  res.json({ items });
+router.get('/chats', requireAuth, async (req, res) => {
+  const rows = await db.q(
+    'SELECT * FROM ai_chats WHERE user_id=$1 ORDER BY pinned DESC, created_at DESC', [req.user.id]
+  );
+  res.json({ items: rows.map(db.aiChatRow) });
 });
 
-router.post('/chats', requireAuth, (req, res) => {
-  const c = { id: 'a' + Date.now(), userId: req.user.id, title: 'New chat', pinned: false, messages: [] };
-  S.aiChats.unshift(c); res.status(201).json(c);
+router.post('/chats', requireAuth, async (req, res) => {
+  const id = 'a' + Date.now();
+  const rows = await db.q(
+    'INSERT INTO ai_chats (id, user_id) VALUES ($1,$2) RETURNING *', [id, req.user.id]
+  );
+  res.status(201).json(db.aiChatRow(rows[0]));
 });
 
-router.post('/chats/:id/pin', requireAuth, (req, res) => {
-  const c = S.aiChats.find(x => x.id === req.params.id && x.userId === req.user.id);
-  if (!c) return res.status(404).json({ error: 'not_found' });
-  c.pinned = !c.pinned;
-  res.json({ id: c.id, pinned: c.pinned });
+router.post('/chats/:id/pin', requireAuth, async (req, res) => {
+  const rows = await db.q('UPDATE ai_chats SET pinned=NOT pinned WHERE id=$1 AND user_id=$2 RETURNING id, pinned',
+    [req.params.id, req.user.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  res.json({ id: rows[0].id, pinned: rows[0].pinned });
 });
 
-router.delete('/chats/:id', requireAuth, (req, res) => {
-  const i = S.aiChats.findIndex(x => x.id === req.params.id && x.userId === req.user.id);
-  if (i < 0) return res.status(404).json({ error: 'not_found' });
-  S.aiChats.splice(i, 1);
+router.delete('/chats/:id', requireAuth, async (req, res) => {
+  const del = await db.q('DELETE FROM ai_chats WHERE id=$1 AND user_id=$2 RETURNING id', [req.params.id, req.user.id]);
+  if (!del.length) return res.status(404).json({ error: 'not_found' });
   res.json({ ok: true });
 });
 
 // Text chat — real provider when live, demo brain otherwise.
 router.post('/chats/:id/messages', requireAuth, async (req, res) => {
-  const chat = S.aiChats.find(c => c.id === req.params.id && c.userId === req.user.id);
-  if (!chat) return res.status(404).json({ error: 'not_found' });
+  const rows = await db.q('SELECT * FROM ai_chats WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  const chat = db.aiChatRow(rows[0]);
   const { text } = req.body || {};
   if (!text?.trim()) return res.status(400).json({ error: 'empty' });
   chat.messages.push({ id: 'm' + Date.now(), role: 'user', text });
@@ -56,6 +60,8 @@ router.post('/chats/:id/messages', requireAuth, async (req, res) => {
   const a = { id: 'a' + Date.now(), role: 'assistant', text: reply };
   chat.messages.push(a);
   if (chat.title === 'New chat') chat.title = (text || 'Chat').slice(0, 40);
+  await db.q('UPDATE ai_chats SET messages=$1, title=$2 WHERE id=$3',
+    [JSON.stringify(chat.messages), chat.title, chat.id]);
   res.json(a);
 });
 
@@ -112,25 +118,33 @@ router.post('/agent/plan', requireAuth, (req, res) => {
   res.json({ tool, risk, preview, needsConfirmation: risk !== 'LOW', instruction });
 });
 
-router.post('/agent/execute', requireAuth, (req, res) => {
-  const me = S.users.find(u => u.id === req.user.id);
+router.post('/agent/execute', requireAuth, async (req, res) => {
+  const meRows = await db.q('SELECT * FROM users WHERE id=$1', [req.user.id]);
+  const me = db.userRow(meRows[0]);
   if (!me?.gold) return res.status(403).json({ error: 'gold_required' });
   const { tool, input, confirmed } = req.body || {};
   const risk = LOW.has(tool) ? 'LOW' : MEDIUM.has(tool) ? 'MEDIUM' : 'HIGH';
   if (risk !== 'LOW' && !confirmed) return res.status(428).json({ error: 'confirmation_required', risk });
   let result = { ok: true };
   if (tool === 'publish' && input?.text) {
-    const post = { id: 'p-' + S.uuid().slice(0, 6), authorId: me.id, type: 'TEXT', text: input.text, hashtags: input.hashtags || [],
-      mentions: [], likeCount: 0, commentCount: 0, shareCount: 0, saveCount: 0, viewCount: 0, aiGenerated: true, createdAt: new Date().toISOString(), media: [] };
-    S.posts.unshift(post); result = { published: post.id };
+    const id = 'p-' + db.uuid().slice(0, 6);
+    await db.q(
+      `INSERT INTO posts (id, author_id, type, text, hashtags, media, ai_generated)
+       VALUES ($1,$2,'TEXT',$3,$4,'[]',TRUE)`,
+      [id, me.id, input.text, JSON.stringify(input.hashtags || [])]
+    );
+    result = { published: id };
   }
   if (tool === 'follow' && input?.username) {
-    const u = S.users.find(x => x.username === input.username);
-    if (u) { u.followers++; result = { followed: u.username }; }
+    const upd = await db.q('UPDATE users SET followers=followers+1 WHERE username=$1 RETURNING username', [input.username]);
+    if (upd.length) result = { followed: upd[0].username };
   }
-  if (tool === 'edit_profile' && input?.bio) { me.bio = input.bio; result = { bio: input.bio }; }
-  S.notify(me.id, { category: 'ai', title: 'Agent task completed', body: `${tool} done` });
-  S.auditLog(me.username, 'agent_execute', tool);
+  if (tool === 'edit_profile' && input?.bio) {
+    await db.q('UPDATE users SET bio=$1 WHERE id=$2', [input.bio, me.id]);
+    result = { bio: input.bio };
+  }
+  await db.notify(me.id, { category: 'ai', title: 'Agent task completed', body: `${tool} done` });
+  await db.auditLog(me.username, 'agent_execute', tool);
   res.json({ result, risk, audited: true });
 });
 

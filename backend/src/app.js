@@ -4,6 +4,7 @@ try {
   require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 } catch { /* Vercel injects env vars directly */ }
 
+require('express-async-errors'); // forward async errors to the error middleware
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');

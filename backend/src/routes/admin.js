@@ -1,14 +1,12 @@
 // KING admin: hidden UX client-side; REAL security here — role check + audit + rate limits.
 const router = require('express').Router();
 const rateLimit = require('express-rate-limit');
-const S = require('../lib/store');
+const db = require('../lib/db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { checkPassword, signAccess } = require('../lib/auth');
 
 const adminLoginLimiter = rateLimit({ windowMs: 15 * 60e3, max: 10 });
 const gate = [requireAuth, requireRole('ADMIN', 'SUPERADMIN')];
-
-function strip(u) { if (!u) return null; const { _pw, _vault, ...r } = u; return r; }
 
 router.post('/login', adminLoginLimiter, async (req, res) => {
   const { username, password } = req.body || {};
@@ -20,147 +18,175 @@ router.post('/login', adminLoginLimiter, async (req, res) => {
   } else if ((password || '').length < 8) {
     return res.status(401).json({ error: 'admin_not_bootstrapped' });
   }
-  S.auditLog(username, 'admin_login', '');
+  await db.auditLog(username, 'admin_login', '');
   res.json({ access: signAccess({ id: 'admin-1', username, role: 'ADMIN' }), role: 'ADMIN' });
 });
 
-router.get('/stats', gate, (req, res) => {
-  const msgCount = Object.values(S.messages).reduce((n, arr) => n + arr.length, 0);
+router.get('/stats', gate, async (req, res) => {
+  const [u, p, r, c, m, l, camp, g, pg, pa] = await Promise.all([
+    db.q('SELECT COUNT(*)::int AS c FROM users'),
+    db.q('SELECT COUNT(*)::int AS c FROM posts'),
+    db.q('SELECT COUNT(*)::int AS c FROM reels'),
+    db.q('SELECT COUNT(*)::int AS c FROM conversations'),
+    db.q('SELECT COUNT(*)::int AS c FROM messages'),
+    db.q('SELECT COUNT(*)::int AS c FROM listings'),
+    db.q('SELECT COUNT(*)::int AS c FROM campaigns'),
+    db.q('SELECT COUNT(*)::int AS c FROM users WHERE gold=TRUE'),
+    db.q("SELECT COUNT(*)::int AS c FROM gold_requests WHERE status='PENDING_REVIEW'"),
+    db.q("SELECT COUNT(*)::int AS c FROM campaigns WHERE status='PENDING_REVIEW'"),
+  ]);
   res.json({
-    users: S.users.length, posts: S.posts.length, reels: S.reels.length,
-    conversations: S.conversations.length, messages: msgCount,
-    listings: S.listings.length, campaigns: S.campaigns.length,
-    gold: S.users.filter(u => u.gold).length,
-    pendingGold: S.goldRequests.filter(r => r.status === 'PENDING_REVIEW').length,
-    pendingAds: S.campaigns.filter(c => c.status === 'PENDING_REVIEW').length,
+    users: u[0].c, posts: p[0].c, reels: r[0].c, conversations: c[0].c, messages: m[0].c,
+    listings: l[0].c, campaigns: camp[0].c, gold: g[0].c,
+    pendingGold: pg[0].c, pendingAds: pa[0].c,
   });
 });
 
 // ---- Users ----
-router.get('/users', gate, (req, res) => {
-  res.json({ items: S.users.map(strip) });
+router.get('/users', gate, async (req, res) => {
+  const rows = await db.q('SELECT * FROM users ORDER BY created_at DESC LIMIT 500');
+  res.json({ items: rows.map((u) => db.strip(db.userRow(u, true))) });
 });
-router.post('/users/:id/ban', gate, (req, res) => {
-  const u = S.users.find(x => x.id === req.params.id);
-  if (!u) return res.status(404).json({ error: 'not_found' });
-  u.banned = !u.banned;
-  S.auditLog(req.user.username, u.banned ? 'ban_user' : 'unban_user', u.username);
-  res.json({ id: u.id, banned: u.banned });
+router.post('/users/:id/ban', gate, async (req, res) => {
+  const rows = await db.q('SELECT * FROM users WHERE id=$1', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  const banned = !rows[0].banned;
+  await db.q('UPDATE users SET banned=$1 WHERE id=$2', [banned, req.params.id]);
+  await db.auditLog(req.user.username, banned ? 'ban_user' : 'unban_user', rows[0].username);
+  res.json({ id: req.params.id, banned });
 });
-router.delete('/users/:id', gate, (req, res) => {
-  const i = S.users.findIndex(x => x.id === req.params.id);
-  if (i < 0) return res.status(404).json({ error: 'not_found' });
-  const [u] = S.users.splice(i, 1);
-  S.posts = S.posts.filter(p => p.authorId !== u.id);
-  S.reels = S.reels.filter(r => r.authorId !== u.id);
-  S.listings = S.listings.filter(l => l.sellerId !== u.id);
-  S.auditLog(req.user.username, 'delete_user', u.username);
+router.delete('/users/:id', gate, async (req, res) => {
+  const rows = await db.q('SELECT id, username FROM users WHERE id=$1', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  await db.q('DELETE FROM users WHERE id=$1', [req.params.id]); // content cascades
+  await db.auditLog(req.user.username, 'delete_user', rows[0].username);
   res.json({ ok: true });
 });
 
 // ---- Content ----
-router.get('/posts', gate, (req, res) => {
-  res.json({ items: S.posts.slice(0, 50).map(p => ({ ...p, author: strip(S.users.find(u => u.id === p.authorId)) })) });
+router.get('/posts', gate, async (req, res) => {
+  const rows = await db.q('SELECT * FROM posts ORDER BY created_at DESC LIMIT 50');
+  const aids = [...new Set(rows.map((p) => p.author_id))];
+  const authors = aids.length ? await db.q('SELECT * FROM users WHERE id = ANY($1)', [aids]) : [];
+  const byId = Object.fromEntries(authors.map((u) => [u.id, db.strip(db.userRow(u, true))]));
+  res.json({ items: rows.map((p) => ({ ...db.postRow(p), author: byId[p.author_id] || null })) });
 });
-router.delete('/posts/:id', gate, (req, res) => {
-  const i = S.posts.findIndex(x => x.id === req.params.id);
-  if (i < 0) return res.status(404).json({ error: 'not_found' });
-  S.posts.splice(i, 1);
-  S.auditLog(req.user.username, 'delete_post', req.params.id);
+router.delete('/posts/:id', gate, async (req, res) => {
+  const del = await db.q('DELETE FROM posts WHERE id=$1 RETURNING id', [req.params.id]);
+  if (!del.length) return res.status(404).json({ error: 'not_found' });
+  await db.auditLog(req.user.username, 'delete_post', req.params.id);
   res.json({ ok: true });
 });
-router.post('/posts/:id/boost', gate, (req, res) => {
-  const p = S.posts.find(x => x.id === req.params.id);
-  if (!p) return res.status(404).json({ error: 'not_found' });
-  p.boosted = !p.boosted;
-  p.boostedAt = p.boosted ? new Date().toISOString() : null;
-  const a = S.users.find(u => u.id === p.authorId);
-  if (a) {
-    S.notify(a.id, p.boosted
+router.post('/posts/:id/boost', gate, async (req, res) => {
+  const rows = await db.q('SELECT * FROM posts WHERE id=$1', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  const boosted = !rows[0].boosted;
+  await db.q('UPDATE posts SET boosted=$1, boosted_at=$2 WHERE id=$3',
+    [boosted, boosted ? new Date().toISOString() : null, req.params.id]);
+  const a = await db.q('SELECT id FROM users WHERE id=$1', [rows[0].author_id]);
+  if (a.length) {
+    await db.notify(a[0].id, boosted
       ? { category: 'admin', title: 'إدارة الموقع: تم دعم منشورك', body: 'منشورك عجب الإدارة واتدعم — هيوصل لناس أكتر.' }
       : { category: 'admin', title: 'إدارة الموقع: انتهى الدعم', body: 'اتشال الدعم من منشورك ورجع للترتيب الطبيعي.' });
   }
-  S.auditLog(req.user.username, p.boosted ? 'boost_post' : 'unboost_post', req.params.id);
-  res.json({ id: p.id, boosted: p.boosted });
+  await db.auditLog(req.user.username, boosted ? 'boost_post' : 'unboost_post', req.params.id);
+  res.json({ id: req.params.id, boosted });
 });
-router.delete('/reels/:id', gate, (req, res) => {
-  const i = S.reels.findIndex(x => x.id === req.params.id);
-  if (i < 0) return res.status(404).json({ error: 'not_found' });
-  S.reels.splice(i, 1);
-  S.auditLog(req.user.username, 'delete_reel', req.params.id);
+router.delete('/reels/:id', gate, async (req, res) => {
+  const del = await db.q('DELETE FROM reels WHERE id=$1 RETURNING id', [req.params.id]);
+  if (!del.length) return res.status(404).json({ error: 'not_found' });
+  await db.auditLog(req.user.username, 'delete_reel', req.params.id);
   res.json({ ok: true });
 });
 
 // ---- Gold ----
-router.get('/gold-requests', gate, (req, res) => {
-  res.json({ items: S.goldRequests.map(r => ({ ...r, user: strip(S.users.find(u => u.id === r.userId)) })) });
+router.get('/gold-requests', gate, async (req, res) => {
+  const rows = await db.q('SELECT * FROM gold_requests ORDER BY created_at DESC LIMIT 200');
+  const uids = [...new Set(rows.map((r) => r.user_id))];
+  const users = uids.length ? await db.q('SELECT * FROM users WHERE id = ANY($1)', [uids]) : [];
+  const byId = Object.fromEntries(users.map((u) => [u.id, db.strip(db.userRow(u, true))]));
+  res.json({ items: rows.map((r) => ({ ...db.grRow(r), user: byId[r.user_id] || null })) });
 });
-router.post('/gold-requests/:id/:decision', gate, (req, res) => {
-  const r = S.goldRequests.find(x => x.id === req.params.id);
-  if (!r) return res.status(404).json({ error: 'not_found' });
-  const u = S.users.find(x => x.id === r.userId);
+router.post('/gold-requests/:id/:decision', gate, async (req, res) => {
+  const rows = await db.q('SELECT * FROM gold_requests WHERE id=$1', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  const r = db.grRow(rows[0]);
   if (req.params.decision === 'approve') {
     r.status = 'APPROVED';
-    if (u) { u.gold = true; S.notify(u.id, { category: 'gold', title: 'Gold approved', body: `${r.package?.name || 'ZIVV Gold'} is now active on your account.` }); }
+    await db.q('UPDATE gold_requests SET status=$1 WHERE id=$2', ['APPROVED', r.id]);
+    await db.q('UPDATE users SET gold=TRUE WHERE id=$1', [r.userId]);
+    await db.notify(r.userId, { category: 'gold', title: 'Gold approved', body: `${r.package?.name || 'ZIVV Gold'} is now active on your account.` });
   } else {
     r.status = 'REJECTED';
-    if (u) S.notify(u.id, { category: 'gold', title: 'Gold request rejected', body: 'Contact support for details.' });
+    await db.q('UPDATE gold_requests SET status=$1 WHERE id=$2', ['REJECTED', r.id]);
+    await db.notify(r.userId, { category: 'gold', title: 'Gold request rejected', body: 'Contact support for details.' });
   }
-  S.auditLog(req.user.username, `gold_${req.params.decision}`, r.id);
+  await db.auditLog(req.user.username, `gold_${req.params.decision}`, r.id);
   res.json(r);
 });
 
 // ---- Ads ----
-router.get('/ads', gate, (req, res) => {
-  res.json({ items: S.campaigns.map(c => ({ ...c, owner: strip(S.users.find(u => u.id === c.userId)) })) });
+router.get('/ads', gate, async (req, res) => {
+  const rows = await db.q('SELECT * FROM campaigns ORDER BY created_at DESC LIMIT 200');
+  const uids = [...new Set(rows.map((c) => c.user_id))];
+  const users = uids.length ? await db.q('SELECT * FROM users WHERE id = ANY($1)', [uids]) : [];
+  const byId = Object.fromEntries(users.map((u) => [u.id, db.strip(db.userRow(u, true))]));
+  res.json({ items: rows.map((c) => ({ ...db.campRow(c), owner: byId[c.user_id] || null })) });
 });
-router.post('/ads/:id/:decision', gate, (req, res) => {
-  const c = S.campaigns.find(x => x.id === req.params.id);
-  if (!c) return res.status(404).json({ error: 'not_found' });
+router.post('/ads/:id/:decision', gate, async (req, res) => {
+  const rows = await db.q('SELECT * FROM campaigns WHERE id=$1', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  const c = db.campRow(rows[0]);
   if (req.params.decision === 'approve') {
     c.status = 'PENDING_PAYMENT';
-    S.notify(c.userId, { category: 'ads', title: 'Ad approved — payment next', body: `"${c.title}" passed review. Admin will send the price and payment method.` });
+    await db.q('UPDATE campaigns SET status=$1 WHERE id=$2', ['PENDING_PAYMENT', c.id]);
+    await db.notify(c.userId, { category: 'ads', title: 'Ad approved — payment next', body: `"${c.title}" passed review. Admin will send the price and payment method.` });
   } else {
     c.status = 'REJECTED';
-    S.notify(c.userId, { category: 'ads', title: 'Ad rejected', body: `"${c.title}" did not pass review.` });
+    await db.q('UPDATE campaigns SET status=$1 WHERE id=$2', ['REJECTED', c.id]);
+    await db.notify(c.userId, { category: 'ads', title: 'Ad rejected', body: `"${c.title}" did not pass review.` });
   }
-  S.auditLog(req.user.username, `ad_${req.params.decision}`, c.id);
+  await db.auditLog(req.user.username, `ad_${req.params.decision}`, c.id);
   res.json(c);
 });
-router.post('/ads/:id/activate', gate, (req, res) => {
-  const c = S.campaigns.find(x => x.id === req.params.id);
-  if (!c) return res.status(404).json({ error: 'not_found' });
-  c.status = 'ACTIVE';
-  S.notify(c.userId, { category: 'ads', title: 'Ad is live', body: `"${c.title}" is now running.` });
-  S.auditLog(req.user.username, 'ad_activate', c.id);
+router.post('/ads/:id/activate', gate, async (req, res) => {
+  const rows = await db.q('SELECT * FROM campaigns WHERE id=$1', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  await db.q('UPDATE campaigns SET status=$1 WHERE id=$2', ['ACTIVE', req.params.id]);
+  const c = db.campRow({ ...rows[0], status: 'ACTIVE' });
+  await db.notify(c.userId, { category: 'ads', title: 'Ad is live', body: `"${c.title}" is now running.` });
+  await db.auditLog(req.user.username, 'ad_activate', c.id);
   res.json(c);
 });
 
 // ---- Broadcast / DM as site administration ----
-router.post('/notify', gate, (req, res) => {
+router.post('/notify', gate, async (req, res) => {
   const { to, title, body } = req.body || {};
   if (!title || !body) return res.status(400).json({ error: 'missing_fields' });
   const fullTitle = `إدارة الموقع: ${title}`;
   if (to === 'all' || !to) {
-    S.users.forEach(u => S.notify(u.id, { category: 'admin', title: fullTitle, body }));
-    S.auditLog(req.user.username, 'notify_all', title);
-    return res.json({ sent: S.users.length });
+    const sent = await db.notifyAll({ category: 'admin', title: fullTitle, body });
+    await db.auditLog(req.user.username, 'notify_all', title);
+    return res.json({ sent });
   }
-  const u = S.users.find(x => x.username === to || x.id === to);
-  if (!u) return res.status(404).json({ error: 'user_not_found' });
-  S.notify(u.id, { category: 'admin', title: fullTitle, body });
-  S.auditLog(req.user.username, 'notify_user', u.username);
+  const rows = await db.q('SELECT id, username FROM users WHERE username=$1 OR id=$1', [to]);
+  if (!rows.length) return res.status(404).json({ error: 'user_not_found' });
+  await db.notify(rows[0].id, { category: 'admin', title: fullTitle, body });
+  await db.auditLog(req.user.username, 'notify_user', rows[0].username);
   res.json({ sent: 1 });
 });
 
-router.get('/audit', gate, (req, res) => res.json({ items: S.audit.slice(0, 100) }));
+router.get('/audit', gate, async (req, res) => {
+  const rows = await db.q('SELECT * FROM audit ORDER BY created_at DESC LIMIT 100');
+  res.json({ items: rows.map(db.auditRow) });
+});
 
-router.get('/review-queue', gate, (req, res) => {
-  res.json({
-    ads: S.campaigns.filter(c => c.status === 'PENDING_REVIEW'),
-    gold: S.goldRequests.filter(r => r.status === 'PENDING_REVIEW'),
-    reports: [],
-  });
+router.get('/review-queue', gate, async (req, res) => {
+  const [ads, gold] = await Promise.all([
+    db.q("SELECT * FROM campaigns WHERE status='PENDING_REVIEW' ORDER BY created_at DESC"),
+    db.q("SELECT * FROM gold_requests WHERE status='PENDING_REVIEW' ORDER BY created_at DESC"),
+  ]);
+  res.json({ ads: ads.map(db.campRow), gold: gold.map(db.grRow), reports: [] });
 });
 
 module.exports = router;

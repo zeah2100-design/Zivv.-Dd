@@ -1,59 +1,77 @@
 const router = require('express').Router();
-const S = require('../lib/store');
+const db = require('../lib/db');
 const { requireAuth } = require('../middleware/auth');
 
-function visible(r) {
-  const a = S.users.find(u => u.id === r.authorId);
-  return a && !a.banned;
-}
-
-router.get('/', requireAuth, (req, res) => {
-  res.json({ items: S.reels.filter(visible).map(r => ({ ...r, liked: (r.likedBy || []).includes(req.user.id), author: S.users.find(u => u.id === r.authorId) })).map(({ likedBy, _pointsTo, ...r }) => r) });
+router.get('/', requireAuth, async (req, res) => {
+  const rows = await db.q(
+    `SELECT r.* FROM reels r JOIN users u ON u.id=r.author_id AND u.banned=FALSE
+     ORDER BY r.created_at DESC LIMIT 100`
+  );
+  const items = rows.map(db.reelRow);
+  const aids = [...new Set(items.map((r) => r.authorId))];
+  const rids = items.map((r) => r.id);
+  const [authors, likes] = await Promise.all([
+    aids.length ? db.q('SELECT * FROM users WHERE id = ANY($1)', [aids]) : [],
+    rids.length ? db.q('SELECT reel_id FROM reel_likes WHERE user_id=$1 AND reel_id = ANY($2)', [req.user.id, rids]) : [],
+  ]);
+  const byId = Object.fromEntries(authors.map((u) => [u.id, db.strip(db.userRow(u, true))]));
+  const likedSet = new Set(likes.map((l) => l.reel_id));
+  res.json({ items: items.map((r) => ({ ...r, liked: likedSet.has(r.id), author: byId[r.authorId] || null })) });
 });
 
-router.post('/', requireAuth, (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   const { caption = '', hashtags = [], mediaUrl = '', durationSec = 0, sound = null } = req.body || {};
   if (!caption && !mediaUrl) return res.status(400).json({ error: 'empty_reel' });
   if (mediaUrl && mediaUrl.length > 2.5e6) return res.status(413).json({ error: 'media_too_large' });
-  const r = { id: 'r-' + S.uuid().slice(0, 6), authorId: req.user.id, caption, hashtags,
-    mediaUrl, sound: sound || null, durationSec: durationSec || 0,
-    likeCount: 0, likedBy: [], commentCount: 0, shareCount: 0, playCount: 0, createdAt: new Date().toISOString() };
-  S.reels.unshift(r);
-  res.status(201).json({ ...r, author: S.users.find(u => u.id === r.authorId) });
+  const id = 'r-' + db.uuid().slice(0, 6);
+  const rows = await db.q(
+    `INSERT INTO reels (id, author_id, caption, hashtags, media_url, sound, duration_sec)
+     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+    [id, req.user.id, caption, JSON.stringify(hashtags || []), mediaUrl, sound ? JSON.stringify(sound) : null, durationSec || 0]
+  );
+  const r = db.reelRow(rows[0]);
+  const a = await db.q('SELECT * FROM users WHERE id=$1', [req.user.id]);
+  res.status(201).json({ ...r, author: db.strip(db.userRow(a[0], true)) });
 });
 
-router.post('/:id/like', requireAuth, (req, res) => {
-  const r = S.reels.find(x => x.id === req.params.id);
-  if (!r) return res.status(404).json({ error: 'not_found' });
-  r.likedBy = r.likedBy || [];
-  const i = r.likedBy.indexOf(req.user.id);
+router.post('/:id/like', requireAuth, async (req, res) => {
+  const found = await db.q('SELECT id, author_id FROM reels WHERE id=$1', [req.params.id]);
+  if (!found.length) return res.status(404).json({ error: 'not_found' });
+  const r = found[0];
+  const ex = await db.q('SELECT 1 FROM reel_likes WHERE reel_id=$1 AND user_id=$2', [r.id, req.user.id]);
   let liked;
-  if (i >= 0) { r.likedBy.splice(i, 1); r.likeCount = Math.max(0, r.likeCount - 1); liked = false; }
-  else {
-    r.likedBy.push(req.user.id); r.likeCount++; liked = true;
-    if (r.authorId !== req.user.id) {
-      r._pointsTo = r._pointsTo || [];
-      if (!r._pointsTo.includes(req.user.id)) {
-        r._pointsTo.push(req.user.id);
-        const a = S.users.find(u => u.id === r.authorId);
-        if (a) a.points = (a.points || 0) + 2;
-      }
+  if (ex.length) {
+    await db.q('DELETE FROM reel_likes WHERE reel_id=$1 AND user_id=$2', [r.id, req.user.id]);
+    await db.q('UPDATE reels SET like_count=GREATEST(like_count-1,0) WHERE id=$1', [r.id]);
+    liked = false;
+  } else {
+    await db.q('INSERT INTO reel_likes (reel_id, user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [r.id, req.user.id]);
+    await db.q('UPDATE reels SET like_count=like_count+1 WHERE id=$1', [r.id]);
+    liked = true;
+    if (r.author_id !== req.user.id) {
+      const award = await db.q(
+        'INSERT INTO point_awards (target_type, target_id, user_id) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING RETURNING user_id',
+        ['reel', r.id, req.user.id]
+      );
+      if (award.length) await db.q('UPDATE users SET points=points+2 WHERE id=$1', [r.author_id]);
     }
   }
-  res.json({ likeCount: r.likeCount, liked });
+  const c = await db.q('SELECT like_count FROM reels WHERE id=$1', [r.id]);
+  res.json({ likeCount: c[0].like_count, liked });
 });
 
-router.post('/:id/play', requireAuth, (req, res) => {
-  const r = S.reels.find(x => x.id === req.params.id);
-  if (!r) return res.status(404).json({ error: 'not_found' });
-  r.playCount = (r.playCount || 0) + 1; res.json({ playCount: r.playCount });
+router.post('/:id/play', requireAuth, async (req, res) => {
+  const rows = await db.q('UPDATE reels SET play_count=play_count+1 WHERE id=$1 RETURNING play_count', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  res.json({ playCount: rows[0].play_count });
 });
 
-router.get('/sounds/:id', requireAuth, (req, res) => {
-  const s = S.sounds.find(x => x.id === req.params.id);
-  if (!s) return res.status(404).json({ error: 'not_found' });
-  const reels = S.reels.filter(r => r.sound && r.sound.title === s.title);
-  res.json({ ...s, reels });
+router.get('/sounds/:id', requireAuth, async (req, res) => {
+  const sRows = await db.q('SELECT * FROM sounds WHERE id=$1', [req.params.id]);
+  if (!sRows.length) return res.status(404).json({ error: 'not_found' });
+  const s = db.soundRow(sRows[0]);
+  const reels = await db.q("SELECT * FROM reels WHERE sound->>'title' = $1 ORDER BY created_at DESC LIMIT 50", [s.title]);
+  res.json({ ...s, reels: reels.map(db.reelRow) });
 });
 
 module.exports = router;

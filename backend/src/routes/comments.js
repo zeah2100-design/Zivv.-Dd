@@ -1,69 +1,78 @@
 // Real comments for posts + reels: list, create, like toggle, delete (author/admin).
 const router = require('express').Router();
-const S = require('../lib/store');
+const db = require('../lib/db');
 const { requireAuth } = require('../middleware/auth');
 
-S.comments = S.comments || [];
+const TABLES = { post: 'posts', reel: 'reels' };
 
-function targetOf(type, id) {
-  return type === 'post' ? S.posts.find(x => x.id === id) : S.reels.find(x => x.id === id);
-}
-function strip(u) { if (!u) return null; const { _pw, _vault, email, ...r } = u; return r; }
 function isAdmin(req) {
   return req.user.role === 'ADMIN' || req.user.role === 'SUPERADMIN';
 }
 
 // NOTE: /:cid/like must come before /:type/:id so "like" isn't parsed as an id.
-router.post('/:cid/like', requireAuth, (req, res) => {
-  const c = S.comments.find(x => x.id === req.params.cid);
-  if (!c) return res.status(404).json({ error: 'not_found' });
-  c.likedBy = c.likedBy || [];
-  const i = c.likedBy.indexOf(req.user.id);
+router.post('/:cid/like', requireAuth, async (req, res) => {
+  const found = await db.q('SELECT id FROM comments WHERE id=$1', [req.params.cid]);
+  if (!found.length) return res.status(404).json({ error: 'not_found' });
+  const ex = await db.q('SELECT 1 FROM comment_likes WHERE comment_id=$1 AND user_id=$2', [req.params.cid, req.user.id]);
   let liked;
-  if (i >= 0) { c.likedBy.splice(i, 1); c.likeCount = Math.max(0, (c.likeCount || 1) - 1); liked = false; }
-  else { c.likedBy.push(req.user.id); c.likeCount = (c.likeCount || 0) + 1; liked = true; }
-  res.json({ liked, likeCount: c.likeCount });
+  if (ex.length) {
+    await db.q('DELETE FROM comment_likes WHERE comment_id=$1 AND user_id=$2', [req.params.cid, req.user.id]);
+    await db.q('UPDATE comments SET like_count=GREATEST(like_count-1,0) WHERE id=$1', [req.params.cid]);
+    liked = false;
+  } else {
+    await db.q('INSERT INTO comment_likes (comment_id, user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [req.params.cid, req.user.id]);
+    await db.q('UPDATE comments SET like_count=like_count+1 WHERE id=$1', [req.params.cid]);
+    liked = true;
+  }
+  const c = await db.q('SELECT like_count FROM comments WHERE id=$1', [req.params.cid]);
+  res.json({ liked, likeCount: c[0].like_count });
 });
 
-router.get('/:type/:id', requireAuth, (req, res) => {
+router.get('/:type/:id', requireAuth, async (req, res) => {
   const { type, id } = req.params;
-  if (!['post', 'reel'].includes(type)) return res.status(400).json({ error: 'bad_type' });
-  const items = S.comments
-    .filter(c => c.targetType === type && c.targetId === id)
-    .map(c => ({ ...c, liked: (c.likedBy || []).includes(req.user.id), author: strip(S.users.find(u => u.id === c.authorId)) }))
-    .map(({ likedBy, ...r }) => r);
-  res.json({ items });
+  if (!TABLES[type]) return res.status(400).json({ error: 'bad_type' });
+  const rows = await db.q('SELECT * FROM comments WHERE target_type=$1 AND target_id=$2 ORDER BY created_at ASC', [type, id]);
+  const aids = [...new Set(rows.map((c) => c.author_id))];
+  const cids = rows.map((c) => c.id);
+  const [authors, likes] = await Promise.all([
+    aids.length ? db.q('SELECT * FROM users WHERE id = ANY($1)', [aids]) : [],
+    cids.length ? db.q('SELECT comment_id FROM comment_likes WHERE user_id=$1 AND comment_id = ANY($2)', [req.user.id, cids]) : [],
+  ]);
+  const byId = Object.fromEntries(authors.map((u) => [u.id, db.strip(db.userRow(u, true))]));
+  const likedSet = new Set(likes.map((l) => l.comment_id));
+  res.json({ items: rows.map((c) => ({ ...db.commentRow(c), liked: likedSet.has(c.id), author: byId[c.author_id] || null })) });
 });
 
-router.post('/:type/:id', requireAuth, (req, res) => {
+router.post('/:type/:id', requireAuth, async (req, res) => {
   const { type, id } = req.params;
   const { text } = req.body || {};
-  if (!['post', 'reel'].includes(type)) return res.status(400).json({ error: 'bad_type' });
-  const t = targetOf(type, id);
-  if (!t) return res.status(404).json({ error: 'not_found' });
+  if (!TABLES[type]) return res.status(400).json({ error: 'bad_type' });
+  const t = await db.q(`SELECT id, author_id FROM ${TABLES[type]} WHERE id=$1`, [id]);
+  if (!t.length) return res.status(404).json({ error: 'not_found' });
   if (!text || !text.trim()) return res.status(400).json({ error: 'empty_comment' });
   if (text.length > 500) return res.status(413).json({ error: 'too_long' });
-  const c = {
-    id: 'c-' + S.uuid().slice(0, 6), targetType: type, targetId: id, authorId: req.user.id,
-    text: text.trim().slice(0, 500), likeCount: 0, likedBy: [], createdAt: new Date().toISOString(),
-  };
-  S.comments.push(c);
-  t.commentCount = (t.commentCount || 0) + 1;
-  if (t.authorId !== req.user.id) {
-    const me = S.users.find(u => u.id === req.user.id);
-    S.notify(t.authorId, { category: 'social', title: '💬 تعليق جديد', body: `${me?.name || 'مستخدم'}: ${c.text.slice(0, 80)}` });
+  const cid = 'c-' + db.uuid().slice(0, 6);
+  const rows = await db.q(
+    'INSERT INTO comments (id, target_type, target_id, author_id, text) VALUES ($1,$2,$3,$4,$5) RETURNING *',
+    [cid, type, id, req.user.id, text.trim().slice(0, 500)]
+  );
+  await db.q(`UPDATE ${TABLES[type]} SET comment_count=comment_count+1 WHERE id=$1`, [id]);
+  if (t[0].author_id !== req.user.id) {
+    const me = await db.q('SELECT name FROM users WHERE id=$1', [req.user.id]);
+    await db.notify(t[0].author_id, { category: 'social', title: '💬 تعليق جديد', body: `${me[0]?.name || 'مستخدم'}: ${text.trim().slice(0, 80)}` });
   }
-  res.status(201).json({ ...c, liked: false, author: strip(S.users.find(u => u.id === c.authorId)) });
+  const a = await db.q('SELECT * FROM users WHERE id=$1', [req.user.id]);
+  res.status(201).json({ ...db.commentRow(rows[0]), liked: false, author: db.strip(db.userRow(a[0], true)) });
 });
 
-router.delete('/:cid', requireAuth, (req, res) => {
-  const i = S.comments.findIndex(x => x.id === req.params.cid);
-  if (i < 0) return res.status(404).json({ error: 'not_found' });
-  const c = S.comments[i];
-  if (c.authorId !== req.user.id && !isAdmin(req)) return res.status(403).json({ error: 'forbidden' });
-  S.comments.splice(i, 1);
-  const t = targetOf(c.targetType, c.targetId);
-  if (t) t.commentCount = Math.max(0, (t.commentCount || 1) - 1);
+router.delete('/:cid', requireAuth, async (req, res) => {
+  const found = await db.q('SELECT * FROM comments WHERE id=$1', [req.params.cid]);
+  if (!found.length) return res.status(404).json({ error: 'not_found' });
+  const c = found[0];
+  if (c.author_id !== req.user.id && !isAdmin(req)) return res.status(403).json({ error: 'forbidden' });
+  await db.q('DELETE FROM comments WHERE id=$1', [req.params.cid]);
+  const tbl = TABLES[c.target_type];
+  if (tbl) await db.q(`UPDATE ${tbl} SET comment_count=GREATEST(comment_count-1,0) WHERE id=$1`, [c.target_id]);
   res.json({ ok: true });
 });
 
