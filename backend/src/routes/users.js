@@ -13,9 +13,15 @@ router.get('/:username', requireAuth, async (req, res) => {
   ]);
   res.json({
     user: db.stripPublic(u),
-    posts: posts.map(db.postRow), reels: reels.map(db.reelRow), listings: listings.map(db.listingRow),
+    posts: posts.map((r) => db.postRow(r, false)), reels: reels.map(db.reelRow), listings: listings.map((r) => db.listingRow(r, false)),
     isSelf: u.id === req.user.id, isFollowing: u.id !== req.user.id,
   });
+});
+
+router.get('/:id/avatar', requireAuth, async (req, res) => {
+  const rows = await db.q('SELECT avatar FROM users WHERE id=$1 OR LOWER(username)=LOWER($1)', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  res.json({ avatar: rows[0].avatar || null });
 });
 
 router.post('/:id/follow', requireAuth, async (req, res) => {

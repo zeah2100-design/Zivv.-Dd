@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api, { fmt } from '../lib/api';
+import { usePostMedia, useListingImage } from '../lib/media';
 import { processImage, MAX_UPLOAD_CHARS } from '../lib/image';
 import { useZivv } from '../lib/store';
 import { useLang } from '../lib/i18n';
-import { Avatar, Verified, GoldBadge, Empty, ImageModal } from '../components/ui';
+import { Avatar, Verified, GoldBadge, Empty, ImageModal, resolveAvatar, setAvatarCache } from '../components/ui';
 import PageLoader from '../components/PageLoader';
 import { PostCard } from './Feed';
 import { openConversation } from './Chat';
@@ -19,11 +20,68 @@ function Tile({ icon, label }) {
   );
 }
 
+function PhotoTile({ p, onZoom }) {
+  const media = usePostMedia(p);
+  const src = media?.[0]?.cdnUrl || '';
+  return (
+    <button onClick={() => src && onZoom(src)} className="relative rounded-2xl overflow-hidden aspect-square bg-neutral-100 dark:bg-white/5">
+      {media === null ? <div className="w-full h-full animate-pulse bg-black/5 dark:bg-white/10" />
+        : src ? <img src={src} alt="" loading="lazy" className="w-full h-full object-cover" />
+        : <Tile icon={<ImageIcon size={26} />} label={p.text} />}
+    </button>
+  );
+}
+
+function VideoCard({ p }) {
+  const media = usePostMedia(p);
+  const src = media?.[0]?.cdnUrl || '';
+  return (
+    <div className="card overflow-hidden">
+      {media === null ? <div className="aspect-video animate-pulse bg-black/5 dark:bg-white/10" />
+        : src ? <video src={src} controls preload="metadata" playsInline className="w-full aspect-video bg-black" />
+        : <div className="aspect-video"><Tile icon={<FilmIcon size={30} />} /></div>}
+      {!!p.text && <div className="p-3 text-sm">{p.text}</div>}
+    </div>
+  );
+}
+
+function SongRow({ p }) {
+  const media = usePostMedia(p);
+  const src = media?.[0]?.cdnUrl || '';
+  return (
+    <div className="card p-3 flex items-center gap-3">
+      <div className="w-12 h-12 rounded-xl bg-zivv-purple/15 text-zivv-purple flex items-center justify-center shrink-0">
+        <MusicIcon size={22} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="font-bold text-sm truncate">{p.text?.slice(0, 60) || 'Track'}</div>
+        <div className="text-xs opacity-60">{fmt.time(p.createdAt)}</div>
+        {media === null ? <div className="h-8 mt-1.5 rounded animate-pulse bg-black/5 dark:bg-white/10" />
+          : src ? <audio src={src} controls preload="metadata" className="w-full h-8 mt-1.5" /> : null}
+      </div>
+    </div>
+  );
+}
+
+function StoreCard({ l }) {
+  const img = useListingImage(l);
+  return (
+    <Link to={`/market/${l.id}`} className="card overflow-hidden">
+      <div className="aspect-square bg-neutral-100 dark:bg-white/5">
+        {img === null ? <div className="w-full h-full animate-pulse bg-black/5 dark:bg-white/10" />
+          : img ? <img src={img} alt="" loading="lazy" className="w-full h-full object-cover" />
+          : <Tile icon={<BagIcon size={30} />} />}
+      </div>
+      <div className="p-2.5"><div className="font-bold text-sm">{fmt.money(l.priceCents, l.currency)}</div><div className="text-xs opacity-60 truncate">{l.title}</div></div>
+    </Link>
+  );
+}
+
 function EditModal({ user, onClose, onSaved }) {
   const { t } = useLang();
   const [name, setName] = useState(user.name || '');
   const [bio, setBio] = useState(user.bio || '');
-  const [avatar, setAvatar] = useState(user.avatar || '');
+  const [avatar, setAvatar] = useState(''); // new photo only — empty keeps current
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const fileRef = useRef(null);
@@ -41,8 +99,8 @@ function EditModal({ user, onClose, onSaved }) {
   const save = async () => {
     setBusy(true); setErr('');
     try {
-      const r = await api.patch('/users/me', { name: name.trim(), bio, avatar });
-      onSaved(r.data.user);
+      const r = await api.patch('/users/me', { name: name.trim(), bio, ...(avatar ? { avatar } : {}) }, { timeout: 120000 });
+      onSaved(r.data.user, avatar || null);
     } catch { setErr(t('create.failed')); } finally { setBusy(false); }
   };
 
@@ -55,7 +113,9 @@ function EditModal({ user, onClose, onSaved }) {
           <button onClick={onClose} className="w-9 h-9 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center" aria-label="Close"><XIcon size={18} /></button>
         </div>
         <div className="flex items-center gap-3">
-          <Avatar user={{ ...user, avatar }} size={64} ring={user.gold} />
+          {avatar
+            ? <img src={avatar} alt="" className="w-16 h-16 rounded-full object-cover shrink-0" />
+            : <Avatar user={user} size={64} ring={user.gold} />}
           <button onClick={() => fileRef.current?.click()} className="btn-ghost !py-2 text-sm font-bold">{t('profile.changePhoto')}</button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pick} />
         </div>
@@ -120,6 +180,7 @@ export default function Profile() {
     {
       try {
         const r = await api.patch('/users/me', { avatar: dataUrl }, { timeout: 120000 });
+        setAvatarCache(r.data.user.id, dataUrl);
         setData((d) => ({ ...d, user: r.data.user }));
         refreshUser();
         setMsg(t('profile.saved'));
@@ -127,7 +188,8 @@ export default function Profile() {
     };
     }
 
-  const onSaved = (u) => {
+  const onSaved = (u, newAv) => {
+    if (newAv) setAvatarCache(u.id, newAv);
     setData((d) => ({ ...d, user: u }));
     refreshUser();
     setEditing(false);
@@ -182,7 +244,7 @@ export default function Profile() {
       <div className="px-4 pt-2">
         <div className="flex items-center gap-5">
           <div className="relative shrink-0">
-            <button onClick={() => u.avatar && setZoom(u.avatar)} aria-label="Photo">
+            <button onClick={() => { if (u.hasAvatar) resolveAvatar(u.id).then((a) => a && setZoom(a)); }} aria-label="Photo">
               <Avatar user={u} size={84} ring={u.gold} />
             </button>
             {data.isSelf && (
@@ -238,15 +300,7 @@ export default function Profile() {
             ? <Empty icon={<ImageIcon size={40} />} title={t('profile.noPhotos')} sub="" />
             : (
               <div className="grid grid-cols-3 gap-1.5">
-                {photos.map((p) => {
-                  const src = p.media?.[0]?.cdnUrl || '';
-                  return (
-                    <button key={p.id} onClick={() => src && setZoom(src)} className="relative rounded-2xl overflow-hidden aspect-square bg-neutral-100 dark:bg-white/5">
-                      {src ? <img src={src} alt="" loading="lazy" className="w-full h-full object-cover" /> : <Tile icon={<ImageIcon size={26} />} label={p.text} />}
-                    </button>
-                  );
-                })}
-              </div>
+                {photos.map((p) => <PhotoTile key={p.id} p={p} onZoom={setZoom} />)}              </div>
             ))}
 
           {tab === 'shorts' && (shorts.length === 0
@@ -269,47 +323,17 @@ export default function Profile() {
 
           {tab === 'videos' && (videos.length === 0
             ? <Empty icon={<FilmIcon size={40} />} title={t('profile.noVideos')} sub="" />
-            : videos.map((p) => {
-              const src = p.media?.[0]?.cdnUrl || '';
-              return (
-                <div key={p.id} className="card overflow-hidden">
-                  {src ? <video src={src} controls preload="metadata" playsInline className="w-full aspect-video bg-black" />
-                    : <div className="aspect-video"><Tile icon={<FilmIcon size={30} />} /></div>}
-                  {!!p.text && <div className="p-3 text-sm">{p.text}</div>}
-                </div>
-              );
-            }))}
+            : videos.map((p) => <VideoCard key={p.id} p={p} />))}
 
           {tab === 'songs' && (songs.length === 0
             ? <Empty icon={<MusicIcon size={40} />} title={t('profile.noSongs')} sub="" />
-            : songs.map((p) => {
-              const src = p.media?.[0]?.cdnUrl || '';
-              return (
-                <div key={p.id} className="card p-3 flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-zivv-purple/15 text-zivv-purple flex items-center justify-center shrink-0">
-                    <MusicIcon size={22} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-sm truncate">{p.text?.slice(0, 60) || 'Track'}</div>
-                    <div className="text-xs opacity-60">{fmt.time(p.createdAt)}</div>
-                    {src && <audio src={src} controls preload="metadata" className="w-full h-8 mt-1.5" />}
-                  </div>
-                </div>
-              );
-            }))}
+            : songs.map((p) => <SongRow key={p.id} p={p} />))}
 
           {tab === 'store' && (listings.length === 0
             ? <Empty icon={<BagIcon size={40} />} title={t('profile.noStore')} sub="" />
             : (
               <div className="grid grid-cols-2 gap-2.5">
-                {listings.map((l) => (
-                  <Link key={l.id} to={`/market/${l.id}`} className="card overflow-hidden">
-                    <div className="aspect-square bg-neutral-100 dark:bg-white/5">
-                      {l.image ? <img src={l.image} alt="" loading="lazy" className="w-full h-full object-cover" /> : <Tile icon={<BagIcon size={30} />} />}
-                    </div>
-                    <div className="p-2.5"><div className="font-bold text-sm">{fmt.money(l.priceCents, l.currency)}</div><div className="text-xs opacity-60 truncate">{l.title}</div></div>
-                  </Link>
-                ))}
+                {listings.map((l) => <StoreCard key={l.id} l={l} />)}
               </div>
             ))}
         </div>

@@ -2,10 +2,30 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import api, { fmt } from '../lib/api';
 import { useLang } from '../lib/i18n';
-import { Avatar, ZImg, Empty } from '../components/ui';
+import { Avatar, Empty } from '../components/ui';
+import { useListingImage } from '../lib/media';
 import PageLoader from '../components/PageLoader';
 import { openConversation } from './Chat';
 import { SearchIcon, BagIcon, BackIcon, FlagIcon, PhoneIcon, ChatIcon, ShieldIcon, PlusIcon } from '../components/icons';
+
+function ListingCard({ l, onOpen }) {
+  const img = useListingImage(l);
+  return (
+    <button onClick={onOpen} className="card overflow-hidden text-start">
+      <div className="aspect-square bg-neutral-100 dark:bg-white/5 relative">
+        {img === null ? <div className="w-full h-full animate-pulse bg-black/5 dark:bg-white/10" />
+          : img ? <img src={img} alt="" loading="lazy" className="w-full h-full object-cover" />
+          : <div className="w-full h-full flex items-center justify-center text-neutral-300 dark:text-neutral-600"><BagIcon size={34} /></div>}
+        {l.status !== 'available' && <span className="absolute top-2 start-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/70 text-white">{l.status}</span>}
+      </div>
+      <div className="p-2.5">
+        <div className="font-bold">{fmt.money(l.priceCents, l.currency)}</div>
+        <div className="text-xs opacity-60 truncate">{l.title}</div>
+        <div className="text-[11px] opacity-40 truncate">{l.category} · {l.condition}</div>
+      </div>
+    </button>
+  );
+}
 
 export function Marketplace() {
   const { t } = useLang();
@@ -45,19 +65,7 @@ export function Marketplace() {
       </div>
       {items.length === 0 && <Empty icon={<BagIcon size={40} />} title={t('market.empty')} sub="" />}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
-        {items.map((l) => (
-          <button key={l.id} onClick={() => nav(`/market/${l.id}`)} className="card overflow-hidden text-start">
-            <div className="aspect-square bg-neutral-100 dark:bg-white/5 relative">
-              <ZImg seed={`listing-${l.id}`} w={400} h={400} className="w-full h-full object-cover" alt="" />
-              {l.status !== 'available' && <span className="absolute top-2 start-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/70 text-white">{l.status}</span>}
-            </div>
-            <div className="p-2.5">
-              <div className="font-bold">{fmt.money(l.priceCents, l.currency)}</div>
-              <div className="text-xs opacity-60 truncate">{l.title}</div>
-              <div className="text-[11px] opacity-40 truncate">{l.category} · {l.condition}</div>
-            </div>
-          </button>
-        ))}
+        {items.map((l) => <ListingCard key={l.id} l={l} onOpen={() => nav(`/market/${l.id}`)} />)}
       </div>
       <div className="flex items-start gap-2 text-[11px] opacity-50 px-1 pb-4">
         <ShieldIcon size={14} className="shrink-0 mt-0.5" />{t('market.disclaimer')}
@@ -88,7 +96,7 @@ export function ProductDetail() {
   return (
     <div className="max-w-2xl mx-auto pb-6">
       <div className="relative aspect-square md:rounded-b-3xl overflow-hidden bg-neutral-900">
-        <ZImg seed={`listing-${l.id}`} w={800} h={800} className="w-full h-full object-cover" alt="" />
+        {l.image ? <img src={l.image} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-neutral-500"><BagIcon size={48} /></div>}
         <button onClick={() => nav('/market')} className="absolute top-3 start-3 w-10 h-10 rounded-full bg-black/50 text-white backdrop-blur flex items-center justify-center rtl:rotate-180" aria-label="Back"><BackIcon size={20} /></button>
         <button onClick={report} disabled={reported} className="absolute top-3 end-3 h-10 px-3 rounded-full bg-black/50 text-white backdrop-blur flex items-center gap-1.5 text-xs font-bold disabled:opacity-50">
           <FlagIcon size={15} />{reported ? t('market.reported') : t('market.report')}

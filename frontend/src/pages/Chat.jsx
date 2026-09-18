@@ -5,10 +5,33 @@ import { useZivv } from '../lib/store';
 import { useLang } from '../lib/i18n';
 import { Avatar } from '../components/ui';
 import PageLoader from '../components/PageLoader';
-import { BackIcon, SendIcon, SearchIcon, ImageIcon, SmileIcon, CheckDoubleIcon, MicIcon, StopIcon } from '../components/icons';
+import { BackIcon, SendIcon, SearchIcon, ImageIcon, SmileIcon, CheckDoubleIcon, MicIcon, StopIcon, PlayIcon } from '../components/icons';
 
 function timeHM(ts) {
   try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch { return ''; }
+}
+
+const audioCache = new Map();
+function VoiceBubble({ m }) {
+  const { t } = useLang();
+  const [src, setSrc] = useState(m.audio || audioCache.get(m.id) || null);
+  const [loading, setLoading] = useState(false);
+  const load = async () => {
+    if (src || loading) return;
+    setLoading(true);
+    try {
+      const r = await api.get(`/chat/messages/${m.id}/audio`);
+      const a = r.data.audio || '';
+      audioCache.set(m.id, a);
+      setSrc(a);
+    } finally { setLoading(false); }
+  };
+  if (src) return <audio controls src={src} className="max-w-[210px] h-9" />;
+  return (
+    <button onClick={load} disabled={loading} className="flex items-center gap-2 text-sm font-bold opacity-90 py-1 disabled:opacity-50">
+      <PlayIcon size={18} />{loading ? '…' : t('chat.playVoice')}
+    </button>
+  );
 }
 
 export function ConversationList({ onPick, activeId }) {
@@ -152,8 +175,8 @@ export function Thread({ convId, peer, online, onBack }) {
                   ? `bg-zivv-purple text-white rounded-2xl ${showTail ? 'rounded-ee-md' : ''}`
                   : `bg-black/[.07] dark:bg-white/15 rounded-2xl ${showTail ? 'rounded-es-md' : ''}`
               }`}>
-                {m.kind === 'audio' && m.audio
-                  ? <audio controls src={m.audio} className="max-w-[210px] h-9" />
+                {m.kind === 'audio'
+                  ? <VoiceBubble m={m} />
                   : m.text}
                 <span className={`flex items-center justify-end gap-1 text-[10px] mt-0.5 ${mine ? 'text-white/70' : 'opacity-50'}`}>
                   {timeHM(m.createdAt)}

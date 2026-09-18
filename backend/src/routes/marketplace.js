@@ -3,12 +3,12 @@ const router = require('express').Router();
 const db = require('../lib/db');
 const { requireAuth } = require('../middleware/auth');
 
-async function withSellers(rows) {
+async function withSellers(rows, withImage = true) {
   const sids = [...new Set(rows.map((l) => l.seller_id))];
   const sellers = sids.length ? await db.q('SELECT * FROM users WHERE id = ANY($1)', [sids]) : [];
   const byId = Object.fromEntries(sellers.map((u) => [u.id, db.stripPublic(db.userRow(u, true))]));
   return rows.map((l) => {
-    const o = db.listingRow(l);
+    const o = db.listingRow(l, withImage);
     return { ...o, phone: o.phonePublic ? o.phone : '', seller: byId[o.sellerId] || null };
   });
 }
@@ -20,8 +20,8 @@ router.get('/', requireAuth, async (req, res) => {
   if (category) { vals.push(category); conds.push(`category=$${vals.length}`); }
   if (maxPrice) { vals.push(parseInt(maxPrice, 10)); conds.push(`price_cents<=$${vals.length}`); }
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
-  const rows = await db.q(`SELECT * FROM listings ${where} ORDER BY created_at DESC LIMIT 100`, vals);
-  res.json({ items: await withSellers(rows), categories: ['Phones', 'Sports', 'Cars', 'Fashion', 'Home', 'Electronics'] });
+  const rows = await db.q(`SELECT * FROM listings ${where} ORDER BY created_at DESC LIMIT 30`, vals);
+  res.json({ items: await withSellers(rows, false), categories: ['Phones', 'Sports', 'Cars', 'Fashion', 'Home', 'Electronics'] });
 });
 
 router.get('/:id', requireAuth, async (req, res) => {

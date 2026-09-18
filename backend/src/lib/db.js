@@ -136,6 +136,11 @@ async function migrate() {
   _migrating = (async () => {
     try {
       const s = sql();
+      try {
+        await s.query('SELECT 1 FROM users LIMIT 1');
+        _migrated = true; // tables already exist: skip (fast cold start)
+        return;
+      } catch { /* fresh DB: fall through to full migrate */ }
       // Sequential: tables reference each other, so order matters.
       for (const stmt of SCHEMA) await s.query(stmt);
       _migrated = true;
@@ -171,6 +176,7 @@ function userRow(r, secret = false) {
   const u = {
     id: r.id, firstName: r.first_name, lastName: r.last_name, name: r.name,
     username: r.username, email: r.email, age: r.age, bio: r.bio || '', avatar: r.avatar || null,
+    hasAvatar: !!r.avatar,
     website: r.website || '', language: r.language || 'ar', theme: r.theme || 'light',
     followers: r.followers || 0, following: r.following || 0,
     verified: !!r.verified, gold: !!r.gold, points: r.points || 0,
@@ -179,14 +185,14 @@ function userRow(r, secret = false) {
   if (secret) { u._pw = r.pw_hash; u._vault = r.vault || null; u._attempts = r.attempts || 0; u._lockoutUntil = Number(r.lockout_until || 0); }
   return u;
 }
-function strip(u) { if (!u) return null; const { _pw, _vault, _attempts, _lockoutUntil, ...r } = u; return r; }
-function stripPublic(u) { if (!u) return null; const { _pw, _vault, _attempts, _lockoutUntil, email, ...r } = u; return r; }
+function strip(u) { if (!u) return null; const { _pw, _vault, _attempts, _lockoutUntil, avatar, ...r } = u; return { ...r, hasAvatar: !!u.avatar }; }
+function stripPublic(u) { if (!u) return null; const { _pw, _vault, _attempts, _lockoutUntil, email, avatar, ...r } = u; return { ...r, hasAvatar: !!u.avatar }; }
 
-function postRow(r) {
+function postRow(r, withMedia = true) {
   if (!r) return null;
   return {
     id: r.id, authorId: r.author_id, type: r.type, text: r.text || '',
-    hashtags: J(r.hashtags, []), media: J(r.media, []),
+    hashtags: J(r.hashtags, []), media: withMedia ? J(r.media, []) : [], hasMedia: J(r.media, []).length > 0,
     likeCount: r.like_count || 0, commentCount: r.comment_count || 0,
     shareCount: r.share_count || 0, saveCount: r.save_count || 0, viewCount: r.view_count || 0,
     viewBonusPaid: !!r.view_bonus_paid, aiGenerated: !!r.ai_generated,
@@ -211,13 +217,13 @@ function commentRow(r) {
     text: r.text || '', likeCount: r.like_count || 0, createdAt: iso(r.created_at),
   };
 }
-function listingRow(r) {
+function listingRow(r, withImage = true) {
   if (!r) return null;
   return {
     id: r.id, sellerId: r.seller_id, title: r.title, description: r.description || '',
     priceCents: r.price_cents, currency: r.currency || 'EGP', category: r.category || 'Other',
     condition: r.condition || 'used', phone: r.phone || '', phonePublic: !!r.phone_public,
-    image: r.image || '', status: r.status || 'available', createdAt: iso(r.created_at),
+    image: withImage ? (r.image || '') : '', hasImage: !!(r.image), status: r.status || 'available', createdAt: iso(r.created_at),
   };
 }
 function convoRow(r) {
@@ -229,11 +235,11 @@ function convoRow(r) {
     private: !!r.is_private, createdAt: iso(r.created_at),
   };
 }
-function msgRow(r) {
+function msgRow(r, withAudio = true) {
   if (!r) return null;
   return {
     id: r.id, senderId: r.sender_id, kind: r.kind || 'text',
-    text: r.text || '', audio: r.audio || '', createdAt: iso(r.created_at), state: r.state || 'sent',
+    text: r.text || '', audio: withAudio ? (r.audio || '') : '', hasAudio: !!(r.audio), createdAt: iso(r.created_at), state: r.state || 'sent',
   };
 }
 function notifRow(r) {

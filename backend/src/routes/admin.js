@@ -69,7 +69,7 @@ router.get('/posts', gate, async (req, res) => {
   const aids = [...new Set(rows.map((p) => p.author_id))];
   const authors = aids.length ? await db.q('SELECT * FROM users WHERE id = ANY($1)', [aids]) : [];
   const byId = Object.fromEntries(authors.map((u) => [u.id, db.strip(db.userRow(u, true))]));
-  res.json({ items: rows.map((p) => ({ ...db.postRow(p), author: byId[p.author_id] || null })) });
+  res.json({ items: rows.map((p) => ({ ...db.postRow(p, false), author: byId[p.author_id] || null })) });
 });
 router.delete('/posts/:id', gate, async (req, res) => {
   const del = await db.q('DELETE FROM posts WHERE id=$1 RETURNING id', [req.params.id]);

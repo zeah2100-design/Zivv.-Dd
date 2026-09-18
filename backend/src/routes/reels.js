@@ -5,7 +5,7 @@ const { requireAuth } = require('../middleware/auth');
 router.get('/', requireAuth, async (req, res) => {
   const rows = await db.q(
     `SELECT r.* FROM reels r JOIN users u ON u.id=r.author_id AND u.banned=FALSE
-     ORDER BY r.created_at DESC LIMIT 100`
+     ORDER BY r.created_at DESC LIMIT 30`
   );
   const items = rows.map(db.reelRow);
   const aids = [...new Set(items.map((r) => r.authorId))];

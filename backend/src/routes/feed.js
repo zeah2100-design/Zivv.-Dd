@@ -19,9 +19,9 @@ router.get('/', requireAuth, async (req, res) => {
   const page = parseInt(req.query.page || '1', 10);
   const rows = await db.q(
     `SELECT p.* FROM posts p JOIN users u ON u.id=p.author_id AND u.banned=FALSE
-     ORDER BY p.created_at DESC LIMIT 100`
+     ORDER BY p.created_at DESC LIMIT 30`
   );
-  const items = rows.map(db.postRow);
+  const items = rows.map((r) => db.postRow(r, false));
   const aids = [...new Set(items.map((p) => p.authorId))];
   const pids = items.map((p) => p.id);
   const [authors, likes] = await Promise.all([
@@ -35,6 +35,12 @@ router.get('/', requireAuth, async (req, res) => {
     .sort((a, b) => b._s - a._s)
     .map(({ _s, ...r }) => r);
   res.json({ items: ranked, nextPage: page < 5 ? page + 1 : null });
+});
+
+router.get('/:id/media', requireAuth, async (req, res) => {
+  const rows = await db.q('SELECT media FROM posts WHERE id=$1', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  res.json({ media: db.J(rows[0].media, []) });
 });
 
 router.post('/:id/like', requireAuth, async (req, res) => {

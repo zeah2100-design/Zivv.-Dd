@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api, { fmt } from '../lib/api';
 import { useLang } from '../lib/i18n';
-import { Avatar, ZImg } from '../components/ui';
+import { Avatar } from '../components/ui';
 import PageLoader from '../components/PageLoader';
 import CommentsSheet from '../components/CommentsSheet';
 import { LikeButton } from './Feed';
@@ -42,7 +42,7 @@ function ReelItem({ reel, active }) {
       <div className="absolute inset-0 bg-neutral-900">
         {reel.mediaUrl
           ? <video src={reel.mediaUrl} loop muted playsInline autoPlay={active} preload={active ? 'auto' : 'none'} className="w-full h-full object-cover" />
-          : <ZImg seed={`reel-${reel.id}`} w={540} h={960} className="w-full h-full object-cover" alt="" />}
+          : <div className="w-full h-full zivv-gradient" />}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/85 pointer-events-none" />
       </div>
       {!active && (

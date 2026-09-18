@@ -2,10 +2,25 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api, { fmt } from '../lib/api';
 import { useLang } from '../lib/i18n';
-import { Avatar, ZImg, Empty } from '../components/ui';
+import { Avatar, Empty } from '../components/ui';
+import { useListingImage } from '../lib/media';
 import { SearchIcon, XIcon, HashIcon, MusicIcon, PlayIcon, SparklesIcon, ClockIcon, UserPlusIcon } from '../components/icons';
 
 const TABS = ['top', 'users', 'reels', 'posts', 'music', 'hashtags', 'store'];
+
+function SearchStoreCard({ l, onOpen }) {
+  const img = useListingImage(l);
+  return (
+    <button onClick={onOpen} className="card overflow-hidden text-start">
+      <div className="aspect-square bg-neutral-100 dark:bg-white/5">
+        {img === null ? <div className="w-full h-full animate-pulse bg-black/5 dark:bg-white/10" />
+          : img ? <img src={img} alt="" loading="lazy" className="w-full h-full object-cover" />
+          : <div className="w-full h-full" />}
+      </div>
+      <div className="p-2.5"><div className="font-bold text-sm">{fmt.money(l.priceCents, l.currency)}</div><div className="text-xs opacity-60 truncate">{l.title}</div></div>
+    </button>
+  );
+}
 
 export default function Search() {
   const { t } = useLang();
@@ -167,7 +182,9 @@ export default function Search() {
           <div className="grid grid-cols-3 gap-1.5">
             {res.reels.map((r) => (
               <button key={r.id} onClick={() => nav('/reels')} className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-neutral-800">
-                <ZImg seed={`reel-${r.id}`} w={300} h={400} className="w-full h-full object-cover" alt="" />
+                {r.mediaUrl
+                  ? <video src={r.mediaUrl} preload="metadata" muted playsInline className="w-full h-full object-cover" />
+                  : <div className="w-full h-full zivv-gradient" />}
                 <span className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                 <PlayIcon size={20} className="absolute top-2 start-2 text-white" />
                 <span className="absolute bottom-2 start-2 end-2 text-white text-[11px] font-semibold truncate text-start">{r.caption}</span>
@@ -204,12 +221,7 @@ export default function Search() {
         <div>
           <div className="font-bold mb-2 px-1">{t('search.t_store')}</div>
           <div className="grid grid-cols-2 gap-2">
-            {res.store.map((l) => (
-              <button key={l.id} onClick={() => nav(`/market/${l.id}`)} className="card overflow-hidden text-start">
-                <div className="aspect-square bg-neutral-100 dark:bg-white/5 relative"><ZImg seed={`listing-${l.id}`} w={400} h={400} className="w-full h-full object-cover" alt="" /></div>
-                <div className="p-2.5"><div className="font-bold text-sm">{fmt.money(l.priceCents, l.currency)}</div><div className="text-xs opacity-60 truncate">{l.title}</div></div>
-              </button>
-            ))}
+            {res.store.map((l) => <SearchStoreCard key={l.id} l={l} onOpen={() => nav(`/market/${l.id}`)} />)}
           </div>
         </div>
       )}

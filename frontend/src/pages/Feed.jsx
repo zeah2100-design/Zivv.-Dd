@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import api, { fmt } from '../lib/api';
+import { usePostMedia } from '../lib/media';
 import { useZivv } from '../lib/store';
 import { useLang } from '../lib/i18n';
-import { Avatar, ZImg, AiBadge, ImageModal } from '../components/ui';
+import { Avatar, AiBadge, ImageModal } from '../components/ui';
 import PageLoader from '../components/PageLoader';
 import CommentsSheet from '../components/CommentsSheet';
-import { LikeIcon, CommentIcon, ShareIcon, BookmarkIcon, BookmarkFilledIcon, SendIcon, ImageIcon, SmileIcon, EarthIcon, XIcon, VerifyIcon, CrownIcon, PlayIcon, PauseIcon, MusicIcon, MoonIcon } from '../components/icons';
+import { LikeIcon, CommentIcon, ShareIcon, BookmarkIcon, BookmarkFilledIcon, SendIcon, ImageIcon, SmileIcon, EarthIcon, XIcon, VerifyIcon, CrownIcon, PlayIcon, PauseIcon, MusicIcon, MoonIcon, FilmIcon } from '../components/icons';
 
 export function LikeButton({ targetType = 'post', targetId, liked, count, hideCount = false, onToggle }) {
   const [isLiked, setIsLiked] = useState(!!liked);
@@ -80,67 +81,59 @@ function Composer() {
 }
 
 function PostMedia({ p }) {
-  const [playing, setPlaying] = useState(false);
+  const media = usePostMedia(p);
   const [zoom, setZoom] = useState(null);
-  const src = p.media?.[0]?.cdnUrl || '';
-  if (p.type === 'IMAGE') {
-    const zoomSrc = src || `https://picsum.photos/seed/post-${p.id}/800/600`;
+  if (p.type !== 'IMAGE' && p.type !== 'VIDEO' && p.type !== 'MUSIC') return null;
+  if (media === null) {
     return (
       <div className="px-3 py-2">
-        <button onClick={() => setZoom(zoomSrc)} className="block w-full rounded-xl overflow-hidden bg-neutral-100 dark:bg-white/5 aspect-[4/3]">
-          {src ? <img src={src} alt="" className="w-full h-full object-cover" /> : <ZImg seed={`post-${p.id}`} w={800} h={600} className="w-full h-full object-cover" alt="Post image" />}
+        <div className={`rounded-xl bg-black/5 dark:bg-white/10 animate-pulse ${p.type === 'MUSIC' ? 'h-[76px]' : p.type === 'VIDEO' ? 'aspect-video' : 'aspect-[4/3]'}`} />
+      </div>
+    );
+  }
+  const src = media?.[0]?.cdnUrl || '';
+  if (p.type === 'IMAGE') {
+    if (!src) return null;
+    return (
+      <div className="px-3 py-2">
+        <button onClick={() => setZoom(src)} className="block w-full rounded-xl overflow-hidden bg-neutral-100 dark:bg-white/5 aspect-[4/3]">
+          <img src={src} alt="" loading="lazy" className="w-full h-full object-cover" />
         </button>
         <ImageModal src={zoom} onClose={() => setZoom(null)} />
       </div>
     );
   }
   if (p.type === 'VIDEO') {
-    if (src) {
+    if (!src) {
       return (
         <div className="px-3 py-2">
-          <video src={src} controls preload="metadata" playsInline className="w-full rounded-xl bg-black aspect-video" />
+          <div className="rounded-xl bg-black aspect-video flex items-center justify-center text-white/40">
+            <FilmIcon size={34} />
+          </div>
         </div>
       );
     }
     return (
       <div className="px-3 py-2">
-        <div className="rounded-xl overflow-hidden bg-black aspect-video relative cursor-pointer" onClick={() => setPlaying(!playing)}>
-          <ZImg seed={`vid-${p.id}`} w={800} h={450} className="absolute inset-0 w-full h-full object-cover opacity-80" alt="Video" />
-          <div className="absolute inset-0 bg-black/20" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="w-14 h-14 rounded-full bg-black/55 backdrop-blur flex items-center justify-center text-white">
-              {playing ? <PauseIcon size={26} /> : <PlayIcon size={26} className="ms-1" />}
-            </span>
-          </div>
-          <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20"><div className="h-full bg-white rounded-full" style={{ width: playing ? '32%' : '8%' }} /></div>
-        </div>
+        <video src={src} controls preload="metadata" playsInline className="w-full rounded-xl bg-black aspect-video" />
       </div>
     );
   }
-  if (p.type === 'MUSIC') {
-    return (
-      <div className="px-3 py-2">
-        <div className="rounded-xl bg-black/[.04] dark:bg-white/[.07] p-3 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-lg overflow-hidden bg-zivv-purple shrink-0">
-            <ZImg seed={`song-${p.id}`} w={200} h={200} className="w-full h-full object-cover" alt="Cover" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-bold text-sm truncate">{p.text?.slice(0, 40) || 'Track'}</div>
-            <div className="text-xs opacity-60 flex items-center gap-1"><MusicIcon size={12} />{p.author?.name}</div>
-            {src
-              ? <audio src={src} controls preload="metadata" className="w-full h-8 mt-1.5" />
-              : <div className="h-1 rounded-full bg-black/10 dark:bg-white/15 mt-2 overflow-hidden"><div className="h-full w-1/3 bg-zivv-purple rounded-full" /></div>}
-          </div>
-          {!src && (
-            <button onClick={() => setPlaying(!playing)} className="w-10 h-10 rounded-full bg-zivv-purple text-white flex items-center justify-center shrink-0 active:scale-95 transition" aria-label="Play">
-              {playing ? <PauseIcon size={18} /> : <PlayIcon size={18} className="ms-0.5" />}
-            </button>
-          )}
+  // MUSIC
+  return (
+    <div className="px-3 py-2">
+      <div className="rounded-xl bg-black/[.04] dark:bg-white/[.07] p-3 flex items-center gap-3">
+        <div className="w-12 h-12 rounded-lg bg-zivv-purple/15 text-zivv-purple flex items-center justify-center shrink-0">
+          <MusicIcon size={22} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-sm truncate">{p.text?.slice(0, 40) || 'Track'}</div>
+          <div className="text-xs opacity-60 flex items-center gap-1"><MusicIcon size={12} />{p.author?.name}</div>
+          {src && <audio src={src} controls preload="metadata" className="w-full h-8 mt-1.5" />}
         </div>
       </div>
-    );
-  }
-  return null;
+    </div>
+  );
 }
 
 export function PostCard({ post: p }) {

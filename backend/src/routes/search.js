@@ -40,10 +40,10 @@ router.get('/', requireAuth, async (req, res) => {
   const data = {
     users: users.map((u) => db.strip(db.userRow(u, true))),
     reels: reels.map(db.reelRow),
-    posts: posts.map(db.postRow),
+    posts: posts.map((x) => db.postRow(x, false)),
     music: music.map(db.soundRow),
     hashtags: tags,
-    store: store.map(db.listingRow),
+    store: store.map((x) => db.listingRow(x, false)),
   };
   if (q) {
     const ex = await db.q('SELECT id FROM search_history WHERE user_id=$1 AND query=$2', [req.user.id, q]);
@@ -62,9 +62,9 @@ router.get('/explore', requireAuth, async (req, res) => {
     db.q('SELECT * FROM listings ORDER BY created_at DESC LIMIT 30'),
   ]);
   res.json({
-    trending: posts.map(db.postRow), forYou: reels.map(db.reelRow), popularReels: reels.map(db.reelRow),
+    trending: posts.map((x) => db.postRow(x, false)), forYou: reels.map(db.reelRow), popularReels: reels.map(db.reelRow),
     trendingSounds: sounds.map(db.soundRow), trendingHashtags: tags.map((t) => t.h),
-    suggestedAccounts: users.map((u) => db.strip(db.userRow(u, true))), products: listings.map(db.listingRow),
+    suggestedAccounts: users.map((u) => db.strip(db.userRow(u, true))), products: listings.map((x) => db.listingRow(x, false)),
   });
 });
 
@@ -81,7 +81,7 @@ router.post('/ai', requireAuth, async (req, res) => {
     db.q('SELECT * FROM sounds WHERE LOWER(title) LIKE $1 OR LOWER(artist) LIKE $1 LIMIT 3', [like]),
   ]);
   const picks = {
-    reels: reels.map(db.reelRow), posts: posts.map(db.postRow),
+    reels: reels.map(db.reelRow), posts: posts.map((x) => db.postRow(x, false)),
     users: users.map((u) => db.strip(db.userRow(u, true))), music: music.map(db.soundRow),
   };
   const n = picks.reels.length + picks.posts.length + picks.users.length;

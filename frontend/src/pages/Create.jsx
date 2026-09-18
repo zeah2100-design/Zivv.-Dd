@@ -27,6 +27,7 @@ export default function Create() {
   const [preview, setPreview] = useState('');
   const [duration, setDuration] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [done, setDone] = useState('');
   const [err, setErr] = useState('');
   const fileRef = useRef(null);
@@ -45,22 +46,26 @@ export default function Create() {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
-    setErr('');
-    const dataUrl = await processImage(f);
-    if (!dataUrl) { setErr(t('create.failed')); return; }
-    if (dataUrl.length > MAX_UPLOAD_CHARS) { setErr(t('create.tooBig')); return; }
-    setMediaUrl(dataUrl); setPreview(dataUrl);
+    setErr(''); setPreparing(true);
+    try {
+      const dataUrl = await processImage(f);
+      if (!dataUrl) { setErr(t('create.failed')); return; }
+      if (dataUrl.length > MAX_UPLOAD_CHARS) { setErr(t('create.tooBig')); return; }
+      setMediaUrl(dataUrl); setPreview(dataUrl);
+    } finally { setPreparing(false); }
   };
 
   const pickListingImg = async (e) => {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
-    setErr('');
-    const dataUrl = await processImage(f);
-    if (!dataUrl) { setErr(t('create.failed')); return; }
-    if (dataUrl.length > MAX_UPLOAD_CHARS) { setErr(t('create.tooBig')); return; }
-    setLimg(dataUrl);
+    setErr(''); setPreparing(true);
+    try {
+      const dataUrl = await processImage(f);
+      if (!dataUrl) { setErr(t('create.failed')); return; }
+      if (dataUrl.length > MAX_UPLOAD_CHARS) { setErr(t('create.tooBig')); return; }
+      setLimg(dataUrl);
+    } finally { setPreparing(false); }
   };
 
   const detectDuration = (url, isVideo) => {
@@ -151,8 +156,8 @@ export default function Create() {
                   <button onClick={() => { setPreview(''); setMediaUrl(''); }} className="absolute top-2 end-2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center" aria-label="Remove"><XIcon size={16} /></button>
                 </div>
               ) : (
-                <button onClick={() => fileRef.current?.click()} className="w-full py-6 rounded-xl border-2 border-dashed border-black/15 dark:border-white/15 text-sm font-bold opacity-70 hover:opacity-100 flex items-center justify-center gap-2">
-                  <ImageIcon size={19} />{t('create.pickImage')}
+                <button onClick={() => fileRef.current?.click()} disabled={preparing} className="w-full py-6 rounded-xl border-2 border-dashed border-black/15 dark:border-white/15 text-sm font-bold opacity-70 hover:opacity-100 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {preparing ? t('create.preparing') : <><ImageIcon size={19} />{t('create.pickImage')}</>}
                 </button>
               )}
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickFile} />
@@ -185,7 +190,7 @@ export default function Create() {
           <div className="flex items-center gap-2 mt-3 pt-3 border-t border-black/5 dark:border-white/10">
             <span className="text-[11px] opacity-50 font-semibold">{kind === 'short' ? t('create.goesReels') : t('create.goesHome')}</span>
             <div className="flex-1" />
-            <button onClick={publish} disabled={busy || (!text.trim() && !mediaUrl)} className="btn-primary disabled:opacity-40 flex items-center gap-2">
+            <button onClick={publish} disabled={busy || preparing || (!text.trim() && !mediaUrl)} className="btn-primary disabled:opacity-40 flex items-center gap-2">
               <SendIcon size={17} />{t('create.publish')}
             </button>
           </div>
@@ -214,13 +219,13 @@ export default function Create() {
               <button onClick={() => setLimg('')} className="absolute top-2 end-2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center" aria-label="Remove"><XIcon size={16} /></button>
             </div>
           ) : (
-            <button onClick={() => limgRef.current?.click()} className="w-full py-4 rounded-xl border-2 border-dashed border-black/15 dark:border-white/15 text-sm font-bold opacity-70 hover:opacity-100 flex items-center justify-center gap-2">
-              <ImageIcon size={19} />{t('create.listingImage')}
+            <button onClick={() => limgRef.current?.click()} disabled={preparing} className="w-full py-4 rounded-xl border-2 border-dashed border-black/15 dark:border-white/15 text-sm font-bold opacity-70 hover:opacity-100 disabled:opacity-50 flex items-center justify-center gap-2">
+              {preparing ? t('create.preparing') : <><ImageIcon size={19} />{t('create.listingImage')}</>}
             </button>
           )}
           <input ref={limgRef} type="file" accept="image/*" className="hidden" onChange={pickListingImg} />
           {!!err && <div className="text-red-500 text-sm font-bold">{err}</div>}
-          <button onClick={publishListing} disabled={!title.trim() || !price || busy} className="btn-primary w-full disabled:opacity-40">{t('create.publishListing')}</button>
+          <button onClick={publishListing} disabled={!title.trim() || !price || busy || preparing} className="btn-primary w-full disabled:opacity-40">{t('create.publishListing')}</button>
         </div>
       )}
 

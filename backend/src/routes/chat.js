@@ -42,8 +42,8 @@ router.get('/conversations', requireAuth, async (req, res) => {
 router.get('/conversations/:id/messages', requireAuth, async (req, res) => {
   const c = await db.q('SELECT * FROM conversations WHERE id=$1', [req.params.id]);
   if (!c.length || (c[0].a_id !== req.user.id && c[0].b_id !== req.user.id)) return res.status(404).json({ error: 'not_found' });
-  const rows = await db.q('SELECT * FROM messages WHERE conv_id=$1 ORDER BY created_at ASC LIMIT 500', [req.params.id]);
-  res.json({ items: rows.map(db.msgRow) });
+  const rows = await db.q('SELECT * FROM messages WHERE conv_id=$1 ORDER BY created_at ASC LIMIT 100', [req.params.id]);
+  res.json({ items: rows.map((r) => db.msgRow(r, false)) });
 });
 
 router.post('/conversations/:id/messages', requireAuth, async (req, res) => {
@@ -62,6 +62,14 @@ router.post('/conversations/:id/messages', requireAuth, async (req, res) => {
     [audio ? '🎤 Voice message' : (text || ''), req.params.id]);
   req.app.get('io')?.to(req.params.id).emit('message:new', msg);
   res.status(201).json(msg);
+});
+
+router.get('/messages/:mid/audio', requireAuth, async (req, res) => {
+  const rows = await db.q(
+    `SELECT m.audio FROM messages m JOIN conversations c ON c.id=m.conv_id
+     WHERE m.id=$1 AND (c.a_id=$2 OR c.b_id=$2)`, [req.params.mid, req.user.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  res.json({ audio: rows[0].audio || '' });
 });
 
 router.post('/conversations/:id/read', requireAuth, async (req, res) => {

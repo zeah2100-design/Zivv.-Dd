@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import api from '../lib/api';
 import { CrownIcon, SparkleIcon } from './icons';
 
 export function Logo({ size = 36, wordmark = true }) {
@@ -12,11 +13,41 @@ export function Logo({ size = 36, wordmark = true }) {
 
 function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
 
-// Real face photos online, neutral initials offline.
+// Avatar bytes load lazily (lists carry hasAvatar only) — cached per session.
+const avatarCache = new Map();
+const avatarPending = new Map();
+export function resolveAvatar(id) {
+  if (!id) return Promise.resolve(null);
+  if (avatarCache.has(id)) return Promise.resolve(avatarCache.get(id));
+  if (!avatarPending.has(id)) {
+    avatarPending.set(id, api.get(`/users/${id}/avatar`).then((r) => {
+      avatarCache.set(id, r.data.avatar || null);
+      return r.data.avatar || null;
+    }).catch(() => { avatarCache.set(id, null); return null; }).finally(() => avatarPending.delete(id)));
+  }
+  return avatarPending.get(id);
+}
+export function setAvatarCache(id, dataUrl) {
+  if (id) avatarCache.set(id, dataUrl || null);
+}
+
+// Real user photo, lazy-loaded — neutral initials meanwhile.
 export function Avatar({ user, size = 44, ring = false }) {
   const [err, setErr] = useState(false);
+  const [lazy, setLazy] = useState(null);
   const name = user?.name || user?.username || '?';
-  const src = user?.avatar || '';
+  const direct = user?.avatar || '';
+  const id = user?.id;
+  const wantLazy = !direct && id && user?.hasAvatar;
+  useEffect(() => {
+    setErr(false);
+    if (!wantLazy) { setLazy(null); return; }
+    if (avatarCache.has(id)) { setLazy(avatarCache.get(id)); return; }
+    let on = true;
+    resolveAvatar(id).then((v) => { if (on) setLazy(v); });
+    return () => { on = false; };
+  }, [id, direct, user?.hasAvatar]);
+  const src = direct || lazy || '';
   const initials = name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
   const inner = (src && !err) ? (
     <img src={src} onError={() => setErr(true)} alt={name} loading="lazy"
