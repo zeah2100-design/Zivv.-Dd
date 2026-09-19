@@ -69,7 +69,7 @@ router.patch('/me', requireAuth, async (req, res) => {
   const u = db.userRow(rows[0]);
   if (!u) return res.status(404).json({ error: 'not_found' });
   const { name, bio, website, language, theme, avatar } = req.body || {};
-  if (avatar && avatar.length > 4.2e6) return res.status(413).json({ error: 'media_too_large' });
+  if (avatar && avatar.length > 4.4e6) return res.status(413).json({ error: 'media_too_large' });
   const sets = [], vals = [];
   const set = (col, v) => { vals.push(v); sets.push(`${col}=$${vals.length}`); };
   if (name) set('name', name);

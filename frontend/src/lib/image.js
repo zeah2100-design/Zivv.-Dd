@@ -79,4 +79,4 @@ export function processImage(file, { maxDim = 1600, quality = 0.85 } = {}) {
 
 // Absolute ceiling: hosting (Vercel) rejects bodies over ~4.5MB,
 // so uploads must stay under ~4MB including JSON overhead.
-export const MAX_UPLOAD_CHARS = 4.0e6;
+export const MAX_UPLOAD_CHARS = 4.3e6; // platform ceiling (~4.5MB body): no app-level limit below it

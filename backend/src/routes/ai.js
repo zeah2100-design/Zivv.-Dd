@@ -136,8 +136,13 @@ router.post('/agent/execute', requireAuth, async (req, res) => {
     result = { published: id };
   }
   if (tool === 'follow' && input?.username) {
-    const upd = await db.q('UPDATE users SET followers=followers+1 WHERE LOWER(username)=LOWER($1) RETURNING username', [input.username]);
-    if (upd.length) result = { followed: upd[0].username };
+    const tgt = await db.q('SELECT id, username FROM users WHERE LOWER(username)=LOWER($1) AND banned=FALSE', [input.username]);
+    if (tgt.length && tgt[0].id !== me.id) {
+      await db.q('INSERT INTO follows (follower_id, followee_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [me.id, tgt[0].id]);
+      await db.q('UPDATE users SET followers=(SELECT COUNT(*) FROM follows WHERE followee_id=$1) WHERE id=$1', [tgt[0].id]);
+      await db.q('UPDATE users SET following=(SELECT COUNT(*) FROM follows WHERE follower_id=$1) WHERE id=$1', [me.id]);
+      result = { followed: tgt[0].username };
+    }
   }
   if (tool === 'edit_profile' && input?.bio) {
     await db.q('UPDATE users SET bio=$1 WHERE id=$2', [input.bio, me.id]);

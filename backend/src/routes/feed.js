@@ -105,7 +105,7 @@ router.post('/', requireAuth, async (req, res) => {
   if (!TYPES.has(type)) return res.status(400).json({ error: 'bad_type' });
   const max = meRows[0]?.gold ? 5000 : 2000; // Gold perk: longer posts
   if ((text || '').length > max) return res.status(413).json({ error: 'too_long', max });
-  if (mediaUrl && mediaUrl.length > 4.2e6) return res.status(413).json({ error: 'media_too_large' });
+  if (mediaUrl && mediaUrl.length > 4.4e6) return res.status(413).json({ error: 'media_too_large' });
   const kind = type === 'IMAGE' ? 'IMAGE' : type === 'VIDEO' ? 'VIDEO' : type === 'MUSIC' ? 'AUDIO' : 'TEXT';
   const id = 'p-' + db.uuid().slice(0, 6);
   const media = mediaUrl ? [{ kind, cdnUrl: mediaUrl, durationSec: durationSec || 0 }] : [];

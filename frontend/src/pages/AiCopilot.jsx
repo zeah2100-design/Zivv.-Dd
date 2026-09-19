@@ -15,10 +15,15 @@ const MODES = [['chat', ChatIcon], ['caption', EditIcon], ['ideas', BulbIcon], [
 const suggestions = (t) => [t('ai.s1'), t('ai.s2'), t('ai.s3'), t('ai.s4')];
 
 export default function AiCopilot() {
-  const { user } = useZivv();
+  const { user, refreshUser } = useZivv();
   const { t, lang, isRTL } = useLang();
   const nav = useNavigate();
-  const isGold = !!user?.gold;
+  const [goldFresh, setGoldFresh] = useState(null); // live from server — cache may predate approval
+  useEffect(() => {
+    try { refreshUser(); } catch {}
+    api.get('/gold/status').then((r) => setGoldFresh(!!r.data.gold)).catch(() => setGoldFresh(false));
+  }, []);
+  const isGold = goldFresh === null ? !!user?.gold : goldFresh;
   const [chats, setChats] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [msgs, setMsgs] = useState([]);

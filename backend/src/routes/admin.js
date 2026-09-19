@@ -55,7 +55,11 @@ router.post('/users/:id/ban', gate, async (req, res) => {
 router.delete('/users/:id', gate, async (req, res) => {
   const rows = await db.q('SELECT id, username FROM users WHERE id=$1', [req.params.id]);
   if (!rows.length) return res.status(404).json({ error: 'not_found' });
-  await db.q('DELETE FROM users WHERE id=$1', [req.params.id]); // content cascades
+  const aff = await db.q('SELECT follower_id AS id FROM follows WHERE followee_id=$1 UNION SELECT followee_id AS id FROM follows WHERE follower_id=$1', [req.params.id]);
+  await db.q('DELETE FROM users WHERE id=$1', [req.params.id]); // content + follows cascade
+  for (const a of aff) {
+    await db.q('UPDATE users SET followers=(SELECT COUNT(*) FROM follows WHERE followee_id=$1), following=(SELECT COUNT(*) FROM follows WHERE follower_id=$1) WHERE id=$1', [a.id]);
+  }
   await db.auditLog(req.user.username, 'delete_user', rows[0].username);
   res.json({ ok: true });
 });

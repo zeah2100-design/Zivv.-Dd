@@ -74,7 +74,6 @@ export default function Create() {
     e.target.value = '';
     if (!f) return;
     setErr('');
-    if (f.size > 3.9e6) { setErr(t('create.tooBig')); return; }
     setPreparing(true);
     try {
       const dataUrl = await new Promise((res, rej) => {

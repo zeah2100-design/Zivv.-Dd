@@ -68,8 +68,8 @@ router.post('/conversations/:id/messages', requireAuth, async (req, res) => {
   if (!c.length || (c[0].a_id !== req.user.id && c[0].b_id !== req.user.id)) return res.status(404).json({ error: 'not_found' });
   const { text, kind = 'text', audio = '', image = '' } = req.body || {};
   if (!text && !audio && !image) return res.status(400).json({ error: 'empty' });
-  if (audio && audio.length > 4.2e6) return res.status(413).json({ error: 'audio_too_large' });
-  if (image && image.length > 4.2e6) return res.status(413).json({ error: 'image_too_large' });
+  if (audio && audio.length > 4.4e6) return res.status(413).json({ error: 'audio_too_large' });
+  if (image && image.length > 4.4e6) return res.status(413).json({ error: 'image_too_large' });
   const id = 'm' + Date.now();
   const rows = await db.q(
     'INSERT INTO messages (id, conv_id, sender_id, kind, text, audio, image) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
@@ -178,8 +178,8 @@ router.post('/private/conversations/:id/messages', requireAuth, async (req, res)
   if (!c.length || (c[0].a_id !== req.user.id && c[0].b_id !== req.user.id)) return res.status(404).json({ error: 'not_found' });
   const { text, kind = 'text', audio = '', image = '' } = req.body || {};
   if (!text && !audio && !image) return res.status(400).json({ error: 'empty' });
-  if (audio && audio.length > 4.2e6) return res.status(413).json({ error: 'audio_too_large' });
-  if (image && image.length > 4.2e6) return res.status(413).json({ error: 'image_too_large' });
+  if (audio && audio.length > 4.4e6) return res.status(413).json({ error: 'audio_too_large' });
+  if (image && image.length > 4.4e6) return res.status(413).json({ error: 'image_too_large' });
   const id = 'm' + Date.now();
   const rows = await db.q(
     'INSERT INTO messages (id, conv_id, sender_id, kind, text, audio, image) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
