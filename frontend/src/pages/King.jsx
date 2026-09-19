@@ -51,7 +51,12 @@ export default function King() {
       ]);
       setStats(s.data); setUsers(uu.data.items || []); setPosts(pp.data.items || []);
       setGold(g.data.items || []); setAds(a.data.items || []); setAudit(au.data.items || []);
-    } catch { setErr(t('king.e_load')); } finally { setLoading(false); }
+    } catch (e) {
+      if (e.response?.status === 401 || e.response?.status === 403) {
+        localStorage.removeItem('zivv_admin');
+        setToken('');
+      } else setErr(t('king.e_load'));
+    } finally { setLoading(false); }
   };
 
   useEffect(() => { if (token) load(token); }, [token]);
@@ -191,9 +196,12 @@ export default function King() {
                   <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-600">{r.status}</span>
                 </div>
                 {r.status === 'PENDING_REVIEW' && (
-                  <div className="flex gap-2 mt-2.5">
-                    <button onClick={() => act(() => api.post(`/admin/gold-requests/${r.id}/approve`, {}, H(token)))} className="btn-primary !py-1.5 text-sm flex-1 flex items-center justify-center gap-1.5"><CheckIcon size={15} />{t('king.approve')}</button>
-                    <button onClick={() => act(() => api.post(`/admin/gold-requests/${r.id}/reject`, {}, H(token)))} className="btn-ghost !py-1.5 text-sm flex-1 flex items-center justify-center gap-1.5"><XIcon size={15} />{t('king.reject')}</button>
+                  <div className="space-y-2 mt-2.5">
+                    <button onClick={() => { const v = prompt(t('king.msgPh')); if (v && v.trim()) act(() => api.post(`/admin/gold-requests/${r.id}/message`, { text: v.trim() }, H(token))); }} className="btn-ghost !py-1.5 text-sm w-full flex items-center justify-center gap-1.5"><SendIcon size={15} />{t('king.msgBtn')}</button>
+                    <div className="flex gap-2">
+                      <button onClick={() => act(() => api.post(`/admin/gold-requests/${r.id}/approve`, {}, H(token)))} className="btn-primary !py-1.5 text-sm flex-1 flex items-center justify-center gap-1.5"><CheckIcon size={15} />{t('king.approve')}</button>
+                      <button onClick={() => act(() => api.post(`/admin/gold-requests/${r.id}/reject`, {}, H(token)))} className="btn-ghost !py-1.5 text-sm flex-1 flex items-center justify-center gap-1.5"><XIcon size={15} />{t('king.reject')}</button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -214,6 +222,9 @@ export default function King() {
                   </div>
                   <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10">{c.status}</span>
                 </div>
+                {c.status === 'PENDING_REVIEW' && (
+                  <button onClick={() => { const v = prompt(t('king.msgPh')); if (v && v.trim()) act(() => api.post(`/admin/ads/${c.id}/message`, { text: v.trim() }, H(token))); }} className="btn-ghost !py-1.5 text-sm w-full mt-2.5 flex items-center justify-center gap-1.5"><SendIcon size={15} />{t('king.msgBtn')}</button>
+                )}
                 <div className="flex gap-2 mt-2.5">
                   {c.status === 'PENDING_REVIEW' && (
                     <>

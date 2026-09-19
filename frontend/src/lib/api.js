@@ -12,7 +12,7 @@ api.interceptors.response.use(
   (r) => r,
   async (err) => {
     const cfg = err.config || {};
-    if (err.response?.status === 401 && !cfg._retried && !cfg.url?.includes('/auth/')) {
+    if (err.response?.status === 401 && !cfg._retried && !cfg.url?.includes('/auth/') && !cfg.url?.includes('/admin/')) { // admin auth is separate: never swap in a user token
       cfg._retried = true;
       try {
         const refresh = localStorage.getItem('zivv_refresh');
