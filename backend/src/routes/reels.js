@@ -37,7 +37,8 @@ router.post('/', requireAuth, async (req, res) => {
 router.get('/:id/media', requireAuth, async (req, res) => {
   const rows = await db.q('SELECT media_url FROM reels WHERE id=$1', [req.params.id]);
   if (!rows.length) return res.status(404).json({ error: 'not_found' });
-  res.json({ mediaUrl: rows[0].media_url || '' });
+  const { resolveUrl } = require('../lib/storage');
+  res.json({ mediaUrl: await resolveUrl(rows[0].media_url || '') });
 });
 
 router.post('/:id/share', requireAuth, async (req, res) => {

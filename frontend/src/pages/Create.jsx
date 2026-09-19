@@ -25,6 +25,8 @@ export default function Create() {
   const [text, setText] = useState('');
   const [mediaUrl, setMediaUrl] = useState('');
   const [preview, setPreview] = useState('');
+  const [previewUrl, setPreviewUrl] = useState(''); // playable preview for R2 uploads
+  const [upPct, setUpPct] = useState(-1);
   const [duration, setDuration] = useState(0);
   const [busy, setBusy] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -69,31 +71,75 @@ export default function Create() {
     } finally { setPreparing(false); }
   };
 
+  const fileDuration = (f, tag) => new Promise((res) => {
+    let done = false;
+    const fin = (d) => { if (!done) { done = true; res(d); } };
+    try {
+      const url = URL.createObjectURL(f);
+      const el = document.createElement(tag);
+      el.preload = 'metadata';
+      el.onloadedmetadata = () => { const d = Math.round(el.duration || 0); URL.revokeObjectURL(url); fin(Number.isFinite(d) ? d : 0); };
+      el.onerror = () => { URL.revokeObjectURL(url); fin(0); };
+      el.src = url;
+      setTimeout(() => fin(0), 8000);
+    } catch { fin(0); }
+  });
+
+  const putFile = (url, file, contentType) => new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url, true);
+    xhr.setRequestHeader('Content-Type', contentType);
+    xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) setUpPct(Math.round((ev.loaded / ev.total) * 100)); };
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error('http' + xhr.status)));
+    xhr.onerror = () => reject(new Error('net'));
+    xhr.send(file);
+  });
+
   const pickMediaFile = async (e) => {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
-    setErr('');
-    setPreparing(true);
+    setErr(''); setPreviewUrl('');
+    const dur = await fileDuration(f, kind === 'song' ? 'audio' : 'video');
+    if (kind === 'short' && dur > 65) { setErr(t('create.tooLong')); return; }
+    if (dur > 0) setDuration(dur);
+    // Small files: instant inline upload (current flow). Big files: direct R2 upload.
+    if (f.size * 1.37 + 64 < MAX_UPLOAD_CHARS) {
+      setPreparing(true);
+      try {
+        const dataUrl = await new Promise((res, rej) => {
+          const rd = new FileReader();
+          rd.onload = () => res(rd.result);
+          rd.onerror = rej;
+          rd.readAsDataURL(f);
+        });
+        if (!dataUrl || dataUrl.length > MAX_UPLOAD_CHARS) { setErr(t('create.tooBig')); return; }
+        setMediaUrl(dataUrl); setPreviewUrl(dataUrl);
+      } catch { setErr(t('create.failed')); } finally { setPreparing(false); }
+      return;
+    }
+    setPreparing(true); setUpPct(0);
     try {
-      const dataUrl = await new Promise((res, rej) => {
-        const rd = new FileReader();
-        rd.onload = () => res(rd.result);
-        rd.onerror = rej;
-        rd.readAsDataURL(f);
+      const ps = await api.post('/media/presign', {
+        contentType: f.type || (kind === 'song' ? 'audio/mpeg' : 'video/mp4'),
+        kind: kind === 'short' ? 'reel' : kind === 'song' ? 'song' : 'post',
+        bytes: f.size,
       });
-      if (!dataUrl || dataUrl.length > MAX_UPLOAD_CHARS) { setErr(t('create.tooBig')); return; }
-      const el = document.createElement(kind === 'song' ? 'audio' : 'video');
-      el.preload = 'metadata';
-      el.onloadedmetadata = () => {
-        const d = Math.round(el.duration || 0);
-        if (kind === 'short' && d > 65) { setErr(t('create.tooLong')); setMediaUrl(''); setDuration(0); return; }
-        setDuration(d);
-      };
-      el.onerror = () => {};
-      el.src = dataUrl;
-      setMediaUrl(dataUrl);
-    } catch { setErr(t('create.failed')); } finally { setPreparing(false); }
+      await putFile(ps.data.uploadUrl, f, f.type || (kind === 'song' ? 'audio/mpeg' : 'video/mp4'));
+      setMediaUrl(ps.data.cdnUrl);
+      if (ps.data.cdnUrl.startsWith('r2:')) {
+        api.get('/media/resolve', { params: { key: ps.data.cdnUrl } })
+          .then((r) => setPreviewUrl(r.data.url))
+          .catch(() => {});
+      } else setPreviewUrl(ps.data.cdnUrl);
+    } catch (err) {
+      const code = err.response?.data?.error;
+      if (code === 'too_large') setErr(t('create.tooBig'));
+      else if (code === 'unsupported_type') setErr(t('create.unsupported'));
+      else if (code === 'storage_offline') setErr(t('create.noStorage'));
+      else setErr(t('create.failed'));
+      setMediaUrl('');
+    } finally { setPreparing(false); setUpPct(-1); }
   };
 
   const detectDuration = (url, isVideo) => {
@@ -137,7 +183,7 @@ export default function Create() {
       setErr(e.response?.data?.error === 'too_long' ? t('create.tooLongText') : t('create.failed'));
     } finally { setBusy(false); }
   };
-  const afterMedia = (to) => { setText(''); setMediaUrl(''); setPreview(''); setDuration(0); setDone(t('create.published')); setTimeout(() => nav(to), 900); };
+  const afterMedia = (to) => { setText(''); setMediaUrl(''); setPreview(''); setPreviewUrl(''); setDuration(0); setUpPct(-1); setDone(t('create.published')); setTimeout(() => nav(to), 900); };
 
   const publishListing = async () => {
     if (!title.trim() || !price || busy) return;
@@ -151,6 +197,7 @@ export default function Create() {
   };
 
   const needsUrl = kind === 'short' || kind === 'video' || kind === 'song';
+  const pv = previewUrl || (mediaUrl.startsWith('http') ? mediaUrl : '');
 
   return (
     <div className="p-3 md:p-4 max-w-2xl mx-auto space-y-3">
@@ -202,22 +249,30 @@ export default function Create() {
                 {preparing ? t('create.preparing') : <>{kind === 'song' ? <MusicIcon size={19} /> : <FilmIcon size={19} />}{t(kind === 'song' ? 'create.pickAudio' : 'create.pickVideo')}</>}
               </button>
               <input ref={mediaRef} type="file" accept={kind === 'song' ? 'audio/*' : 'video/*'} className="hidden" onChange={pickMediaFile} />
-              {mediaUrl.startsWith('data:') && (
-                <button onClick={() => { setMediaUrl(''); setDuration(0); }} className="text-xs font-bold text-red-500 px-1"><XIcon size={13} className="inline -mt-0.5" /> {t('friends.delete')}</button>
+              {upPct >= 0 && (
+                <div className="px-1">
+                  <div className="h-2 rounded-full bg-black/10 dark:bg-white/15 overflow-hidden">
+                    <div className="h-full bg-zivv-purple rounded-full transition-all" style={{ width: `${upPct}%` }} />
+                  </div>
+                  <div className="text-[11px] font-bold opacity-60 mt-1">{t('create.uploading')} {upPct}%</div>
+                </div>
+              )}
+              {(mediaUrl.startsWith('data:') || mediaUrl.startsWith('r2:')) && (
+                <button onClick={() => { setMediaUrl(''); setPreviewUrl(''); setDuration(0); }} className="text-xs font-bold text-red-500 px-1"><XIcon size={13} className="inline -mt-0.5" /> {t('friends.delete')}</button>
               )}
               <div className="flex items-center gap-2 bg-black/5 dark:bg-white/10 rounded-xl px-3">
                 <LinkIcon size={16} className="opacity-50 shrink-0" />
-                <input value={mediaUrl} onChange={(e) => { setMediaUrl(e.target.value); detectDuration(e.target.value, kind !== 'song'); }} placeholder={t(kind === 'song' ? 'create.audioUrlPh' : 'create.videoUrlPh')} className="bg-transparent flex-1 py-2.5 text-sm focus:outline-none placeholder:opacity-40" dir="ltr" />
+                <input value={mediaUrl.startsWith('r2:') ? '' : mediaUrl} onChange={(e) => { setMediaUrl(e.target.value); setPreviewUrl(''); detectDuration(e.target.value, kind !== 'song'); }} placeholder={t(kind === 'song' ? 'create.audioUrlPh' : 'create.videoUrlPh')} className="bg-transparent flex-1 py-2.5 text-sm focus:outline-none placeholder:opacity-40" dir="ltr" />
               </div>
               {kind === 'short' && <div className="text-[11px] opacity-50 px-1">{t('create.shortNote')}{duration > 0 && ` · ${duration}s`}</div>}
               {kind === 'video' && duration > 0 && <div className="text-[11px] opacity-50 px-1">{duration}s · {t('create.longNote')}</div>}
-              {kind === 'short' && (mediaUrl.startsWith('http') || mediaUrl.startsWith('data:')) && (
-                <video src={mediaUrl} preload="metadata" muted playsInline className="w-full max-h-64 rounded-xl bg-black" controls />
+              {kind === 'short' && !!pv && (
+                <video src={pv} preload="metadata" muted playsInline className="w-full max-h-64 rounded-xl bg-black" controls />
               )}
-              {kind === 'video' && (mediaUrl.startsWith('http') || mediaUrl.startsWith('data:')) && (
-                <video src={mediaUrl} preload="metadata" className="w-full max-h-64 rounded-xl bg-black" controls />
+              {kind === 'video' && !!pv && (
+                <video src={pv} preload="metadata" className="w-full max-h-64 rounded-xl bg-black" controls />
               )}
-              {kind === 'song' && (mediaUrl.startsWith('http') || mediaUrl.startsWith('data:')) && <audio src={mediaUrl} controls className="w-full" />}
+              {kind === 'song' && !!pv && <audio src={pv} controls className="w-full" />}
             </div>
           )}
 

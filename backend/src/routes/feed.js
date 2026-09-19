@@ -40,7 +40,9 @@ router.get('/', requireAuth, async (req, res) => {
 router.get('/:id/media', requireAuth, async (req, res) => {
   const rows = await db.q('SELECT media FROM posts WHERE id=$1', [req.params.id]);
   if (!rows.length) return res.status(404).json({ error: 'not_found' });
-  res.json({ media: db.J(rows[0].media, []) });
+  const { resolveUrl } = require('../lib/storage');
+  const media = await Promise.all(db.J(rows[0].media, []).map(async (m) => ({ ...m, cdnUrl: await resolveUrl(m.cdnUrl) })));
+  res.json({ media });
 });
 
 router.post('/:id/like', requireAuth, async (req, res) => {

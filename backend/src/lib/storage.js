@@ -34,4 +34,18 @@ function publicUrl(key) {
   return `/media/${encodeURIComponent(key)}`;
 }
 
-module.exports = { presignUpload, presignDownload, publicUrl, bucket };
+function isConfigured() { return !!s3; }
+function cdnBase() { return cdn || ''; }
+
+// Playback: 'r2:key' -> fresh presigned URL (private bucket, no domain needed).
+// Plain http(s)/data URLs pass through untouched.
+async function resolveUrl(stored, expiresIn = 21600) {
+  if (typeof stored !== 'string' || !stored.startsWith('r2:')) return stored;
+  if (!s3) return stored;
+  try {
+    const cmd = new GetObjectCommand({ Bucket: bucket, Key: stored.slice(3) });
+    return await getSignedUrl(s3, cmd, { expiresIn });
+  } catch { return stored; }
+}
+
+module.exports = { presignUpload, presignDownload, publicUrl, bucket, isConfigured, cdnBase, resolveUrl };
