@@ -104,6 +104,16 @@ router.get('/gold-requests', gate, async (req, res) => {
   const byId = Object.fromEntries(users.map((u) => [u.id, db.strip(db.userRow(u, true))]));
   res.json({ items: rows.map((r) => ({ ...db.grRow(r), user: byId[r.user_id] || null })) });
 });
+router.post('/gold-requests/:id/message', gate, async (req, res) => {
+  const rows = await db.q('SELECT * FROM gold_requests WHERE id=$1', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  const { text } = req.body || {};
+  if (!text || !text.trim()) return res.status(400).json({ error: 'missing_text' });
+  const r = db.grRow(rows[0]);
+  await db.notify(r.userId, { category: 'gold', title: `\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0645\u0648\u0642\u0639: \u0633\u0639\u0631 ${r.package?.name || 'Gold'}`, body: text.trim().slice(0, 500) });
+  await db.auditLog(req.user.username, 'gold_message', r.id);
+  res.json({ ok: true });
+}
 router.post('/gold-requests/:id/:decision', gate, async (req, res) => {
   const rows = await db.q('SELECT * FROM gold_requests WHERE id=$1', [req.params.id]);
   if (!rows.length) return res.status(404).json({ error: 'not_found' });
@@ -140,6 +150,16 @@ router.get('/ads', gate, async (req, res) => {
   const byId = Object.fromEntries(users.map((u) => [u.id, db.strip(db.userRow(u, true))]));
   res.json({ items: rows.map((c) => ({ ...db.campRow(c), owner: byId[c.user_id] || null })) });
 });
+router.post('/ads/:id/message', gate, async (req, res) => {
+  const rows = await db.q('SELECT * FROM campaigns WHERE id=$1', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'not_found' });
+  const { text } = req.body || {};
+  if (!text || !text.trim()) return res.status(400).json({ error: 'missing_text' });
+  const c = db.campRow(rows[0]);
+  await db.notify(c.userId, { category: 'ads', title: `\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0645\u0648\u0642\u0639: \u0633\u0639\u0631 \u0625\u0639\u0644\u0627\u0646 "${c.title}"`, body: text.trim().slice(0, 500) });
+  await db.auditLog(req.user.username, 'ad_message', c.id);
+  res.json({ ok: true });
+}
 router.post('/ads/:id/:decision', gate, async (req, res) => {
   const rows = await db.q('SELECT * FROM campaigns WHERE id=$1', [req.params.id]);
   if (!rows.length) return res.status(404).json({ error: 'not_found' });
