@@ -209,4 +209,35 @@ router.get('/review-queue', gate, async (req, res) => {
   res.json({ ads: ads.map(db.campRow), gold: gold.map(db.grRow), reports: [] });
 });
 
+// TEMPORARY one-time R2 bootstrap (removed after verification).
+router.post('/r2-setup', gate, async (req, res) => {
+  const out = {};
+  try {
+    const { S3Client, HeadBucketCommand, CreateBucketCommand, PutBucketCorsCommand, GetBucketCorsCommand, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+    const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+    const store = require('../lib/storage');
+    out.configured = store.isConfigured();
+    if (!out.configured) return res.json({ ...out, error: 'storage_offline' });
+    const s3 = new S3Client({ region: process.env.S3_REGION || 'auto', endpoint: process.env.S3_ENDPOINT, forcePathStyle: true, credentials: { accessKeyId: process.env.S3_ACCESS_KEY, secretAccessKey: process.env.S3_SECRET_KEY } });
+    try { await s3.send(new HeadBucketCommand({ Bucket: store.bucket })); out.bucket = 'exists'; }
+    catch { await s3.send(new CreateBucketCommand({ Bucket: store.bucket })); out.bucket = 'created'; }
+    await s3.send(new PutBucketCorsCommand({ Bucket: store.bucket, CORSConfiguration: { CORSRules: [{ AllowedOrigins: ['https://zivv-beta.vercel.app', 'http://localhost:5173'], AllowedMethods: ['GET', 'PUT', 'HEAD'], AllowedHeaders: ['Content-Type', 'Content-Length', 'Origin'], ExposeHeaders: ['ETag'], MaxAgeSeconds: 3600 }] } }));
+    const back = await s3.send(new GetBucketCorsCommand({ Bucket: store.bucket }));
+    out.cors = (back.CORSRules || []).length > 0 ? 'set' : 'missing';
+    // Exact browser flow, executed server-side: presign -> PUT -> presigned GET -> delete
+    const ps = await store.presignUpload('probe/presigned.bin', 'video/mp4');
+    out.presign = ps.uploadUrl.startsWith('http') && !ps.stub ? 'ok' : 'BAD-STUB';
+    const put = await fetch(ps.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'video/mp4' }, body: Buffer.alloc(6 * 1024 * 1024, 9) });
+    out.presignedPut6mb = put.status;
+    const play = await store.resolveUrl('r2:probe/presigned.bin', 120);
+    out.presignedGet = (play.startsWith('http') && !play.startsWith('r2:')) ? 'ok' : 'BAD';
+    const chk = await fetch(play);
+    out.playbackFetch = chk.status;
+    await s3.send(new DeleteObjectCommand({ Bucket: store.bucket, Key: 'probe/presigned.bin' }));
+    out.cleanup = 'ok';
+    await db.auditLog(req.user.username, 'r2_setup', store.bucket);
+    res.json(out);
+  } catch (e) { res.status(502).json({ ...out, error: e.name, status: e.$metadata?.httpStatusCode, message: String(e.message || '').slice(0, 200) }); }
+});
+
 module.exports = router;
