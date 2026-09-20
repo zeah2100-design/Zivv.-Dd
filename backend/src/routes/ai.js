@@ -1,15 +1,20 @@
-// ZIVV AI: per-user chats + pins + vision + image-gen + video-gen + Gold-only agent actions.
-// Tiers: free models + daily quotas for everyone; premium models + big quotas for Gold.
+// ZIVV AI: CHAT ONLY — per-user chats + vision + Gold agent actions.
+// Tiers: free chat models for everyone; ALL chat models + agent mode for Gold.
 // Quotas are enforced here server-side (see lib/quotas.js) — never trust the client.
+// NOTE: image/video generation was removed from the product (chat-only mode). The
+// provider helpers still exist in lib/ai.js and can be re-routed later if needed.
 const router = require('express').Router();
 const db = require('../lib/db');
 const AI = require('../lib/ai');
 const quotas = require('../lib/quotas');
 const { requireAuth } = require('../middleware/auth');
 
-const LOW = new Set(['search', 'navigate', 'draft', 'summarize']);
+const LOW = new Set(['search', 'navigate', 'draft', 'summarize', 'none']);
 const MEDIUM = new Set(['send_message', 'publish', 'follow', 'edit_profile', 'delete_content']);
 const HIGH = new Set(['delete_account', 'purchase', 'security_change', 'grant_permission']);
+// Tools the executor actually implements. Anything else is rejected, never faked.
+const IMPLEMENTED = new Set(['publish', 'follow', 'edit_profile']);
+const ACTION_TOOLS = new Set(['publish', 'follow', 'edit_profile']);
 
 async function isGold(req) {
   const r = await db.q('SELECT gold FROM users WHERE id=$1', [req.user.id]);
@@ -34,15 +39,13 @@ async function gateModel(req, res, list, fallbackId, kind, { needVision = false 
 
 router.get('/status', requireAuth, (req, res) => res.json(AI.status()));
 
-// Catalog + my quotas. Drives the model pickers and limit badges in the app.
+// Catalog + my quotas. Drives the model picker and limit badges in the app.
 router.get('/models', requireAuth, async (req, res) => {
   const gold = await isGold(req);
   res.json({
     gold,
-    defaults: AI.DEFAULTS,
+    defaults: { chat: AI.DEFAULTS.chat },
     chat: AI.CHAT_MODELS,
-    image: AI.IMAGE_MODELS,
-    video: AI.VIDEO_MODELS,
     limits: quotas.LIMITS,
     usage: await quotas.summary(req.user.id, gold),
   });
@@ -85,9 +88,8 @@ router.post('/chats/:id/messages', requireAuth, async (req, res) => {
   if (!text?.trim()) return res.status(400).json({ error: 'empty' });
 
   let reply;
-  let gated = null;
   if (AI.status().live) {
-    gated = await gateModel(req, res, AI.CHAT_MODELS, AI.DEFAULTS.chat, 'chat');
+    const gated = await gateModel(req, res, AI.CHAT_MODELS, AI.DEFAULTS.chat, 'chat');
     if (!gated) return; // error already sent
     try {
       reply = await AI.chat([...chat.messages, { role: 'user', text }], { model: gated.model.id });
@@ -114,7 +116,7 @@ function smartReply(t = '') {
   const q = t.toLowerCase();
   if (/reel|video|فيديو/.test(q)) return 'Here’s a viral-ready plan:\n1) Hook in 1s (“Stop scrolling!”)\n2) 3 fast cuts, trending sound\n3) Caption + 5 hashtags\nWant me to draft the caption and pick the sound?';
   if (/bio/.test(q)) return 'Bio draft:\n"Football daily | Reels & tips | Collabs open"\nSay "apply this bio" and I’ll preview the change for your confirmation.';
-  if (/image|صورة/.test(q)) return 'Describe the image (subject, style, mood) and I’ll generate it. AI images are always labeled as AI-generated.';
+  if (/image|صورة/.test(q)) return 'Send me the image and I’ll analyze it for you.';
   return `Got it! I can help with that.\n• Draft posts, captions, replies\n• Find accounts, sounds, products\n• Gold members: I can act inside the app (publish, follow, edit profile) with your confirmation.\nTell me what to do first.`;
 }
 
@@ -137,74 +139,58 @@ router.post('/vision', requireAuth, async (req, res) => {
   }
 });
 
-// Image generation — real when live, labeled provenance always.
-router.post('/image', requireAuth, async (req, res) => {
-  const { prompt } = req.body || {};
-  if (!prompt?.trim()) return res.status(400).json({ error: 'missing_prompt' });
-  if (!AI.status().live) return res.status(503).json({ error: 'ai_offline', message: 'AI key is not configured on the server.' });
-  const gated = await gateModel(req, res, AI.IMAGE_MODELS, AI.DEFAULTS.image, 'image');
-  if (!gated) return;
-  try {
-    const out = await AI.generateImage(prompt.trim(), { model: gated.model.id });
-    await quotas.consume(req.user.id, 'image', gated.gold);
-    res.json({ ...out, prompt: prompt.trim(), model: gated.model.id, aiGenerated: true, label: 'AI-generated with ZIVV' });
-  } catch (e) {
-    if (AI.isBilling(e)) return res.status(402).json({ error: 'ai_billing' });
-    console.error('[ai] image error:', e.message);
-    res.status(502).json({ error: 'ai_error' });
-  }
-});
-
-// Video generation — async. Submit here (202 + jobId), then poll GET /ai/video/:jobId.
-// NOTE: video spends real provider balance per second of output; quotas are the spend cap.
-router.post('/video', requireAuth, async (req, res) => {
-  const { prompt } = req.body || {};
-  if (!prompt?.trim()) return res.status(400).json({ error: 'missing_prompt' });
-  if (prompt.length > 1000) return res.status(400).json({ error: 'prompt_too_long' });
-  if (!AI.status().live) return res.status(503).json({ error: 'ai_offline', message: 'AI key is not configured on the server.' });
-  const gated = await gateModel(req, res, AI.VIDEO_MODELS, AI.DEFAULTS.video, 'video');
-  if (!gated) return;
-  try {
-    const { jobId } = await AI.createVideo(prompt.trim(), { model: gated.model.id });
-    await quotas.consume(req.user.id, 'video', gated.gold);
-    res.status(202).json({ jobId, model: gated.model.id, status: 'queued' });
-  } catch (e) {
-    if (AI.isBilling(e)) return res.status(402).json({ error: 'ai_billing' });
-    console.error('[ai] video error:', e.message);
-    res.status(502).json({ error: 'ai_error' });
-  }
-});
-
-router.get('/video/:jobId', requireAuth, async (req, res) => {
-  try {
-    const st = await AI.videoStatus(req.params.jobId);
-    res.json({ jobId: req.params.jobId, ...st, aiGenerated: true, label: 'AI-generated with ZIVV' });
-  } catch (e) {
-    if (e.code === 'video_not_found') return res.status(404).json({ error: 'not_found' });
-    if (AI.isBilling(e)) return res.status(402).json({ error: 'ai_billing' });
-    console.error('[ai] video poll error:', e.message);
-    res.status(502).json({ error: 'ai_error' });
-  }
-});
-
 // Agent: plan → preview → confirm → execute → audit. GOLD ONLY.
-router.post('/agent/plan', requireAuth, (req, res) => {
+// The LLM parses the instruction into { tool, input, confidence }; keyword rules
+// are the fallback when AI is offline or unparsable. Only ACTION_TOOLS act.
+router.post('/agent/plan', requireAuth, async (req, res) => {
+  if (!(await isGold(req))) return res.status(403).json({ error: 'gold_required' });
   const { instruction } = req.body || {};
-  const t = (instruction || '').toLowerCase();
-  let tool = 'search', risk = 'LOW', preview = `Search ZIVV for "${instruction}"`;
-  if (/send|message|بعت|رسالة/.test(t)) { tool = 'send_message'; risk = 'MEDIUM'; preview = 'Send message (recipient + text required)'; }
-  else if (/post|publish|انشر/.test(t)) { tool = 'publish'; risk = 'MEDIUM'; preview = 'Publish content as drafted'; }
-  else if (/follow|تابع/.test(t)) { tool = 'follow'; risk = 'MEDIUM'; preview = 'Follow account'; }
-  else if (/bio|edit profile|عدل/.test(t)) { tool = 'edit_profile'; risk = 'MEDIUM'; preview = 'Edit profile with provided fields'; }
-  else if (/delete account|امسح حساب|purchase|pay|ادفع/.test(t)) { tool = 'purchase'; risk = 'HIGH'; preview = 'HIGH-RISK action — explicit confirmation required'; }
-  res.json({ tool, risk, preview, needsConfirmation: risk !== 'LOW', instruction });
+  if (!instruction?.trim()) return res.status(400).json({ error: 'empty' });
+  let parsed = null;
+  if (AI.status().live) {
+    try {
+      parsed = await AI.agentParse(instruction.trim());
+    } catch (e) {
+      console.error('[ai] agent parse error:', e.message);
+    }
+  }
+  if (!parsed || parsed.confidence < 0.55) parsed = { ...keywordPlan(instruction), confidence: 0.5 };
+  const risk = LOW.has(parsed.tool) ? 'LOW' : MEDIUM.has(parsed.tool) ? 'MEDIUM' : 'HIGH';
+  res.json({
+    tool: parsed.tool, input: parsed.input || {}, risk,
+    preview: parsed.preview || parsed.tool,
+    needsConfirmation: risk !== 'LOW',
+    acts: ACTION_TOOLS.has(parsed.tool),
+    confidence: parsed.confidence,
+    instruction,
+  });
 });
+
+function keywordPlan(instruction) {
+  const t = (instruction || '').toLowerCase();
+  if (/delete account|امسح حساب|purchase|pay|ادفع/.test(t)) {
+    return { tool: 'purchase', input: {}, preview: 'HIGH-RISK action — explicit confirmation required' };
+  }
+  if (/post|publish|انشر|شير|نزل بوست/.test(t)) {
+    const text = instruction.replace(/^(انشر|نزل|شير|publish|post)\s*(بوست)?\s*:?\s*/i, '').trim();
+    return { tool: 'publish', input: { text }, preview: `Publish post: "${text.slice(0, 80)}"` };
+  }
+  if (/follow|تابع/.test(t)) {
+    const u = (instruction.match(/@?([a-z0-9._]{3,30})/i) || [])[1] || '';
+    return { tool: 'follow', input: { username: u }, preview: `Follow @${u}` };
+  }
+  if (/bio|بايو|عدل|الحساب/.test(t)) {
+    return { tool: 'edit_profile', input: {}, preview: 'Edit profile' };
+  }
+  return { tool: 'none', input: {}, preview: 'Plain chat — no action' };
+}
 
 router.post('/agent/execute', requireAuth, async (req, res) => {
   const meRows = await db.q('SELECT * FROM users WHERE id=$1', [req.user.id]);
   const me = db.userRow(meRows[0]);
   if (!me?.gold) return res.status(403).json({ error: 'gold_required' });
   const { tool, input, confirmed } = req.body || {};
+  if (!IMPLEMENTED.has(tool)) return res.status(400).json({ error: 'tool_not_supported', tool });
   const risk = LOW.has(tool) ? 'LOW' : MEDIUM.has(tool) ? 'MEDIUM' : 'HIGH';
   if (risk !== 'LOW' && !confirmed) return res.status(428).json({ error: 'confirmation_required', risk });
   let result = { ok: true };
@@ -213,7 +199,7 @@ router.post('/agent/execute', requireAuth, async (req, res) => {
     await db.q(
       `INSERT INTO posts (id, author_id, type, text, hashtags, media, ai_generated)
        VALUES ($1,$2,'TEXT',$3,$4,'[]',TRUE)`,
-      [id, me.id, input.text, JSON.stringify(input.hashtags || [])]
+      [id, me.id, String(input.text).slice(0, 2000), JSON.stringify(input.hashtags || [])]
     );
     result = { published: id };
   }
@@ -227,7 +213,7 @@ router.post('/agent/execute', requireAuth, async (req, res) => {
     }
   }
   if (tool === 'edit_profile' && input?.bio) {
-    await db.q('UPDATE users SET bio=$1 WHERE id=$2', [input.bio, me.id]);
+    await db.q('UPDATE users SET bio=$1 WHERE id=$2', [String(input.bio).slice(0, 500), me.id]);
     result = { bio: input.bio };
   }
   await db.notify(me.id, { category: 'ai', title: 'Agent task completed', body: `${tool} done` });

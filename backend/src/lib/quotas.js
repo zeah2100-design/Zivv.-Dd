@@ -6,8 +6,6 @@ const db = require('./db');
 const LIMITS = {
   chat: { normal: { n: 40, per: 'day' }, gold: { n: 500, per: 'day' } },
   vision: { normal: { n: 10, per: 'day' }, gold: { n: 100, per: 'day' } },
-  image: { normal: { n: 3, per: 'day' }, gold: { n: 25, per: 'day' } },
-  video: { normal: { n: 1, per: 'week' }, gold: { n: 3, per: 'day' } },
 };
 
 function dayKey(d = new Date()) {

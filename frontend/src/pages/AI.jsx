@@ -28,6 +28,7 @@ function aiErr(e, fallback) {
   if (d.error === 'gold_required') return 'الميزة دي للـ Gold بس — اشترك عشان تفتحها';
   if (d.error === 'quota_exceeded') return `خلصت حصتك (${d.kind}: ${d.used}/${d.limit} ${d.per === 'day' ? 'يوميًا' : 'أسبوعيًا'}) — Gold بيزوّد الحصة`;
   if (d.error === 'model_no_vision') return 'الموديل ده مش بيفهم الصور — اختار موديل رؤية';
+  if (d.error === 'tool_not_supported') return 'الأداة دي مش مدعومة لسه';
   return fallback;
 }
 
@@ -36,8 +37,8 @@ export default function AI() {
   const [active, setActive] = useState(null);
   const [text, setText] = useState('');
   const [plan, setPlan] = useState(null);
-  const [imgPrompt, setImgPrompt] = useState('');
-  const [genImg, setGenImg] = useState('');
+  const [planInput, setPlanInput] = useState({});
+  const [agentMode, setAgentMode] = useState(false);
   const [live, setLive] = useState(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef(null);
@@ -45,19 +46,12 @@ export default function AI() {
   const [muted, setMuted] = useState(false);
   const [models, setModels] = useState(null);
   const [chatModel, setChatModel] = useState('');
-  const [imgModel, setImgModel] = useState('');
-  const [vidModel, setVidModel] = useState('');
-  const [vidPrompt, setVidPrompt] = useState('');
-  const [vidJob, setVidJob] = useState(null);
-  const pollRef = useRef(null);
 
   const loadModels = async () => {
     try {
       const { data } = await api.get('/ai/models');
       setModels(data);
       setChatModel((v) => v || data.defaults.chat);
-      setImgModel((v) => v || data.defaults.image);
-      setVidModel((v) => v || data.defaults.video);
     } catch {}
   };
 
@@ -65,7 +59,6 @@ export default function AI() {
     api.get('/ai/chats').then((r) => { setChats(r.data.items); setActive(r.data.items[0]); });
     api.get('/ai/status').then((r) => setLive(r.data)).catch(() => setLive({ live: false }));
     loadModels();
-    return () => clearTimeout(pollRef.current);
   }, []);
 
   const refresh = async (id) => {
@@ -76,6 +69,7 @@ export default function AI() {
   const send = async (override) => {
     const t = (override ?? text).trim();
     if (!t || !active || busy) return;
+    if (agentMode && models?.gold) return sendAgent(t);
     setText(''); setBusy(true);
     setActive({ ...active, messages: [...active.messages, { role: 'user', text: t }, { role: 'assistant', text: 'Thinking…' }] });
     try {
@@ -85,54 +79,45 @@ export default function AI() {
     await refresh(active.id); setBusy(false);
   };
 
-  const newChat = async () => { const { data } = await api.post('/ai/chats'); setChats([data, ...chats]); setActive(data); };
-
-  const agentPlan = async () => {
-    if (!text.trim()) return;
-    const { data } = await api.post('/ai/agent/plan', { instruction: text });
-    setPlan(data);
-  };
-  const agentExec = async (confirmed) => {
-    const { data } = await api.post('/ai/agent/execute', { tool: plan.tool, input: {}, confirmed });
-    setPlan(null); setText('');
-    alert(`Agent ${plan.tool} done (${data.risk})`);
-  };
-
-  const generate = async () => {
-    if (!imgPrompt.trim()) return;
-    setGenImg('loading');
+  // Agent mode (Gold): instruction → plan card → confirm → execute → audit.
+  // Non-action messages fall back to normal chat.
+  const sendAgent = async (t) => {
+    setText(''); setBusy(true); setPlan(null);
     try {
-      const { data } = await api.post('/ai/image', { prompt: imgPrompt, model: imgModel || undefined });
-      setGenImg(data.imageUrl || data.imageDataUrl || 'none');
-      if (!data.imageUrl && !data.imageDataUrl) alert(data.note || 'Image queued.');
-      loadModels();
-    } catch (e) { setGenImg(''); alert(aiErr(e, 'Image generation failed.')); }
+      const { data } = await api.post('/ai/agent/plan', { instruction: t });
+      if (data.acts && data.confidence >= 0.55) {
+        setPlan(data);
+        setPlanInput(data.input || {});
+      } else {
+        setActive({ ...active, messages: [...active.messages, { role: 'user', text: t }, { role: 'assistant', text: 'Thinking…' }] });
+        await api.post(`/ai/chats/${active.id}/messages`, { text: t, model: chatModel || undefined });
+        await refresh(active.id); loadModels();
+      }
+    } catch (e) { alert(aiErr(e, 'Agent failed.')); }
+    setBusy(false);
   };
 
-  const pollVideo = async (jobId, n = 0) => {
-    if (n > 150) { setVidJob({ jobId, status: 'error', error: 'استغرق وقتًا طويلًا — جرّب تاني' }); return; }
-    try {
-      const { data } = await api.get(`/ai/video/${jobId}`);
-      if (data.status === 'completed' && data.videoUrl) { setVidJob({ jobId, status: 'completed', videoUrl: data.videoUrl }); return; }
-      if (data.status === 'failed') { setVidJob({ jobId, status: 'error', error: 'فشل توليد الفيديو — جرّب وصفًا مختلفًا' }); return; }
-      setVidJob({ jobId, status: data.status || 'processing', videoUrl: '' });
-    } catch (e) {
-      if (e?.response?.status === 404) { setVidJob({ status: 'error', error: 'الطلب مش موجود' }); return; }
+  const agentExec = async () => {
+    const input = { ...planInput };
+    if (plan.tool === 'publish' && input.text) {
+      input.hashtags = [...new Set((input.text.match(/#[\p{L}\p{N}_]+/gu) || []).map((h) => h.slice(1)))];
     }
-    pollRef.current = setTimeout(() => pollVideo(jobId, n + 1), 5000);
+    try {
+      const { data } = await api.post('/ai/agent/execute', { tool: plan.tool, input, confirmed: true });
+      setPlan({ ...plan, done: data.result });
+      setText('');
+    } catch (e) { alert(aiErr(e, 'Execute failed.')); }
   };
 
-  const genVideo = async () => {
-    if (!vidPrompt.trim() || vidJob?.status === 'queued' || vidJob?.status === 'processing' || vidJob?.status === 'starting') return;
-    clearTimeout(pollRef.current);
-    setVidJob({ status: 'starting' });
-    try {
-      const { data } = await api.post('/ai/video', { prompt: vidPrompt, model: vidModel || undefined });
-      setVidJob({ jobId: data.jobId, status: 'queued', videoUrl: '' });
-      pollVideo(data.jobId);
-      loadModels();
-    } catch (e) { setVidJob({ status: 'error', error: aiErr(e, 'Video generation failed.') }); }
+  const planResultText = () => {
+    const r = plan?.done || {};
+    if (r.published) return 'تم نشر البوست بنجاح';
+    if (r.followed) return `تم متابعة @${r.followed}`;
+    if (r.bio) return 'تم تحديث البايو';
+    return 'تم التنفيذ';
   };
+
+  const newChat = async () => { const { data } = await api.post('/ai/chats'); setChats([data, ...chats]); setActive(data); };
 
   const onFile = async (e) => {
     const f = e.target.files?.[0]; if (!f || !active) return;
@@ -153,7 +138,7 @@ export default function AI() {
   };
 
   const u = models?.usage;
-  const quotaLine = u ? `Chat ${u.chat.used}/${u.chat.limit} · Images ${u.image.used}/${u.image.limit} · Video ${u.video.used}/${u.video.limit}/${u.video.per}` : '';
+  const quotaLine = u ? `Chat ${u.chat.used}/${u.chat.limit} · Vision ${u.vision.used}/${u.vision.limit}` : '';
 
   return (
     <div className="md:flex gap-4 pt-3 px-3 md:px-0">
@@ -212,17 +197,6 @@ export default function AI() {
               </div>
             </div>
           )}
-          {genImg === 'loading' && <div className="text-sm opacity-60 flex items-center gap-2"><SparklesIcon size={15} className="animate-pulse" />Generating image…</div>}
-          {genImg && genImg !== 'loading' && genImg !== 'none' && (
-            <div><img src={genImg} alt="AI generated" className="rounded-2xl max-h-72" /><div className="text-[11px] opacity-60 mt-1">AI-generated with ZIVV</div></div>
-          )}
-          {vidJob?.status === 'completed' && vidJob.videoUrl && (
-            <div><video src={vidJob.videoUrl} controls className="rounded-2xl max-h-72 w-full bg-black" /><div className="text-[11px] opacity-60 mt-1">AI-generated with ZIVV</div></div>
-          )}
-          {vidJob && ['starting', 'queued', 'processing'].includes(vidJob.status) && (
-            <div className="text-sm opacity-60 flex items-center gap-2"><SparklesIcon size={15} className="animate-pulse" />Generating video… ({vidJob.status})</div>
-          )}
-          {vidJob?.status === 'error' && <div className="text-sm text-red-500 font-semibold">{vidJob.error}</div>}
         </div>
 
         {plan && (
@@ -231,37 +205,35 @@ export default function AI() {
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${plan.risk === 'HIGH' ? 'bg-red-500/15 text-red-500' : plan.risk === 'MEDIUM' ? 'bg-amber-500/15 text-amber-600' : 'bg-green-500/15 text-green-600'}`}>{plan.risk}</span>
             </div>
             <div className="text-sm mt-1.5">Tool: <b>{plan.tool}</b> — {plan.preview}</div>
-            <div className="text-xs opacity-60 mt-1">Permission → validation → {plan.needsConfirmation ? 'confirmation required' : 'auto-approved (low risk)'} → execution → audit</div>
-            <div className="flex gap-2 mt-2.5"><button onClick={() => agentExec(true)} className="btn-primary text-sm">Confirm & Execute</button><button onClick={() => setPlan(null)} className="btn-ghost text-sm">Cancel</button></div>
+            {!plan.done && plan.tool === 'publish' && (
+              <textarea value={planInput.text || ''} onChange={(e) => setPlanInput({ ...planInput, text: e.target.value })} rows={3} className="input text-sm mt-2" placeholder="Post text…" />
+            )}
+            {!plan.done && plan.tool === 'follow' && (
+              <input value={planInput.username || ''} onChange={(e) => setPlanInput({ ...planInput, username: e.target.value })} className="input text-sm mt-2" placeholder="username" />
+            )}
+            {!plan.done && plan.tool === 'edit_profile' && (
+              <textarea value={planInput.bio || ''} onChange={(e) => setPlanInput({ ...planInput, bio: e.target.value })} rows={2} className="input text-sm mt-2" placeholder="New bio…" />
+            )}
+            {plan.done
+              ? <div className="text-sm font-bold text-green-600 mt-2.5">{planResultText()}</div>
+              : <div className="text-xs opacity-60 mt-1.5">Permission → validation → confirmation required → execution → audit</div>}
+            <div className="flex gap-2 mt-2.5">
+              {!plan.done && <button onClick={agentExec} className="btn-primary text-sm">Confirm & Execute</button>}
+              <button onClick={() => { setPlan(null); setPlanInput({}); }} className="btn-ghost text-sm">{plan.done ? 'Close' : 'Cancel'}</button>
+            </div>
           </div>
         )}
 
-        <div className="flex gap-2 mt-3">
-          <div className="relative flex-1">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-50"><ImageIcon size={16} /></span>
-            <input value={imgPrompt} onChange={(e) => setImgPrompt(e.target.value)} placeholder="Describe an image to generate…" className="input !pl-10 text-sm" />
-          </div>
-          {models && (
-            <select value={imgModel} onChange={(e) => setImgModel(e.target.value)} className="input !w-auto text-sm" title="Image model">
-              {models.image.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-            </select>
-          )}
-          <button onClick={generate} className="btn-ghost text-sm whitespace-nowrap flex items-center gap-1.5"><SparklesIcon size={15} />Generate</button>
-        </div>
-        <div className="flex gap-2 mt-2">
-          <input value={vidPrompt} onChange={(e) => setVidPrompt(e.target.value)} placeholder="Describe a video to generate…" className="input text-sm flex-1" />
-          {models && (
-            <select value={vidModel} onChange={(e) => setVidModel(e.target.value)} className="input !w-auto text-sm" title="Video model">
-              {models.video.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-            </select>
-          )}
-          <button onClick={genVideo} className="btn-ghost text-sm whitespace-nowrap flex items-center gap-1.5"><SparklesIcon size={15} />Video</button>
-        </div>
+        {agentMode && models?.gold && (
+          <div className="text-[11px] opacity-60 mt-2.5 font-semibold">وضع Agent شغال: اطلب (انشر / تابع / عدّل البايو) وهنفذ بعد تأكيدك</div>
+        )}
         <div className="flex gap-1.5 mt-2">
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
           <button onClick={() => fileRef.current?.click()} className="btn-ghost !px-3" title="Analyze image" aria-label="Analyze image"><ImageIcon size={19} /></button>
-          <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()} placeholder="Message ZIVV AI…" className="input" />
-          <button onClick={agentPlan} className="btn-ghost whitespace-nowrap text-sm flex items-center gap-1.5" title="Run as agent action"><BotIcon size={17} /><span className="hidden sm:inline">Agent</span></button>
+          <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()} placeholder={agentMode ? 'أمر للـ Agent…' : 'Message ZIVV AI…'} className="input" />
+          {models?.gold && (
+            <button onClick={() => { setAgentMode(!agentMode); setPlan(null); }} className={`btn-ghost whitespace-nowrap text-sm flex items-center gap-1.5 ${agentMode ? '!bg-zivv-purple/15 text-zivv-purple' : ''}`} title="Agent mode: act inside the app"><BotIcon size={17} /><span className="hidden sm:inline">Agent</span></button>
+          )}
           <button onClick={() => send()} className="btn-primary !px-4" aria-label="Send"><SendIcon size={18} /></button>
         </div>
       </div>

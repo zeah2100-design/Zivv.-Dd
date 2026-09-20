@@ -201,7 +201,59 @@ async function videoStatus(jobId) {
   return { status: done ? 'completed' : failed ? 'failed' : /queue|pend|wait/.test(raw) ? 'queued' : 'processing', raw, videoUrl: done ? url : '' };
 }
 
+// ---------- agent: route a Gold user's instruction to an app action ----------
+// Only publish/follow/edit_profile perform actions (always confirmed in-app first).
+// Everything else (draft/summarize/search/none) is answered as normal chat.
+const AGENT_TOOLS = ['publish', 'follow', 'edit_profile', 'draft', 'summarize', 'search', 'none'];
+const AGENT_SYSTEM = `You route a social-app assistant request to a tool. Reply with ONLY a JSON object, no other text.
+Tools: publish (create a post; input: {text, hashtags[]}), follow (follow a user; input: {username}), edit_profile (change my bio; input: {bio}), draft (just draft text, no action), summarize (summarize, no action), search (find things, no action), none (plain chat, no action).
+Fields: {tool, input, confidence (0-1), preview (short human-readable summary in the user's language)}.
+Only choose publish/follow/edit_profile when the user EXPLICITLY asks to do it (publish/post/share it, follow X, change/update my bio). Drafts and questions are draft/search/none.`;
+async function agentParse(instruction) {
+  if (PROVIDER === 'gemini') return geminiAgentParse(instruction);
+  const r = await fetch(`${OPENAI_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_KEY}` },
+    body: JSON.stringify({
+      model: OPENAI_CHAT,
+      messages: [{ role: 'system', content: AGENT_SYSTEM }, { role: 'user', content: instruction }],
+      temperature: 0.2,
+      max_tokens: 300,
+    }),
+  });
+  if (PROVIDER === 'gemini') return geminiAgentParse(instruction);
+  if (!r.ok) await provErr('openai', r);
+  const j = await r.json();
+  return parseAgentJson(j.choices?.[0]?.message?.content || '');
+}
+async function geminiAgentParse(instruction) {
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: AGENT_SYSTEM }] },
+      contents: [{ role: 'user', parts: [{ text: instruction }] }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 300 },
+    }),
+  });
+  if (!r.ok) await provErr('gemini', r);
+  const j = await r.json();
+  return parseAgentJson(j.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '');
+}
+function parseAgentJson(raw) {
+  const m = String(raw).match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('agent_no_json');
+  const p = JSON.parse(m[0]);
+  if (!AGENT_TOOLS.includes(p.tool)) throw new Error('agent_bad_tool');
+  return {
+    tool: p.tool,
+    input: p.input && typeof p.input === 'object' ? p.input : {},
+    confidence: Number(p.confidence) || 0,
+    preview: String(p.preview || '').slice(0, 200),
+  };
+}
+
 module.exports = {
-  status, chat, vision, generateImage, createVideo, videoStatus, isBilling,
+  status, chat, vision, generateImage, createVideo, videoStatus, isBilling, agentParse, AGENT_TOOLS,
   CHAT_MODELS, IMAGE_MODELS, VIDEO_MODELS, DEFAULTS, SYSTEM,
 };
