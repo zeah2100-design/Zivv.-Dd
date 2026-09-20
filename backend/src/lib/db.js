@@ -134,8 +134,8 @@ const SCHEMA = [
   )`,
   `CREATE TABLE IF NOT EXISTS ai_usage (
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    kind TEXT NOT NULL, window TEXT NOT NULL, count INT DEFAULT 0,
-    PRIMARY KEY (user_id, kind, window)
+    kind TEXT NOT NULL, win TEXT NOT NULL, count INT DEFAULT 0,
+    PRIMARY KEY (user_id, kind, win)
   )`,
 ];
 
@@ -159,8 +159,8 @@ const MIGRATIONS = [
   { v: 3, stmts: [
     `CREATE TABLE IF NOT EXISTS ai_usage (
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      kind TEXT NOT NULL, window TEXT NOT NULL, count INT DEFAULT 0,
-      PRIMARY KEY (user_id, kind, window)
+      kind TEXT NOT NULL, win TEXT NOT NULL, count INT DEFAULT 0,
+      PRIMARY KEY (user_id, kind, win)
     )`,
   ] },
 ];

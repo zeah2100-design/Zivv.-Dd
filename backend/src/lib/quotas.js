@@ -25,7 +25,7 @@ const keyFor = (per) => (per === 'week' ? weekKey() : dayKey());
 
 async function used(userId, kind, per) {
   const rows = await db.q(
-    'SELECT count FROM ai_usage WHERE user_id=$1 AND kind=$2 AND window=$3',
+    'SELECT count FROM ai_usage WHERE user_id=$1 AND kind=$2 AND win=$3',
     [userId, kind, keyFor(per)]
   );
   return rows.length ? Number(rows[0].count) : 0;
@@ -41,8 +41,8 @@ async function check(userId, kind, isGold) {
 async function consume(userId, kind, isGold) {
   const lim = LIMITS[kind][isGold ? 'gold' : 'normal'];
   await db.q(
-    `INSERT INTO ai_usage (user_id, kind, window, count) VALUES ($1,$2,$3,1)
-     ON CONFLICT (user_id, kind, window) DO UPDATE SET count = ai_usage.count + 1`,
+    `INSERT INTO ai_usage (user_id, kind, win, count) VALUES ($1,$2,$3,1)
+     ON CONFLICT (user_id, kind, win) DO UPDATE SET count = ai_usage.count + 1`,
     [userId, kind, keyFor(lim.per)]
   );
 }
