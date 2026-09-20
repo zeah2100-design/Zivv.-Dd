@@ -35,7 +35,7 @@ async function openaiChat(history, { system = SYSTEM } = {}) {
     { role: 'system', content: system },
     ...history.slice(-14).map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.text })),
   ];
-  const r = await fetch('${OPENAI_BASE}/chat/completions', {
+  const r = await fetch(`${OPENAI_BASE}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_KEY}` },
     body: JSON.stringify({ model: OPENAI_CHAT, messages, temperature: 0.7, max_tokens: 1200 }),
@@ -78,7 +78,7 @@ async function vision(imageDataUrl, question = 'Describe this image in detail.')
     const j = await r.json();
     return j.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('').trim() || '';
   }
-  const r = await fetch('${OPENAI_BASE}/chat/completions', {
+  const r = await fetch(`${OPENAI_BASE}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_KEY}` },
     body: JSON.stringify({
@@ -109,7 +109,7 @@ async function generateImage(prompt) {
     if (!part) throw new Error('gemini_no_image');
     return { imageDataUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}` };
   }
-  const r = await fetch('${OPENAI_BASE}/images/generations', {
+  const r = await fetch(`${OPENAI_BASE}/images/generations`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_KEY}` },
     body: JSON.stringify({ model: OPENAI_IMAGE, prompt, size: '1024x1024', n: 1 }),
