@@ -132,10 +132,15 @@ const SCHEMA = [
     id TEXT PRIMARY KEY, user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
     query TEXT NOT NULL, kind TEXT DEFAULT 'text', created_at TIMESTAMPTZ DEFAULT now()
   )`,
+  `CREATE TABLE IF NOT EXISTS ai_usage (
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL, window TEXT NOT NULL, count INT DEFAULT 0,
+    PRIMARY KEY (user_id, kind, window)
+  )`,
 ];
 
 // Versioned migrations for EXISTING databases (fresh DBs get everything via SCHEMA).
-const MIGRATION_VERSION = 2;
+const MIGRATION_VERSION = 3;
 const MIGRATIONS = [
   { v: 2, stmts: [
     `CREATE TABLE IF NOT EXISTS follows (
@@ -150,6 +155,13 @@ const MIGRATIONS = [
     `DO $$ BEGIN
        ALTER TABLE conversations ADD CONSTRAINT conversations_pair_priv_key UNIQUE (a_id, b_id, is_private);
      EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+  ] },
+  { v: 3, stmts: [
+    `CREATE TABLE IF NOT EXISTS ai_usage (
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL, window TEXT NOT NULL, count INT DEFAULT 0,
+      PRIMARY KEY (user_id, kind, window)
+    )`,
   ] },
 ];
 async function applyPending(s) {

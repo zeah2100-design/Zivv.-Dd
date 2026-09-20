@@ -22,6 +22,15 @@ function resizeImage(file, maxDim = 1024) {
 
 const starters = ['Create a Reel about football', 'Draft a post for me', 'Find programming accounts', 'Write a catchy bio'];
 
+function aiErr(e, fallback) {
+  const d = e?.response?.data || {};
+  if (d.error === 'ai_billing') return 'الخدمة محتاجة شحن رصيد AI — كلّم الإدارة';
+  if (d.error === 'gold_required') return 'الميزة دي للـ Gold بس — اشترك عشان تفتحها';
+  if (d.error === 'quota_exceeded') return `خلصت حصتك (${d.kind}: ${d.used}/${d.limit} ${d.per === 'day' ? 'يوميًا' : 'أسبوعيًا'}) — Gold بيزوّد الحصة`;
+  if (d.error === 'model_no_vision') return 'الموديل ده مش بيفهم الصور — اختار موديل رؤية';
+  return fallback;
+}
+
 export default function AI() {
   const [chats, setChats] = useState([]);
   const [active, setActive] = useState(null);
@@ -34,10 +43,29 @@ export default function AI() {
   const fileRef = useRef(null);
   const [liveVoice, setLiveVoice] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [models, setModels] = useState(null);
+  const [chatModel, setChatModel] = useState('');
+  const [imgModel, setImgModel] = useState('');
+  const [vidModel, setVidModel] = useState('');
+  const [vidPrompt, setVidPrompt] = useState('');
+  const [vidJob, setVidJob] = useState(null);
+  const pollRef = useRef(null);
+
+  const loadModels = async () => {
+    try {
+      const { data } = await api.get('/ai/models');
+      setModels(data);
+      setChatModel((v) => v || data.defaults.chat);
+      setImgModel((v) => v || data.defaults.image);
+      setVidModel((v) => v || data.defaults.video);
+    } catch {}
+  };
 
   useEffect(() => {
     api.get('/ai/chats').then((r) => { setChats(r.data.items); setActive(r.data.items[0]); });
     api.get('/ai/status').then((r) => setLive(r.data)).catch(() => setLive({ live: false }));
+    loadModels();
+    return () => clearTimeout(pollRef.current);
   }, []);
 
   const refresh = async (id) => {
@@ -50,7 +78,10 @@ export default function AI() {
     if (!t || !active || busy) return;
     setText(''); setBusy(true);
     setActive({ ...active, messages: [...active.messages, { role: 'user', text: t }, { role: 'assistant', text: 'Thinking…' }] });
-    try { await api.post(`/ai/chats/${active.id}/messages`, { text: t }); } catch {}
+    try {
+      await api.post(`/ai/chats/${active.id}/messages`, { text: t, model: chatModel || undefined });
+      loadModels();
+    } catch (e) { alert(aiErr(e, 'Send failed.')); }
     await refresh(active.id); setBusy(false);
   };
 
@@ -71,27 +102,58 @@ export default function AI() {
     if (!imgPrompt.trim()) return;
     setGenImg('loading');
     try {
-      const { data } = await api.post('/ai/image', { prompt: imgPrompt });
+      const { data } = await api.post('/ai/image', { prompt: imgPrompt, model: imgModel || undefined });
       setGenImg(data.imageUrl || data.imageDataUrl || 'none');
       if (!data.imageUrl && !data.imageDataUrl) alert(data.note || 'Image queued.');
-    } catch { setGenImg(''); alert('Image generation failed.'); }
+      loadModels();
+    } catch (e) { setGenImg(''); alert(aiErr(e, 'Image generation failed.')); }
+  };
+
+  const pollVideo = async (jobId, n = 0) => {
+    if (n > 150) { setVidJob({ jobId, status: 'error', error: 'استغرق وقتًا طويلًا — جرّب تاني' }); return; }
+    try {
+      const { data } = await api.get(`/ai/video/${jobId}`);
+      if (data.status === 'completed' && data.videoUrl) { setVidJob({ jobId, status: 'completed', videoUrl: data.videoUrl }); return; }
+      if (data.status === 'failed') { setVidJob({ jobId, status: 'error', error: 'فشل توليد الفيديو — جرّب وصفًا مختلفًا' }); return; }
+      setVidJob({ jobId, status: data.status || 'processing', videoUrl: '' });
+    } catch (e) {
+      if (e?.response?.status === 404) { setVidJob({ status: 'error', error: 'الطلب مش موجود' }); return; }
+    }
+    pollRef.current = setTimeout(() => pollVideo(jobId, n + 1), 5000);
+  };
+
+  const genVideo = async () => {
+    if (!vidPrompt.trim() || vidJob?.status === 'queued' || vidJob?.status === 'processing' || vidJob?.status === 'starting') return;
+    clearTimeout(pollRef.current);
+    setVidJob({ status: 'starting' });
+    try {
+      const { data } = await api.post('/ai/video', { prompt: vidPrompt, model: vidModel || undefined });
+      setVidJob({ jobId: data.jobId, status: 'queued', videoUrl: '' });
+      pollVideo(data.jobId);
+      loadModels();
+    } catch (e) { setVidJob({ status: 'error', error: aiErr(e, 'Video generation failed.') }); }
   };
 
   const onFile = async (e) => {
     const f = e.target.files?.[0]; if (!f || !active) return;
     const q = text.trim() || 'Describe this image in detail.';
+    const vm = models?.chat.find((m) => m.id === chatModel);
     setText(''); setBusy(true);
     setActive({ ...active, messages: [...active.messages, { role: 'user', text: q }, { role: 'assistant', text: 'Analyzing image…' }] });
     try {
       const dataUrl = await resizeImage(f);
-      const { data } = await api.post('/ai/vision', { imageDataUrl: dataUrl, question: q });
+      const { data } = await api.post('/ai/vision', { imageDataUrl: dataUrl, question: q, model: vm?.vision ? chatModel : undefined });
       setActive({ ...active, messages: [...active.messages, { role: 'user', text: q }, { role: 'assistant', text: data.answer }] });
-    } catch {
-      setActive({ ...active, messages: [...active.messages, { role: 'user', text: q }, { role: 'assistant', text: 'Vision needs a live AI key (set OPENAI_API_KEY or GEMINI_API_KEY on the server).' }] });
+      loadModels();
+    } catch (err) {
+      setActive({ ...active, messages: [...active.messages, { role: 'user', text: q }, { role: 'assistant', text: aiErr(err, 'Vision needs a live AI key on the server.') }] });
     }
     setBusy(false);
     e.target.value = '';
   };
+
+  const u = models?.usage;
+  const quotaLine = u ? `Chat ${u.chat.used}/${u.chat.limit} · Images ${u.image.used}/${u.image.limit} · Video ${u.video.used}/${u.video.limit}/${u.video.per}` : '';
 
   return (
     <div className="md:flex gap-4 pt-3 px-3 md:px-0">
@@ -111,6 +173,18 @@ export default function AI() {
             <button onClick={newChat} className="btn-ghost !px-3 text-sm md:hidden" aria-label="New chat"><PlusIcon size={18} /></button>
           </div>
         </div>
+
+        {models && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px] font-bold">
+            <span className={`px-2.5 py-1 rounded-full ${models.gold ? 'bg-amber-500/15 text-amber-600' : 'bg-black/10 dark:bg-white/10 opacity-70'}`}>{models.gold ? 'GOLD' : 'FREE'}</span>
+            <span className="opacity-60">{quotaLine}</span>
+            <select value={chatModel} onChange={(e) => setChatModel(e.target.value)} className="input !w-auto !py-1 !px-2 !text-[11px] !rounded-full" title="Chat model">
+              {models.chat.map((m) => (
+                <option key={m.id} value={m.id} disabled={m.gold && !models.gold}>{m.label}{m.gold && !models.gold ? ' (Gold)' : ''}{m.free ? ' · free' : ''}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {liveVoice && (
           <div className="mt-3 rounded-2xl zivv-gradient p-6 text-white text-center fade-in">
@@ -142,6 +216,13 @@ export default function AI() {
           {genImg && genImg !== 'loading' && genImg !== 'none' && (
             <div><img src={genImg} alt="AI generated" className="rounded-2xl max-h-72" /><div className="text-[11px] opacity-60 mt-1">AI-generated with ZIVV</div></div>
           )}
+          {vidJob?.status === 'completed' && vidJob.videoUrl && (
+            <div><video src={vidJob.videoUrl} controls className="rounded-2xl max-h-72 w-full bg-black" /><div className="text-[11px] opacity-60 mt-1">AI-generated with ZIVV</div></div>
+          )}
+          {vidJob && ['starting', 'queued', 'processing'].includes(vidJob.status) && (
+            <div className="text-sm opacity-60 flex items-center gap-2"><SparklesIcon size={15} className="animate-pulse" />Generating video… ({vidJob.status})</div>
+          )}
+          {vidJob?.status === 'error' && <div className="text-sm text-red-500 font-semibold">{vidJob.error}</div>}
         </div>
 
         {plan && (
@@ -160,7 +241,21 @@ export default function AI() {
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-50"><ImageIcon size={16} /></span>
             <input value={imgPrompt} onChange={(e) => setImgPrompt(e.target.value)} placeholder="Describe an image to generate…" className="input !pl-10 text-sm" />
           </div>
+          {models && (
+            <select value={imgModel} onChange={(e) => setImgModel(e.target.value)} className="input !w-auto text-sm" title="Image model">
+              {models.image.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+            </select>
+          )}
           <button onClick={generate} className="btn-ghost text-sm whitespace-nowrap flex items-center gap-1.5"><SparklesIcon size={15} />Generate</button>
+        </div>
+        <div className="flex gap-2 mt-2">
+          <input value={vidPrompt} onChange={(e) => setVidPrompt(e.target.value)} placeholder="Describe a video to generate…" className="input text-sm flex-1" />
+          {models && (
+            <select value={vidModel} onChange={(e) => setVidModel(e.target.value)} className="input !w-auto text-sm" title="Video model">
+              {models.video.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+            </select>
+          )}
+          <button onClick={genVideo} className="btn-ghost text-sm whitespace-nowrap flex items-center gap-1.5"><SparklesIcon size={15} />Video</button>
         </div>
         <div className="flex gap-1.5 mt-2">
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />

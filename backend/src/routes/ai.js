@@ -1,14 +1,53 @@
-// ZIVV AI: per-user chats + pins + vision + image-gen + Gold-only agent actions.
+// ZIVV AI: per-user chats + pins + vision + image-gen + video-gen + Gold-only agent actions.
+// Tiers: free models + daily quotas for everyone; premium models + big quotas for Gold.
+// Quotas are enforced here server-side (see lib/quotas.js) — never trust the client.
 const router = require('express').Router();
 const db = require('../lib/db');
 const AI = require('../lib/ai');
+const quotas = require('../lib/quotas');
 const { requireAuth } = require('../middleware/auth');
 
 const LOW = new Set(['search', 'navigate', 'draft', 'summarize']);
 const MEDIUM = new Set(['send_message', 'publish', 'follow', 'edit_profile', 'delete_content']);
 const HIGH = new Set(['delete_account', 'purchase', 'security_change', 'grant_permission']);
 
+async function isGold(req) {
+  const r = await db.q('SELECT gold FROM users WHERE id=$1', [req.user.id]);
+  return !!r[0]?.gold;
+}
+function resolveModel(list, id, fallbackId) {
+  return list.find((x) => x.id === (id || fallbackId)) || null;
+}
+// Returns { model, gold } or sends the error response and returns null.
+async function gateModel(req, res, list, fallbackId, kind, { needVision = false } = {}) {
+  const m = resolveModel(list, (req.body || {}).model, fallbackId);
+  if (!m || (needVision && !m.vision)) {
+    res.status(400).json({ error: needVision && m && !m.vision ? 'model_no_vision' : 'unknown_model' });
+    return null;
+  }
+  const gold = await isGold(req);
+  if (m.gold && !gold) { res.status(403).json({ error: 'gold_required', model: m.id }); return null; }
+  const q = await quotas.check(req.user.id, kind, gold);
+  if (!q.allowed) { res.status(429).json({ error: 'quota_exceeded', kind, ...q }); return null; }
+  return { model: m, gold };
+}
+
 router.get('/status', requireAuth, (req, res) => res.json(AI.status()));
+
+// Catalog + my quotas. Drives the model pickers and limit badges in the app.
+router.get('/models', requireAuth, async (req, res) => {
+  const gold = await isGold(req);
+  res.json({
+    gold,
+    defaults: AI.DEFAULTS,
+    chat: AI.CHAT_MODELS,
+    image: AI.IMAGE_MODELS,
+    video: AI.VIDEO_MODELS,
+    limits: quotas.LIMITS,
+    usage: await quotas.summary(req.user.id, gold),
+  });
+});
+
 router.get('/chats', requireAuth, async (req, res) => {
   const rows = await db.q(
     'SELECT * FROM ai_chats WHERE user_id=$1 ORDER BY pinned DESC, created_at DESC', [req.user.id]
@@ -44,19 +83,24 @@ router.post('/chats/:id/messages', requireAuth, async (req, res) => {
   const chat = db.aiChatRow(rows[0]);
   const { text } = req.body || {};
   if (!text?.trim()) return res.status(400).json({ error: 'empty' });
-  chat.messages.push({ id: 'm' + Date.now(), role: 'user', text });
 
   let reply;
+  let gated = null;
   if (AI.status().live) {
+    gated = await gateModel(req, res, AI.CHAT_MODELS, AI.DEFAULTS.chat, 'chat');
+    if (!gated) return; // error already sent
     try {
-      reply = await AI.chat(chat.messages);
+      reply = await AI.chat([...chat.messages, { role: 'user', text }], { model: gated.model.id });
+      await quotas.consume(req.user.id, 'chat', gated.gold);
     } catch (e) {
+      if (AI.isBilling(e)) return res.status(402).json({ error: 'ai_billing' });
       console.error('[ai] provider error:', e.message);
       reply = smartReply(text) + '\n\n_(تعذّر الوصول لخدمة الذكاء الاصطناعي — رد تجريبي)_';
     }
   } else {
     reply = smartReply(text);
   }
+  chat.messages.push({ id: 'm' + Date.now(), role: 'user', text });
   const a = { id: 'a' + Date.now(), role: 'assistant', text: reply };
   chat.messages.push(a);
   if (chat.title === 'New chat') chat.title = (text || 'Chat').slice(0, 40);
@@ -79,11 +123,15 @@ router.post('/vision', requireAuth, async (req, res) => {
   const { imageDataUrl, question } = req.body || {};
   if (!imageDataUrl) return res.status(400).json({ error: 'missing_image' });
   if (imageDataUrl.length > 5.5e6) return res.status(413).json({ error: 'image_too_large' });
-  if (!AI.status().live) return res.status(503).json({ error: 'ai_offline', message: 'Set OPENAI_API_KEY or GEMINI_API_KEY to enable vision.' });
+  if (!AI.status().live) return res.status(503).json({ error: 'ai_offline', message: 'AI key is not configured on the server.' });
+  const gated = await gateModel(req, res, AI.CHAT_MODELS, AI.DEFAULTS.chat, 'vision', { needVision: true });
+  if (!gated) return;
   try {
-    const answer = await AI.vision(imageDataUrl, question || 'Describe this image in detail.');
-    res.json({ answer });
+    const answer = await AI.vision(imageDataUrl, question || 'Describe this image in detail.', { model: gated.model.id });
+    await quotas.consume(req.user.id, 'vision', gated.gold);
+    res.json({ answer, model: gated.model.id });
   } catch (e) {
+    if (AI.isBilling(e)) return res.status(402).json({ error: 'ai_billing' });
     console.error('[ai] vision error:', e.message);
     res.status(502).json({ error: 'ai_error' });
   }
@@ -93,14 +141,48 @@ router.post('/vision', requireAuth, async (req, res) => {
 router.post('/image', requireAuth, async (req, res) => {
   const { prompt } = req.body || {};
   if (!prompt?.trim()) return res.status(400).json({ error: 'missing_prompt' });
-  if (!AI.status().live) {
-    return res.json({ imageUrl: '', prompt, aiGenerated: true, label: 'AI-generated with ZIVV', note: 'Set OPENAI_API_KEY or GEMINI_API_KEY server-side for real generation.' });
-  }
+  if (!AI.status().live) return res.status(503).json({ error: 'ai_offline', message: 'AI key is not configured on the server.' });
+  const gated = await gateModel(req, res, AI.IMAGE_MODELS, AI.DEFAULTS.image, 'image');
+  if (!gated) return;
   try {
-    const out = await AI.generateImage(prompt);
-    res.json({ ...out, prompt, aiGenerated: true, label: 'AI-generated with ZIVV' });
+    const out = await AI.generateImage(prompt.trim(), { model: gated.model.id });
+    await quotas.consume(req.user.id, 'image', gated.gold);
+    res.json({ ...out, prompt: prompt.trim(), model: gated.model.id, aiGenerated: true, label: 'AI-generated with ZIVV' });
   } catch (e) {
+    if (AI.isBilling(e)) return res.status(402).json({ error: 'ai_billing' });
     console.error('[ai] image error:', e.message);
+    res.status(502).json({ error: 'ai_error' });
+  }
+});
+
+// Video generation — async. Submit here (202 + jobId), then poll GET /ai/video/:jobId.
+// NOTE: video spends real provider balance per second of output; quotas are the spend cap.
+router.post('/video', requireAuth, async (req, res) => {
+  const { prompt } = req.body || {};
+  if (!prompt?.trim()) return res.status(400).json({ error: 'missing_prompt' });
+  if (prompt.length > 1000) return res.status(400).json({ error: 'prompt_too_long' });
+  if (!AI.status().live) return res.status(503).json({ error: 'ai_offline', message: 'AI key is not configured on the server.' });
+  const gated = await gateModel(req, res, AI.VIDEO_MODELS, AI.DEFAULTS.video, 'video');
+  if (!gated) return;
+  try {
+    const { jobId } = await AI.createVideo(prompt.trim(), { model: gated.model.id });
+    await quotas.consume(req.user.id, 'video', gated.gold);
+    res.status(202).json({ jobId, model: gated.model.id, status: 'queued' });
+  } catch (e) {
+    if (AI.isBilling(e)) return res.status(402).json({ error: 'ai_billing' });
+    console.error('[ai] video error:', e.message);
+    res.status(502).json({ error: 'ai_error' });
+  }
+});
+
+router.get('/video/:jobId', requireAuth, async (req, res) => {
+  try {
+    const st = await AI.videoStatus(req.params.jobId);
+    res.json({ jobId: req.params.jobId, ...st, aiGenerated: true, label: 'AI-generated with ZIVV' });
+  } catch (e) {
+    if (e.code === 'video_not_found') return res.status(404).json({ error: 'not_found' });
+    if (AI.isBilling(e)) return res.status(402).json({ error: 'ai_billing' });
+    console.error('[ai] video poll error:', e.message);
     res.status(502).json({ error: 'ai_error' });
   }
 });
