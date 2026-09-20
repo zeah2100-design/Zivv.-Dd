@@ -13,6 +13,7 @@ const rateLimit = require('express-rate-limit');
 
 function createApp() {
   const app = express();
+  app.set('trust proxy', 1); // Vercel terminates TLS; rate-limit by real client IP
   app.use(helmet({ crossOriginResourcePolicy: false }));
   app.use(cors({ origin: (process.env.FRONTEND_URL || 'http://localhost:5173').split(','), credentials: true }));
   app.use(express.json({ limit: '6mb' })); // allows base64 vision images

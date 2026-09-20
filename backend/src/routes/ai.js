@@ -45,15 +45,11 @@ router.post('/chats/:id/messages', requireAuth, async (req, res) => {
   const { text } = req.body || {};
   if (!text?.trim()) return res.status(400).json({ error: 'empty' });
   chat.messages.push({ id: 'm' + Date.now(), role: 'user', text });
-  console.log('[ai-dbg] start chat=' + chat.id + ' msgs=' + chat.messages.length);
 
   let reply;
   if (AI.status().live) {
     try {
-      const t0 = Date.now();
-      console.log('[ai-dbg] before AI.chat');
       reply = await AI.chat(chat.messages);
-      console.log('[ai-dbg] after AI.chat ms=' + (Date.now() - t0) + ' len=' + (reply || '').length);
     } catch (e) {
       console.error('[ai] provider error:', e.message);
       reply = smartReply(text) + '\n\n_(تعذّر الوصول لخدمة الذكاء الاصطناعي — رد تجريبي)_';
@@ -61,13 +57,11 @@ router.post('/chats/:id/messages', requireAuth, async (req, res) => {
   } else {
     reply = smartReply(text);
   }
-  console.log('[ai-dbg] before save');
   const a = { id: 'a' + Date.now(), role: 'assistant', text: reply };
   chat.messages.push(a);
   if (chat.title === 'New chat') chat.title = (text || 'Chat').slice(0, 40);
   await db.q('UPDATE ai_chats SET messages=$1, title=$2 WHERE id=$3',
     [JSON.stringify(chat.messages), chat.title, chat.id]);
-  console.log('[ai-dbg] after save');
   res.json(a);
 });
 
